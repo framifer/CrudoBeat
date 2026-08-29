@@ -89,10 +89,12 @@
   .clip button.act{background:var(--red);color:var(--cream);}
   .clip button:disabled{opacity:.4;cursor:default;}
 
-  #tracceBtn{position:fixed;left:8px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:13;
-    border:2px solid var(--red2);background:var(--cream);color:var(--red2);font-weight:900;font-size:12px;
-    padding:9px 12px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 var(--red2);}
+  /* persistent Tracce button — angolo in basso a sinistra, dentro la banda */
+  #tracceBtn{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:14;
+    border:2px solid #000;background:var(--ink);color:var(--cream);font-weight:900;font-size:12px;
+    padding:9px 12px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;}
 
+  /* load dialog */
   #loadDlg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:30;display:none;align-items:center;justify-content:center;}
   #loadDlg.show{display:flex;}
   #loadBox{background:var(--cream);border:3px solid var(--red2);border-radius:14px;padding:14px;width:min(90vw,360px);max-height:80vh;overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.4);}
@@ -123,7 +125,7 @@
     .grp button,.tools button{padding:4px 6px;font-size:10px;height:30px;}
     #octave .oct{width:28px;height:26px;}#looper{top:calc(68px + env(safe-area-inset-top,0px));bottom:52px;}
     #gridZoom{top:calc(70px + env(safe-area-inset-top,0px));}
-    #tracceBtn{bottom:calc(52px + env(safe-area-inset-bottom,0px));}
+    #tracceBtn{bottom:calc(6px + env(safe-area-inset-bottom,0px));padding:7px 10px;font-size:11px;}
   }
 </style>
 </head>
