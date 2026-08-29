@@ -14,7 +14,7 @@
   #canvas{position:absolute;top:0;right:0;display:block;touch-action:none;}
 
   #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:5px;
-    padding:3px 8px;padding-top:calc(3px + env(safe-area-inset-top,0px));
+    padding:3px 8px;padding-top:calc(3px + env(safe-area-inset-top,0px));padding-right:var(--edge);
     background:var(--red);border-bottom:3px solid var(--red2);z-index:12;pointer-events:none;flex-wrap:wrap;box-shadow:0 2px 8px rgba(60,40,20,.25);}
   #topbar>*{pointer-events:auto;}
   .brandwrap{display:flex;align-items:center;gap:8px;margin-right:auto;}
@@ -36,7 +36,7 @@
   select.sel{border:2px solid var(--red2);background:var(--cream);color:var(--ink);font-weight:800;font-size:11px;border-radius:7px;padding:5px 6px;box-shadow:0 2px 0 var(--red2);cursor:pointer;}
 
   #controls{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:5px;
-    padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--red);border-top:3px solid var(--red2);z-index:12;flex-wrap:wrap;box-shadow:0 -2px 8px rgba(60,40,20,.25);}
+    padding:6px var(--edge) calc(6px + env(safe-area-inset-bottom,0px)) 8px;background:var(--red);border-top:3px solid var(--red2);z-index:12;flex-wrap:wrap;box-shadow:0 -2px 8px rgba(60,40,20,.25);}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:40px;height:40px;padding:0 10px;border-radius:10px;
     border:2px solid var(--red2);background:var(--cream);color:var(--ink);font-size:12px;font-weight:800;cursor:pointer;transition:transform .1s,background .15s;box-shadow:0 2px 0 var(--red2);}
   .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--red2);}
@@ -49,12 +49,12 @@
   #gridZoom{position:fixed;right:var(--edge);top:calc(64px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:11;}
   #gridZoom button{width:34px;height:32px;border-radius:8px;border:2px solid var(--red2);background:var(--cream);color:var(--ink);font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 2px 0 var(--red2);}
 
-  #octave{position:fixed;right:var(--edge);bottom:calc(60px + env(safe-area-inset-bottom,0px));display:flex;gap:4px;z-index:11;align-items:center;
+  #octave{display:flex;gap:4px;align-items:center;
     background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:3px 4px;box-shadow:0 2px 0 var(--red2);}
-  #octave .oct{width:30px;height:30px;border-radius:7px;border:none;background:var(--red);color:var(--cream);font-size:15px;font-weight:900;cursor:pointer;}
-  #octave .octlbl{font-size:9px;font-weight:800;min-width:40px;text-align:center;}
+  #octave .oct{width:28px;height:28px;border-radius:7px;border:none;background:var(--red);color:var(--cream);font-size:15px;font-weight:900;cursor:pointer;}
+  #octave .octlbl{font-size:9px;font-weight:800;min-width:38px;text-align:center;}
 
-  #synthPanel{position:fixed;right:var(--edge);bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:11;display:none;flex-direction:column;gap:5px;
+  #synthPanel{position:fixed;right:var(--edge);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:11;display:none;flex-direction:column;gap:5px;
     background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:8px;box-shadow:0 2px 0 var(--red2);width:200px;max-width:calc(100vw - 60px);}
   #synthPanel.show{display:flex;}
   #synthPanel .r{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;width:100%;}
@@ -110,6 +110,10 @@
     background:var(--ink);border:2px solid #000;color:var(--cream);padding:8px 14px;border-radius:11px;font-size:12px;font-weight:700;z-index:25;opacity:0;transition:all .3s;pointer-events:none;max-width:80vw;text-align:center;}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+  /* when multitrack expanded fullscreen, hide top & bottom bars for max editing space */
+  body.looperFull #topbar,body.looperFull #controls,body.looperFull #gridZoom,body.looperFull #octave,body.looperFull #synthPanel,body.looperFull #tracceBtn{display:none!important;}
+  body.looperFull #looper{top:0!important;bottom:0!important;}
+
   .tools{display:flex;gap:3px;align-items:center;background:var(--cream);border:2px solid var(--red2);border-radius:8px;padding:2px;box-shadow:0 2px 0 var(--red2);}
   .tools button{border:none;background:transparent;color:var(--ink);font-size:13px;height:32px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:800;}
   .tools button.iconbtn{width:32px;}
@@ -132,7 +136,7 @@
 
 <div id="topbar">
   <div class="brandwrap">
-    <div class="speaker" id="speaker" title="Tieni premuto: scorri con l'altro dito per spostare, o fai pinch per zoomare la griglia"><div class="mesh"></div><div class="plate">CrudoBeat<sup>®</sup></div></div>
+    <div class="speaker" id="speaker" title="Tieni premuto: 1 dito naviga, 2 dita (pinch) zoomano la griglia"><div class="mesh"></div><div class="plate">CrudoBeat<sup>®</sup></div></div>
   </div>
   <div class="tools" id="tools">
     <button data-tool="live" class="live active" title="Live">LIVE</button>
@@ -150,7 +154,11 @@
   </div>
   <select class="sel" id="keySel" title="Tonalità"></select>
   <select class="sel" id="scaleSel" title="Scala"></select>
-  <select class="sel" id="micSel" title="Microfono di ingresso"><option value="">🎤 Mic: predefinito</option></select>
+  <div id="octave">
+    <button class="oct" id="octDown">－</button>
+    <div class="octlbl" id="octLbl">8va 0</div>
+    <button class="oct" id="octUp">＋</button>
+  </div>
 </div>
 
 <div id="looper">
@@ -180,15 +188,9 @@
   <button id="gzOut" title="Zoom griglia −">－</button>
 </div>
 
-<div id="octave">
-  <button class="oct" id="octDown">－</button>
-  <div class="octlbl" id="octLbl">8va 0</div>
-  <button class="oct" id="octUp">＋</button>
-</div>
-
 <div id="hint">
   <b>LIVE</b>: suona col dito (multitouch), tieni premuto e scorri per lo <b>slide</b>.<br>
-  Tieni la <b>cassa</b> + pinch = zoom griglia • <b>● REC</b> registra • <b>🎤</b> microfono • <b>🎛 Tracce</b> multitraccia
+  Tieni la <b>cassa</b>: 1 dito naviga, 2 dita (pinch) zoomano • <b>● REC</b> registra • <b>🎤</b> mic • <b>🎛 Tracce</b>
 </div>
 
 <div id="toast"></div>
@@ -204,6 +206,7 @@
   <button class="btn icon" id="clearBtn" title="Svuota nodi">🗑</button>
   <button class="btn rec" id="recBtn" title="Registra">● REC</button>
   <button class="btn icon" id="micBtn" title="Microfono">🎤</button>
+  <select class="sel" id="micSel" title="Microfono di ingresso"><option value="">Mic: predefinito</option></select>
 </div>
 
 <script>
@@ -218,6 +221,7 @@
 
   function applyLayout(){
     tracceBtn.style.display=(splitMode&&!looperHidden&&!looperFull)?'none':'block';
+    document.body.classList.toggle('looperFull',splitMode&&!looperHidden&&looperFull);
     if(looperHidden||!splitMode){looperEl.classList.remove('show');looperEl.style.width='0';CANVAS_LEFT=0;CANVAS_W=window.innerWidth;canvas.style.display='block';}
     else if(looperFull){looperEl.classList.add('show');looperEl.style.width='100vw';CANVAS_W=0;canvas.style.display='none';}
     else{const half=Math.round(window.innerWidth*0.5);looperEl.classList.add('show');looperEl.style.width=half+'px';CANVAS_LEFT=half;CANVAS_W=window.innerWidth-half;canvas.style.display='block';}
@@ -347,7 +351,7 @@
   const tracks=[];for(let i=0;i<NUM_TRACKS;i++)tracks.push({nodes:[],muted:false,instr:DEFAULT_INSTR[i],oct:0});
   let activeTrack=0;const CONNECT_DIST=160;
   let panX=0,panY=0;
-  let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){GRID_TOP=(H<480?80:130);GRID_BOTTOM=H-(H<480?54:76);}
+  let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){GRID_TOP=(H<480?66:104);GRID_BOTTOM=H-(H<480?54:76);}
   function addNode(x,y,type){const n={x:x-panX,y:y-panY,type,flash:0,track:activeTrack};tracks[activeTrack].nodes.push(n);return n;}
   function playNodeInstrument(node){const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
 
@@ -393,16 +397,23 @@
   canvas.addEventListener('mousedown',e=>{e.preventDefault();onPointerDown('mouse',e.clientX,e.clientY);});
   window.addEventListener('mousemove',e=>{onPointerMove('mouse',e.clientX,e.clientY);});
   window.addEventListener('mouseup',()=>onPointerUp('mouse'));
-  let gridPinch=null; // active when speaker held + 2 fingers
+  let gridPinch=null; // speaker held + 2 fingers
   function twoFingerDist(e){if(e.touches.length<2)return null;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;return Math.hypot(dx,dy);}
   canvas.addEventListener('touchstart',e=>{e.preventDefault();
-    if(panActive&&e.touches.length>=2){const d=twoFingerDist(e);gridPinch={d,z:gridZoom};return;}
+    if(panActive){
+      if(e.touches.length>=2){const d=twoFingerDist(e);gridPinch={d,z:gridZoom};panLast=null;}
+      else{panLast={x:e.touches[0].clientX,y:e.touches[0].clientY};gridPinch=null;}
+      return;}
     for(const t of e.changedTouches)onPointerDown(t.identifier,t.clientX,t.clientY);},{passive:false});
   canvas.addEventListener('touchmove',e=>{e.preventDefault();
-    if(panActive&&e.touches.length>=2){const d=twoFingerDist(e);if(gridPinch&&d){gridZoom=clamp(gridPinch.z*(d/gridPinch.d),0.5,4);updateTotalSteps();}return;}
+    if(panActive){
+      if(e.touches.length>=2){const d=twoFingerDist(e);if(gridPinch&&d){gridZoom=clamp(gridPinch.z*(d/gridPinch.d),0.5,4);updateTotalSteps();}}
+      else if(e.touches.length===1){const cx=e.touches[0].clientX,cy=e.touches[0].clientY;if(panLast){panX+=cx-panLast.x;panY+=cy-panLast.y;}panLast={x:cx,y:cy};}
+      return;}
     for(const t of e.changedTouches)onPointerMove(t.identifier,t.clientX,t.clientY);},{passive:false});
-  canvas.addEventListener('touchend',e=>{if(e.touches&&e.touches.length<2)gridPinch=null;for(const t of e.changedTouches)onPointerUp(t.identifier);},{passive:false});
-  canvas.addEventListener('touchcancel',e=>{gridPinch=null;for(const t of e.changedTouches)onPointerUp(t.identifier);},{passive:false});
+  canvas.addEventListener('touchend',e=>{if(!e.touches||e.touches.length<2)gridPinch=null;if(!e.touches||e.touches.length===0)panLast=null;
+    if(panActive)return;for(const t of e.changedTouches)onPointerUp(t.identifier);},{passive:false});
+  canvas.addEventListener('touchcancel',e=>{gridPinch=null;panLast=null;for(const t of e.changedTouches)onPointerUp(t.identifier);},{passive:false});
 
   // ---------- Loop ----------
   function loop(){const now=audio?audio.currentTime:0;
@@ -472,7 +483,7 @@
   const projNameEl=document.getElementById('projName');
   function refreshProjName(){projNameEl.textContent='Progetto: '+(currentProject.name||'(nuovo)');}
   document.getElementById('expandBtn').addEventListener('click',()=>{looperFull=!looperFull;applyLayout();buildClipList();});
-  document.getElementById('closeLooper').addEventListener('click',()=>{looperHidden=true;applyLayout();toast('Multitraccia chiuso • le tracce continuano');});
+  document.getElementById('closeLooper').addEventListener('click',()=>{looperHidden=true;looperFull=false;applyLayout();toast('Multitraccia chiuso • le tracce continuano');});
   tracceBtn.addEventListener('click',()=>{if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();buildClipList();});
 
   function startCapture(){const proc=audio.createScriptProcessor(2048,2,2);const L=[],R=[];dryGain.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
@@ -547,7 +558,7 @@
   let micRecording=false,micStream=null,micNode=null,micCapture=null;
   const micSel=document.getElementById('micSel');let selectedMicId='';
   async function refreshMicList(){try{const devs=await navigator.mediaDevices.enumerateDevices();const mics=devs.filter(d=>d.kind==='audioinput');
-    micSel.innerHTML='<option value="">🎤 Mic: predefinito</option>';mics.forEach((m,i)=>{const o=document.createElement('option');o.value=m.deviceId;o.textContent='🎤 '+(m.label||('Microfono '+(i+1)));if(m.deviceId===selectedMicId)o.selected=true;micSel.appendChild(o);});}catch(e){}}
+    micSel.innerHTML='<option value="">Mic: predefinito</option>';mics.forEach((m,i)=>{const o=document.createElement('option');o.value=m.deviceId;o.textContent=(m.label||('Microfono '+(i+1)));if(m.deviceId===selectedMicId)o.selected=true;micSel.appendChild(o);});}catch(e){}}
   micSel.addEventListener('change',()=>{selectedMicId=micSel.value;toast('Mic: '+(micSel.options[micSel.selectedIndex].textContent));});
   async function startMic(){resumeAudio();
     if(!window.isSecureContext){toast('Microfono: serve HTTPS (contesto sicuro)');return;}
