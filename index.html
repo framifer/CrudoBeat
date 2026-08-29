@@ -14,7 +14,7 @@
   #canvas{position:absolute;top:0;right:0;display:block;touch-action:none;}
 
   #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:5px;
-    padding:6px 8px;padding-top:calc(6px + env(safe-area-inset-top,0px));
+    padding:3px 8px;padding-top:calc(3px + env(safe-area-inset-top,0px));
     background:var(--red);border-bottom:3px solid var(--red2);z-index:12;pointer-events:none;flex-wrap:wrap;box-shadow:0 2px 8px rgba(60,40,20,.25);}
   #topbar>*{pointer-events:auto;}
   .brandwrap{display:flex;align-items:center;gap:8px;margin-right:auto;}
@@ -46,7 +46,7 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.7),0 2px 0 var(--red2)}50%{box-shadow:0 0 0 9px rgba(255,255,255,0),0 2px 0 var(--red2)}}
   .btn:disabled{opacity:.45;cursor:default;}
 
-  #gridZoom{position:fixed;right:var(--edge);top:calc(84px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:11;}
+  #gridZoom{position:fixed;right:var(--edge);top:calc(64px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:11;}
   #gridZoom button{width:34px;height:32px;border-radius:8px;border:2px solid var(--red2);background:var(--cream);color:var(--ink);font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 2px 0 var(--red2);}
 
   #octave{position:fixed;right:var(--edge);bottom:calc(60px + env(safe-area-inset-bottom,0px));display:flex;gap:4px;z-index:11;align-items:center;
@@ -64,13 +64,11 @@
   #synthPanel .waves button{flex:1 1 0;min-width:0;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:5px;padding:5px 0;font-size:10px;font-weight:800;cursor:pointer;}
   #synthPanel .waves button.active{background:var(--red);color:var(--cream);}
 
-  #looper{position:fixed;left:0;top:calc(80px + env(safe-area-inset-top,0px));bottom:56px;width:0;overflow-y:auto;overflow-x:hidden;z-index:11;
+  #looper{position:fixed;left:0;top:calc(60px + env(safe-area-inset-top,0px));bottom:56px;width:0;overflow-y:auto;overflow-x:hidden;z-index:11;
     padding:6px;display:none;flex-direction:column;gap:6px;background:var(--bg2);border-right:3px solid var(--red2);}
   #looper.show{display:flex;}
   #looperHead{display:flex;flex-direction:column;gap:5px;position:sticky;top:0;z-index:2;background:var(--bg2);padding:2px 2px 5px;}
-  #looperHead .saverow{display:flex;gap:5px;}
-  #looperHead .saverow button{flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:7px;height:30px;cursor:pointer;font-size:12px;font-weight:800;}
-  #looperHead .titrow{display:flex;align-items:center;gap:5px;}
+  #looperHead .titrow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
   #looperHead .t{font-size:12px;font-weight:900;color:var(--red2);margin-right:auto;}
   #looperHead .titrow button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;width:30px;height:28px;cursor:pointer;font-size:13px;font-weight:800;}
   .projname{font-size:11px;font-weight:800;color:var(--ink);opacity:.8;padding:0 2px;}
@@ -123,8 +121,8 @@
     .speaker{width:110px;height:32px;}
     .btn{height:36px;font-size:11px;padding:0 8px;min-width:36px;}.btn.icon{width:38px;}
     .grp button,.tools button{padding:4px 6px;font-size:10px;height:30px;}
-    #octave .oct{width:28px;height:26px;}#looper{top:calc(68px + env(safe-area-inset-top,0px));bottom:52px;}
-    #gridZoom{top:calc(70px + env(safe-area-inset-top,0px));}
+    #octave .oct{width:28px;height:26px;}#looper{top:calc(56px + env(safe-area-inset-top,0px));bottom:52px;}
+    #gridZoom{top:calc(56px + env(safe-area-inset-top,0px));}
     #tracceBtn{bottom:calc(6px + env(safe-area-inset-bottom,0px));padding:7px 10px;font-size:11px;}
   }
 </style>
@@ -157,8 +155,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="saverow"><button id="saveBtn">💾 Salva</button><button id="loadBtn">📂 Carica</button></div>
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓ Tutte</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
   </div>
   <div id="clipList"></div>
