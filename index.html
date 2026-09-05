@@ -120,6 +120,10 @@
   .block canvas{display:block;width:100%;height:100%;}
   .block .bn{position:absolute;top:1px;left:3px;font-size:9px;font-weight:800;color:var(--ink);pointer-events:none;}
   .block .loopbadge{position:absolute;bottom:1px;right:3px;font-size:9px;font-weight:800;color:var(--red2);pointer-events:none;}
+  .block .blkbtn{position:absolute;top:1px;border:none;border-radius:4px;width:18px;height:16px;font-size:9px;font-weight:800;cursor:pointer;background:var(--cream);color:var(--ink);opacity:.9;}
+  .block .blkbtn.act{background:var(--red);color:var(--cream);}
+  .block .blkbtn:nth-of-type(1){right:20px;}
+  .block .blkbtn.del{right:1px;}
   #playhead{position:absolute;top:0;bottom:0;width:2px;background:#111;z-index:4;pointer-events:none;left:96px;}
 
   /* persistent Tracce button bottom-left */
@@ -201,7 +205,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="viewBtn" title="Vista: Verticale o Studio (timeline)">Vert</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="120"><span id="latVal">120ms</span></div>
     <div class="playbar" id="playbar"><div class="playfill" id="playfill"></div><div class="playlbl" id="playlbl"></div></div>
@@ -550,7 +554,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     else{clipListEl.style.display='';studioEl.classList.remove('show');buildClipList();}
   }
   viewBtn.addEventListener('click',()=>{
-    stopAllTransport();timelineView=!timelineView;viewBtn.textContent=timelineView?'Studio':'Vert';transportPos=0;
+    stopAllTransport();timelineView=!timelineView;viewBtn.textContent=timelineView?'S':'V';transportPos=0;
     refreshView();toast(timelineView?'Vista Studio (timeline, suonano insieme)':'Vista Verticale (loop insieme)');
   });
 
@@ -609,32 +613,47 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // ruler (seconds ticks)
     studioRuler.innerHTML='';studioRuler.style.marginLeft=LANE_HEAD+'px';studioRuler.style.width=timelineW+'px';
     for(let s=0;s<=total;s++){const t=document.createElement('div');t.className='tick';t.style.left=(s*pxPerSec)+'px';t.textContent=s+'s';studioRuler.appendChild(t);}
-    // lanes: one per clip (each clip on its own lane, ordered by lane)
-    studioLanes.innerHTML='';const ordered=clips.map((c,i)=>({c,i})).sort((a,b)=>(a.c.lane||0)-(b.c.lane||0));
-    ordered.forEach(({c,i})=>{
-      const lane=document.createElement('div');lane.className='lane';lane.style.width=(LANE_HEAD+timelineW)+'px';
+    // lanes: group clips by their lane index (multiple clips can share a lane, in sequence)
+    studioLanes.innerHTML='';
+    let laneIdxs=[...new Set(clips.map(c=>c.lane||0))].sort((a,b)=>a-b);
+    if(!laneIdxs.length)laneIdxs=[0];
+    const laneEls=[];
+    laneIdxs.forEach((li)=>{
+      const lane=document.createElement('div');lane.className='lane';lane.style.width=(LANE_HEAD+timelineW)+'px';lane.dataset.lane=li;
       const head=document.createElement('div');head.className='laneHead';
-      const nm=document.createElement('div');nm.className='ln';nm.style.color=c.color;nm.textContent=c.name;head.appendChild(nm);
+      const first=clips.find(c=>(c.lane||0)===li);
+      const nm=document.createElement('div');nm.className='ln';nm.style.color=first?first.color:'#000';nm.textContent='Corsia '+(laneIdxs.indexOf(li)+1);head.appendChild(nm);
       const lb=document.createElement('div');lb.className='lb';
-      const mb=document.createElement('button');mb.textContent=c.muted?'🔇':'🔊';mb.title='Muta';mb.className=c.muted?'act':'';mb.onclick=(e)=>{e.stopPropagation();c.muted=!c.muted;if(c.gain)c.gain.gain.value=c.muted?0:1;buildStudio();};lb.appendChild(mb);
-      const lp=document.createElement('button');lp.textContent='⟳';lp.title='Ripeti in loop sulla timeline';lp.className=c.loop?'act':'';lp.onclick=(e)=>{e.stopPropagation();c.loop=!c.loop;buildStudio();toast(c.name+(c.loop?' • loop ON':' • loop OFF'));};lb.appendChild(lp);
-      const del=document.createElement('button');del.textContent='🗑';del.title='Elimina';del.onclick=(e)=>{e.stopPropagation();stopClipPlayback(c);clips.splice(clips.indexOf(c),1);buildStudio();};lb.appendChild(del);
+      // lane-level mute toggles all clips on this lane
+      const anyMuted=clips.filter(c=>(c.lane||0)===li).every(c=>c.muted);
+      const mb=document.createElement('button');mb.textContent=anyMuted?'🔇':'🔊';mb.title='Muta corsia';mb.className=anyMuted?'act':'';mb.onclick=(e)=>{e.stopPropagation();const nv=!anyMuted;clips.filter(c=>(c.lane||0)===li).forEach(c=>{c.muted=nv;if(c.gain)c.gain.gain.value=nv?0:1;});buildStudio();};lb.appendChild(mb);
       head.appendChild(lb);lane.appendChild(head);
-      // block
+      studioLanes.appendChild(lane);laneEls.push(lane);
+    });
+    // place each clip as a block on its lane row
+    clips.forEach((c,i)=>{
+      const li=c.lane||0;const lane=laneEls[laneIdxs.indexOf(li)]||laneEls[0];
       const dur=c.buffer?c.buffer.duration:0;const bw=Math.max(20,Math.round(dur*pxPerSec));
       const block=document.createElement('div');block.className='block'+(i===selectedClip?' sel':'');block.style.left=(LANE_HEAD+Math.round((c.t||0)*pxPerSec))+'px';block.style.width=bw+'px';
       const bc=document.createElement('canvas');bc.width=bw;bc.height=52;block.appendChild(bc);if(c.buffer)drawWave(bc,c.buffer,c.color);
       const bn=document.createElement('div');bn.className='bn';bn.textContent=c.name;block.appendChild(bn);
+      // per-clip controls on the block
+      const lpB=document.createElement('button');lpB.className='blkbtn'+(c.loop?' act':'');lpB.textContent='⟳';lpB.title='Ripeti in loop';lpB.onclick=(e)=>{e.stopPropagation();c.loop=!c.loop;buildStudio();toast(c.name+(c.loop?' • loop ON':' • loop OFF'));};block.appendChild(lpB);
+      const delB=document.createElement('button');delB.className='blkbtn del';delB.textContent='🗑';delB.title='Elimina';delB.onclick=(e)=>{e.stopPropagation();stopClipPlayback(c);clips.splice(i,1);buildStudio();};block.appendChild(delB);
       if(c.loop){const lb2=document.createElement('div');lb2.className='loopbadge';lb2.textContent='⟳';block.appendChild(lb2);}
-      // horizontal drag to change t
-      const startDrag=(clientX)=>{selectedClip=i;const r=block.getBoundingClientRect();const grab=clientX-r.left;
-        const move=(cx)=>{const laneR=lane.getBoundingClientRect();let nx=cx-laneR.left-LANE_HEAD-grab;let nt=Math.max(0,nx/pxPerSec);c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';};
-        const mm=(ev)=>{ev.preventDefault();move(ev.touches?ev.touches[0].clientX:ev.clientX);};
-        const up=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);buildStudio();};
+      // drag: horizontal = time (t), vertical = move to another lane
+      const startDrag=(clientX,clientY)=>{selectedClip=i;const r=block.getBoundingClientRect();const grab=clientX-r.left;
+        const move=(cx,cy)=>{const laneR=lane.getBoundingClientRect();let nx=cx-laneR.left-LANE_HEAD-grab;let nt=Math.max(0,nx/pxPerSec);c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';
+          // detect lane under pointer
+          let overLane=null;for(const le of laneEls){const rr=le.getBoundingClientRect();if(cy>=rr.top&&cy<=rr.bottom){overLane=le;break;}}
+          if(overLane&&+overLane.dataset.lane!==(c.lane||0)){c.lane=+overLane.dataset.lane;}
+        };
+        const mm=(ev)=>{ev.preventDefault();const p=ev.touches?ev.touches[0]:ev;move(p.clientX,p.clientY);};
+        const up=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);buildStudio();toast(c.name+' → '+(c.t||0).toFixed(2)+'s');};
         window.addEventListener('mousemove',mm);window.addEventListener('mouseup',up);window.addEventListener('touchmove',mm,{passive:false});window.addEventListener('touchend',up);};
-      block.addEventListener('mousedown',(ev)=>{ev.preventDefault();startDrag(ev.clientX);});
-      block.addEventListener('touchstart',(ev)=>{ev.preventDefault();startDrag(ev.touches[0].clientX);},{passive:false});
-      lane.appendChild(block);studioLanes.appendChild(lane);
+      block.addEventListener('mousedown',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.preventDefault();startDrag(ev.clientX,ev.clientY);});
+      block.addEventListener('touchstart',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.preventDefault();startDrag(ev.touches[0].clientX,ev.touches[0].clientY);},{passive:false});
+      lane.appendChild(block);
     });
   }
 
@@ -874,7 +893,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     name=prompt('Nome del progetto:',name||('Progetto '+(count+1)));if(!name)return;
     toast('Salvataggio…');
     // store clips as binary WAV Blobs (no base64 bloat)
-    const clipData=clips.map(c=>({name:c.name,muted:c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,t:c.t||0,wav:bufferToWav(c.buffer)}));
+    const clipData=clips.map(c=>({name:c.name,muted:c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,t:c.t||0,lane:c.lane||0,loop:!!c.loop,wav:bufferToWav(c.buffer)}));
     try{await dbPut({name,ts:Date.now(),clips:clipData});currentProject.name=name;refreshProjName();
       toast('Progetto "'+name+'" salvato ('+clipData.length+' tracce)'+await storageInfo());}
     catch(e){toast('Salvataggio fallito: '+(e&&e.name==='QuotaExceededError'?'quota dispositivo piena':e.message));}
@@ -882,7 +901,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function loadProject(name){let p;try{p=await dbGet(name);}catch(e){}if(!p)return;
     for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;
     for(const cd of p.clips){try{const ab=await cd.wav.arrayBuffer();const buf=await audio.decodeAudioData(ab);clipCounter++;
-      const clip={buffer:buf,name:cd.name,muted:cd.muted,paused:false,offset:0,source:null,gain:null,color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,t:cd.t||0,_tlScheduled:false};clips.push(clip);startClipPlayback(clip);}catch(e){}}
+      const clip={buffer:buf,name:cd.name,muted:cd.muted,paused:false,offset:0,source:null,gain:null,color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop};clips.push(clip);startClipPlayback(clip);}catch(e){}}
     currentProject.name=name;refreshProjName();splitMode=true;looperHidden=false;applyLayout();refreshView();closeLoad();toast('Progetto "'+name+'" caricato');}
   function newProject(){for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;loopStart=null;currentProject.name=null;refreshProjName();refreshView();}
 
