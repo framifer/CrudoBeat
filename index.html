@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#e33f1a" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="CrudoBeat" />
 <title>CrudoBeat</title>
 <style>
   :root{--bg:#f2e7d0;--bg2:#e9dbbd;--ink:#2b2118;--red:#e33f1a;--red2:#b62c10;--cream:#f7efdd;--panel-border:#c9b48a;--edge:52px;}
@@ -18,7 +24,6 @@
     background:var(--red);border-bottom:3px solid var(--red2);z-index:12;pointer-events:none;flex-wrap:wrap;box-shadow:0 2px 8px rgba(60,40,20,.25);}
   #topbar>*{pointer-events:auto;}
   .brandwrap{display:flex;align-items:center;gap:8px;margin-right:auto;}
-  /* Stylophone-style speaker box (also acts as PAN handle) */
   .speaker{position:relative;width:130px;height:38px;border-radius:6px;background:#0c0c0e;border:2px solid #000;
     box-shadow:inset 0 0 6px rgba(0,0,0,.9),0 2px 4px rgba(0,0,0,.4);padding:4px;display:flex;align-items:center;overflow:hidden;flex:0 0 auto;touch-action:none;}
   .speaker.panning{outline:3px solid #fff;}
@@ -87,12 +92,10 @@
   .clip button.act{background:var(--red);color:var(--cream);}
   .clip button:disabled{opacity:.4;cursor:default;}
 
-  /* persistent Tracce button — angolo in basso a sinistra, dentro la banda */
   #tracceBtn{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:14;
     border:2px solid #000;background:var(--ink);color:var(--cream);font-weight:900;font-size:12px;
     padding:9px 12px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;}
 
-  /* load dialog */
   #loadDlg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:30;display:none;align-items:center;justify-content:center;}
   #loadDlg.show{display:flex;}
   #loadBox{background:var(--cream);border:3px solid var(--red2);border-radius:14px;padding:14px;width:min(90vw,360px);max-height:80vh;overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.4);}
@@ -110,7 +113,6 @@
     background:var(--ink);border:2px solid #000;color:var(--cream);padding:8px 14px;border-radius:11px;font-size:12px;font-weight:700;z-index:25;opacity:0;transition:all .3s;pointer-events:none;max-width:80vw;text-align:center;}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  /* when multitrack expanded fullscreen, hide top & bottom bars for max editing space */
   body.looperFull #topbar,body.looperFull #controls,body.looperFull #octave,body.looperFull #synthPanel,body.looperFull #tracceBtn{display:none!important;}
   body.looperFull #looper{top:0!important;bottom:0!important;}
 
@@ -188,7 +190,7 @@
 
 <div id="hint">
   <b>LIVE</b>: suona col dito (multitouch), tieni premuto e scorri per lo <b>slide</b>.<br>
-  Tieni la <b>cassa</b> + dito = naviga • 🔍 zoom • <b>● REC</b> registra • <b>🎤</b> mic • <b>🎛 Tracce</b>
+  <b>● REC</b> registra • <b>🎤</b> microfono • <b>🎛 Tracce</b> apre il multitraccia
 </div>
 
 <div id="toast"></div>
@@ -209,6 +211,7 @@
 
 <script>
 "use strict";
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
 (function () {
   const canvas=document.getElementById('canvas');
   const ctx=canvas.getContext('2d');
@@ -306,11 +309,9 @@
     g.connect(master);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+2);o2.stop(now+2);o3.stop(now+2);}
   let synthWave='sawtooth',synthCutoff=1600,synthQ=10,synthDrive=35;
   function playSynthTone(freq){const now=audio.currentTime,g=audio.createGain();
-    const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type=synthWave;o2.type=synthWave;o1.frequency.value=freq;o2.frequency.value=freq;o2.detune.value=14;
-    const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(synthCutoff*2.2,now);f.frequency.exponentialRampToValueAtTime(Math.max(200,synthCutoff),now+.25);f.Q.value=synthQ;
-    const drive=audio.createWaveShaper();drive.curve=makeDistortion(synthDrive);drive.oversample='2x';
-    o1.connect(f);o2.connect(f);f.connect(drive);drive.connect(g);g.gain.setValueAtTime(.5,now);g.gain.exponentialRampToValueAtTime(.0006,now+.5);
-    g.connect(master);o1.start(now);o2.start(now);o1.stop(now+.55);o2.stop(now+.55);}
+    const o=audio.createOscillator();o.type=synthWave;o.frequency.value=freq;
+    o.connect(g);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.5,now+.005);g.gain.setValueAtTime(.5,now+.35);g.gain.linearRampToValueAtTime(0,now+.4);
+    g.connect(master);o.start(now);o.stop(now+.42);}
   function playDrum(node){const now=audio.currentTime,kind=drumForY(node.y);node.flash=1;
     if(kind==='kick'){const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(120,now);o.frequency.exponentialRampToValueAtTime(48,now+.14);
       g.gain.setValueAtTime(1,now);g.gain.exponentialRampToValueAtTime(.001,now+.45);const click=audio.createBufferSource();click.buffer=noiseBuffer;const cf=audio.createBiquadFilter();cf.type='lowpass';cf.frequency.value=2500;
@@ -326,9 +327,8 @@
 
   // ---------- Held voices (LIVE) ----------
   function makeHeldVoice(instr,freq){const now=audio.currentTime;const g=audio.createGain();g.gain.setValueAtTime(.4,now);let oscs=[],extra={};
-    if(instr==='synth'){const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type=synthWave;o2.type=synthWave;o1.frequency.value=freq;o2.frequency.value=freq;o2.detune.value=14;
-      const f=audio.createBiquadFilter();f.type='lowpass';f.Q.value=synthQ;f.frequency.value=synthCutoff;const drive=audio.createWaveShaper();drive.curve=makeDistortion(synthDrive);drive.oversample='2x';
-      o1.connect(f);o2.connect(f);f.connect(drive);drive.connect(g);oscs=[o1,o2];extra={f,o2};}
+    if(instr==='synth'){const o=audio.createOscillator();o.type=synthWave;o.frequency.value=freq;
+      o.connect(g);oscs=[o];extra={};}
     else if(instr==='bass'){const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='sine';o2.type='triangle';o1.frequency.value=freq;o2.frequency.value=freq;
       const o2g=audio.createGain();o2g.gain.value=.35;const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*4+250;f.Q.value=1;o1.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(g);oscs=[o1,o2];extra={f,o2};}
     else if(instr==='ambient'){const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='triangle';o2.type='triangle';o1.frequency.value=freq;o2.frequency.value=freq*1.004;
@@ -336,7 +336,7 @@
     else{const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='sine';o2.type='triangle';o1.frequency.value=freq;o2.frequency.value=freq*2.001;const o2g=audio.createGain();o2g.gain.value=.22;o1.connect(g);o2.connect(o2g);o2g.connect(g);oscs=[o1,o2];extra={o2};}
     g.connect(master);oscs.forEach(o=>o.start(now));return{g,oscs,extra,instr};}
   function setVoiceFreq(v,freq){const t=audio.currentTime;
-    if(v.instr==='synth'){v.oscs[0].frequency.setTargetAtTime(freq,t,.008);v.oscs[1].frequency.setTargetAtTime(freq,t,.008);}
+    if(v.instr==='synth'){v.oscs[0].frequency.setTargetAtTime(freq,t,.008);}
     else if(v.instr==='bass'){v.oscs[0].frequency.setTargetAtTime(freq,t,.008);v.oscs[1].frequency.setTargetAtTime(freq,t,.008);if(v.extra.f)v.extra.f.frequency.setTargetAtTime(freq*4+250,t,.02);}
     else if(v.instr==='ambient'){v.oscs[0].frequency.setTargetAtTime(freq,t,.008);if(v.extra.o2)v.extra.o2.frequency.setTargetAtTime(freq*1.004,t,.008);}
     else{v.oscs[0].frequency.setTargetAtTime(freq,t,.008);if(v.extra.o2)v.extra.o2.frequency.setTargetAtTime(freq*2.001,t,.008);}}
@@ -565,7 +565,7 @@
       let msg='Microfono: errore';
       if(n==='NotAllowedError'||n==='SecurityError')msg='Microfono: permesso negato. Consenti l\'accesso nel browser';
       else if(n==='NotFoundError'||n==='OverconstrainedError')msg='Microfono: nessun dispositivo trovato';
-      else if(n==='NotReadableError')msg='Microfono occupato da un\'altra app';
+      else if(n==='NotReadableError')msg='Microfono occupato: chiudi altre app che lo usano e ricarica';
       else if(lastErr)msg='Microfono: '+(lastErr.message||n);
       toast(msg);return;}
     micStream=stream;
