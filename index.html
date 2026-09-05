@@ -57,12 +57,20 @@
 
   #octave{display:flex;gap:4px;align-items:center;
     background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:3px 4px;box-shadow:0 2px 0 var(--red2);}
+  #bpmWidget{display:flex;gap:4px;align-items:center;background:var(--cream);border:2px solid var(--red2);border-radius:10px;padding:0 4px;box-shadow:0 2px 0 var(--red2);height:40px;}
+  #bpmWidget button{border:none;background:var(--red);color:var(--cream);font-size:16px;font-weight:900;width:30px;height:30px;border-radius:7px;cursor:pointer;padding:0;}
+  #bpmWidget #bpmVal{min-width:56px;text-align:center;font-size:13px;font-weight:900;color:var(--ink);cursor:ns-resize;user-select:none;touch-action:none;}
   #octave .oct{width:28px;height:28px;border-radius:7px;border:none;background:var(--red);color:var(--cream);font-size:15px;font-weight:900;cursor:pointer;}
   #octave .octlbl{font-size:9px;font-weight:800;min-width:38px;text-align:center;}
 
-  #synthPanel{position:fixed;right:var(--edge);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:11;display:none;flex-direction:column;gap:5px;
+  #synthPanel{position:fixed;right:var(--edge);bottom:calc(120px + env(safe-area-inset-bottom,0px));z-index:11;display:none;flex-direction:column;gap:5px;
     background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:8px;box-shadow:0 2px 0 var(--red2);width:200px;max-width:calc(100vw - 60px);}
   #synthPanel.show{display:flex;}
+  #synthPanel .synthhead{display:flex;align-items:center;gap:6px;width:100%;}
+  #synthPanel .synthhead .st{font-size:11px;font-weight:900;color:var(--red2);margin-right:auto;}
+  #synthPanel .synthhead button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:6px;width:26px;height:24px;font-size:14px;font-weight:800;cursor:pointer;padding:0;}
+  #synthPanel.min{width:auto;}
+  #synthPanel.min .synthbody{display:none;}
   #synthPanel .r{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;width:100%;}
   #synthPanel label{flex:0 0 42px;min-width:42px;}
   #synthPanel input[type=range]{flex:1 1 auto;min-width:0;width:100%;accent-color:var(--red);margin:0;}
@@ -213,8 +221,9 @@
     <button data-tool="live" class="live active" title="Live">LIVE</button>
     <button data-tool="note" class="iconbtn" title="Nota">●</button>
     <button data-tool="pulsar" class="iconbtn" title="Pulsar">◎</button>
+    <button data-tool="kick" class="iconbtn" title="Cassa (drum)">🥁K</button>
+    <button data-tool="snare" class="iconbtn" title="Rullante (drum)">🥁S</button>
     <button data-tool="erase" class="iconbtn" title="Cancella">✕</button>
-    <button data-tool="grid" class="iconbtn" title="Griglia">▦</button>
   </div>
   <div class="grp" id="instrSwitch">
     <button data-instr="node">Node</button>
@@ -238,7 +247,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="40"><span id="latVal">40ms</span></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -251,6 +260,8 @@
 <button id="tracceBtn" title="Apri multitraccia">🎛 Tracce</button>
 
 <div id="synthPanel">
+  <div class="synthhead"><span class="st">🎛 SYNTH</span><button id="synthMin" title="Minimizza / espandi">–</button></div>
+  <div class="synthbody">
   <div class="waves" id="synthWaves">
     <button data-w="sawtooth" class="active">Saw</button>
     <button data-w="square">Squa</button>
@@ -260,6 +271,7 @@
   <div class="r"><label>Cutoff</label><input type="range" id="synthCut" min="200" max="8000" value="1600"></div>
   <div class="r"><label>Reso</label><input type="range" id="synthReso" min="1" max="24" value="10"></div>
   <div class="r"><label>Drive</label><input type="range" id="synthDrive" min="0" max="80" value="35"></div>
+  </div>
 </div>
 
 <div id="seqPanel">
@@ -291,11 +303,13 @@
   <button class="btn icon" id="seqBtn" title="Drum machine (step sequencer)">🥁</button>
   <button class="btn" id="delayBtn" title="Delay">Delay: off</button>
   <button class="btn" id="reverbBtn" title="Riverbero">Riv: off</button>
-  <button class="btn icon" id="tempoBtn" title="Tempo">♩100</button>
+  <div id="bpmWidget" title="BPM: trascina il numero o usa − / +. Tocca per digitare"><button id="bpmDown">−</button><span id="bpmVal">♩100</span><button id="bpmUp">+</button></div>
   <button class="btn icon" id="clearBtn" title="Svuota nodi">🗑</button>
   <button class="btn rec" id="recBtn" title="Registra">● REC</button>
   <button class="btn icon" id="micBtn" title="Microfono">🎤</button>
   <select class="sel" id="micSel" title="Microfono di ingresso"><option value="">Mic: predefinito</option></select>
+  <button class="btn" id="micEchoBtn" title="Anti-rientro (cancella l'eco degli altoparlanti): attiva se registri senza cuffie">🎧 Anti-rientro: off</button>
+  <button class="btn" id="micMuteBtn" title="Muta le altre tracce mentre registri col microfono">🔇 Muta tracce: on</button>
 </div>
 
 <script>
@@ -458,13 +472,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   let panX=0,panY=0; // grid pan offset (feature 11)
   let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){const tb=document.getElementById('topbar');const topH=(document.body.classList.contains('looperFull')?0:((tb&&tb.offsetHeight)||60));GRID_TOP=topH+12;GRID_BOTTOM=H-(H<480?54:76);}
   function addNode(x,y,type){const n={x:x-panX,y:y-panY,type,flash:0,track:activeTrack};tracks[activeTrack].nodes.push(n);return n;}
-  function playNodeInstrument(node){const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
+  function playNodeInstrument(node){if(node.type==='kick'){playDrumKind('kick');node.flash=1;return;}if(node.type==='snare'){playDrumKind('snare');node.flash=1;return;}const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
 
   // ---------- Engine ----------
   let playing=false,bpm=100,lastPulseTime=0,showGrid=true;
   const impulses=[];function beatInterval(){return 60/bpm;}
   function firePulsars(){for(let ti=0;ti<NUM_TRACKS;ti++){if(tracks[ti].muted)continue;for(const p of tracks[ti].nodes){if(p.type!=='pulsar')continue;p.flash=1;
-    for(const n of tracks[ti].nodes){if(n===p||n.type!=='note')continue;const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<=CONNECT_DIST)impulses.push({sx:p.x,sy:p.y,x:p.x,y:p.y,tx:n.x,ty:n.y,target:n,dist:d,travelled:0,color:TRACK_COLORS[ti]});}}}}
+    for(const n of tracks[ti].nodes){if(n===p||(n.type!=='note'&&n.type!=='kick'&&n.type!=='snare'))continue;const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<=CONNECT_DIST)impulses.push({sx:p.x,sy:p.y,x:p.x,y:p.y,tx:n.x,ty:n.y,target:n,dist:d,travelled:0,color:TRACK_COLORS[ti]});}}}}
   let metroOn=false,lastMetroBeat=0,metroCount=0,countingIn=false;
   function tickMetro(){const now=audio.currentTime,strong=(metroCount%4===0);const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=strong?1600:1100;g.gain.setValueAtTime(strong?.6:.35,now);g.gain.exponentialRampToValueAtTime(.0005,now+.05);o.connect(g);g.connect(metroGain);o.start(now);o.stop(now+.06);metroCount++;}
 
@@ -522,9 +536,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   // ---------- Interaction ----------
   const toolsEl=document.getElementById('tools');let tool='live';
-  toolsEl.addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tool==='grid'){showGrid=!showGrid;b.classList.toggle('active',showGrid);return;}
-    tool=b.dataset.tool;[...toolsEl.children].forEach(c=>{if(c.dataset.tool!=='grid')c.classList.toggle('active',c===b);});});
-  document.querySelector('[data-tool="grid"]').classList.add('active');
+  toolsEl.addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;
+    tool=b.dataset.tool;[...toolsEl.children].forEach(c=>c.classList.toggle('active',c===b));});
   function ptrPos(clientX,clientY){const r=canvas.getBoundingClientRect();return{x:clientX-r.left,y:clientY-r.top};}
   function inCanvas(clientX){return(splitMode&&!looperFull&&!looperHidden)?clientX>=CANVAS_LEFT:!(looperFull&&!looperHidden);}
   function findNode(x,y){const ns=tracks[activeTrack].nodes;for(let i=ns.length-1;i>=0;i--)if(Math.hypot(ns[i].x-(x-panX),ns[i].y-(y-panY))<30)return ns[i];return null;}
@@ -545,7 +558,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(tool==='live'){const tr=tracks[activeTrack];if(tr.instr==='drums'){playDrum({x:x-panX,y:y-panY,track:activeTrack});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
       const v=makeHeldVoice(tr.instr,freqForLiveY(y));liveVoices.set(id,{voice:v,x,y});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
     const hit=findNode(x,y);if(tool==='erase'){if(hit){const a=tracks[activeTrack].nodes;a.splice(a.indexOf(hit),1);}return;}
-    if(hit)dragNode=hit;else{dragNode=addNode(x,y,tool);if(tool==='note')playNodeInstrument(dragNode);}}
+    if(hit)dragNode=hit;else{dragNode=addNode(x,y,tool);if(tool==='note'||tool==='kick'||tool==='snare')playNodeInstrument(dragNode);}}
   function onPointerMove(id,clientX,clientY){
     if(panActive){if(panLast){panX+=clientX-panLast.x;panY+=clientY-panLast.y;panLast={x:clientX,y:clientY};}return;}
     const{x,y}=ptrPos(clientX,clientY);
@@ -582,7 +595,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(const im of impulses){ctx.fillStyle=im.color;ctx.beginPath();ctx.arc(im.x,im.y,5,0,Math.PI*2);ctx.fill();}
     for(let ti=0;ti<NUM_TRACKS;ti++){if(tracks[ti].muted)continue;const col=TRACK_COLORS[ti],dim=(ti===activeTrack)?1:.45;for(const n of tracks[ti].nodes){n.flash*=.9;const r=(n.type==='pulsar'?16:12)+n.flash*8;ctx.globalAlpha=dim;
       if(n.type==='pulsar'){ctx.strokeStyle=col;ctx.lineWidth=4;ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.stroke();ctx.fillStyle=hexA(col,.35+n.flash*.5);ctx.beginPath();ctx.arc(n.x,n.y,r*.5,0,Math.PI*2);ctx.fill();}
-      else{ctx.fillStyle=col;ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}ctx.globalAlpha=1;}}
+      else{ctx.fillStyle=col;ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();
+        if(n.type==='kick'||n.type==='snare'){ctx.fillStyle='#f7efdd';ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.type==='kick'?'K':'S',n.x,n.y);ctx.textAlign='start';}
+      }ctx.globalAlpha=1;}}
     ctx.restore();
     for(let i=livePulses.length-1;i>=0;i--){const lp=livePulses[i];lp.r+=2.2;lp.a*=.93;if(lp.a<.04){livePulses.splice(i,1);continue;}ctx.strokeStyle=hexA(lp.color,lp.a);ctx.lineWidth=3;ctx.beginPath();ctx.arc(lp.x,lp.y,lp.r,0,Math.PI*2);ctx.stroke();}
     for(const[,lv]of liveVoices){ctx.fillStyle=TRACK_COLORS[activeTrack];ctx.beginPath();ctx.arc(lv.x,lv.y,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}}
@@ -609,7 +624,24 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   delayBtn.addEventListener('click',()=>{resumeAudio();delayLevel=(delayLevel+1)%DELAY_LEVELS.length;const L=DELAY_LEVELS[delayLevel];delayWet.gain.setTargetAtTime(L.wet,audio.currentTime,.03);delayFb.gain.setTargetAtTime(L.fb,audio.currentTime,.03);delayBtn.classList.toggle('on',delayLevel>0);delayBtn.textContent='Delay: '+L.n;updateDelayTime();});
   const reverbBtn=document.getElementById('reverbBtn');const REV_LEVELS=[{n:'off',w:0},{n:'basso',w:.3},{n:'medio',w:.55},{n:'alto',w:.8}];let revLevel=0;
   reverbBtn.addEventListener('click',()=>{resumeAudio();revLevel=(revLevel+1)%REV_LEVELS.length;const L=REV_LEVELS[revLevel];reverbWet.gain.setTargetAtTime(L.w,audio.currentTime,.05);reverbBtn.classList.toggle('on',revLevel>0);reverbBtn.textContent='Riv: '+L.n;});
-  const tempoBtn=document.getElementById('tempoBtn');const tempos=[80,100,120,140];let tempoIdx=1;tempoBtn.addEventListener('click',()=>{tempoIdx=(tempoIdx+1)%tempos.length;bpm=tempos[tempoIdx];tempoBtn.textContent='♩'+bpm;updateDelayTime();});
+  const bpmValEl=document.getElementById('bpmVal'),bpmDownEl=document.getElementById('bpmDown'),bpmUpEl=document.getElementById('bpmUp');
+  function setBpm(v){bpm=clamp(Math.round(v),60,180);bpmValEl.textContent='♩'+bpm;updateDelayTime();}
+  setBpm(100);
+  bpmDownEl.addEventListener('click',()=>setBpm(bpm-1));
+  bpmUpEl.addEventListener('click',()=>setBpm(bpm+1));
+  // drag vertically (or horizontally) on the value to scrub BPM
+  (function(){let dragging=false,startY=0,startX=0,startBpm=0;
+    const down=(x,y)=>{dragging=true;startX=x;startY=y;startBpm=bpm;};
+    const move=(x,y)=>{if(!dragging)return;const delta=Math.round((startY-y+ (x-startX))/4);setBpm(startBpm+delta);};
+    const up=()=>{dragging=false;};
+    bpmValEl.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});
+    window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
+    bpmValEl.addEventListener('touchstart',(e)=>{down(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
+    bpmValEl.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+    bpmValEl.addEventListener('touchend',up);
+    // tap to type an exact value
+    let moved=false;bpmValEl.addEventListener('click',async()=>{const v=await askText('BPM (60–180):',bpm);if(v===null)return;const n=parseInt(v,10);if(!isNaN(n))setBpm(n);});
+  })();
   document.getElementById('clearBtn').addEventListener('click',()=>{tracks[activeTrack].nodes=[];toast('Nodi svuotati');});
   const octLbl=document.getElementById('octLbl');function refreshOct(){octLbl.textContent='8va '+(tracks[activeTrack].oct>0?'+':'')+tracks[activeTrack].oct;}
   document.getElementById('octUp').addEventListener('click',()=>{tracks[activeTrack].oct=clamp(tracks[activeTrack].oct+1,-3,3);refreshOct();});
@@ -623,6 +655,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('lpZoomOut').addEventListener('click',()=>doZoom(-1));
   const instrEl=document.getElementById('instrSwitch');const synthPanel=document.getElementById('synthPanel');
   function refreshInstrSwitch(){const cur=tracks[activeTrack].instr;[...instrEl.children].forEach(c=>c.classList.toggle('active',c.dataset.instr===cur));synthPanel.classList.toggle('show',cur==='synth');}
+  document.getElementById('synthMin').addEventListener('click',()=>{const m=synthPanel.classList.toggle('min');document.getElementById('synthMin').textContent=m?'+':'–';});
   instrEl.addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;tracks[activeTrack].instr=b.dataset.instr;resumeAudio();refreshInstrSwitch();toast('→ '+b.textContent);});
   refreshInstrSwitch();refreshOct();
 
@@ -670,6 +703,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   // ---- Loop mode + latency compensation ----
   const LOOP_BEATS=8;let loopMode=false,latencyMs=40,loopStart=null;
+  let snapRec=true;
+  const snapBtn=document.getElementById('snapBtn');
+  snapBtn.classList.add('on');
+  snapBtn.addEventListener('click',()=>{snapRec=!snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');toast(snapRec?'Snap ON: registrazioni allineate al tempo':'Snap OFF: durata libera');});
   function loopDur(){return LOOP_BEATS*(60/bpm);} // loop length in seconds at current BPM
   const modeBtn=document.getElementById('modeBtn'),latSlider=document.getElementById('latSlider'),latVal=document.getElementById('latVal');
   modeBtn.addEventListener('click',()=>{loopMode=!loopMode;modeBtn.classList.toggle('on',loopMode);modeBtn.textContent=loopMode?'Loop 8':'Libera';toast(loopMode?('Modalità Loop • '+loopDur().toFixed(2)+'s (8 battute)'):'Modalità Libera');});
@@ -869,6 +906,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   function fitToLoop(buf){const rate=buf.sampleRate;const target=Math.round(loopDur()*rate);const shift=Math.round(latencyMs/1000*rate);
     const out=audio.createBuffer(2,target,rate);
+    for(let ch=0;ch<2;ch++){const src=buf.getChannelData(Math.min(ch,buf.numberOfChannels-1)),dst=out.getChannelData(ch);
+      for(let i=0;i<target;i++){const si=i+shift;dst[i]=(si>=0&&si<src.length)?src[si]:0;}}
+    return out;}
+  // Opt2: align a free-recording's length to the nearest 1/2 beat and compensate latency,
+  // so it lines up with the project tempo and loops without drift.
+  function snapBufferToBeats(buf){const rate=buf.sampleRate;const half=(60/bpm)/2;                 // half-beat in seconds
+    const shift=Math.round(latencyMs/1000*rate);                                                   // latency compensation
+    const rawSec=Math.max(0,buf.length/rate-latencyMs/1000);
+    const beats=Math.max(1,Math.round(rawSec/half));                                               // nearest half-beat, min 1
+    const target=Math.round(beats*half*rate);
+    const out=audio.createBuffer(2,Math.max(1,target),rate);
     for(let ch=0;ch<2;ch++){const src=buf.getChannelData(Math.min(ch,buf.numberOfChannels-1)),dst=out.getChannelData(ch);
       for(let i=0;i<target;i++){const si=i+shift;dst[i]=(si>=0&&si<src.length)?src[si]:0;}}
     return out;}
@@ -1108,11 +1156,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       });
     }else{
       if(loopMode){finishLoopRec();}
-      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(buf);else toast('Clip troppo breve');}
+      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(snapRec?snapBufferToBeats(buf):buf);else toast('Clip troppo breve');}
     }});
 
   // ---------- Microphone ----------
   let micRecording=false,micStream=null,micNode=null,micCapture=null;
+  let micEcho=false,micMuteOthers=true,_micPrevMaster=null;
+  const micEchoBtn=document.getElementById('micEchoBtn'),micMuteBtn=document.getElementById('micMuteBtn');
+  micEchoBtn.addEventListener('click',()=>{micEcho=!micEcho;micEchoBtn.classList.toggle('on',micEcho);micEchoBtn.textContent='🎧 Anti-rientro: '+(micEcho?'on':'off');toast(micEcho?'Anti-rientro ON (per registrare senza cuffie)':'Anti-rientro OFF (usa le cuffie per la max qualità)');});
+  micMuteBtn.classList.add('on');
+  micMuteBtn.addEventListener('click',()=>{micMuteOthers=!micMuteOthers;micMuteBtn.classList.toggle('on',micMuteOthers);micMuteBtn.textContent='🔇 Muta tracce: '+(micMuteOthers?'on':'off');toast(micMuteOthers?'Le altre tracce saranno mutate durante la reg. mic':'Le altre tracce suoneranno durante la reg. mic');});
   const micSel=document.getElementById('micSel');let selectedMicId='';
   async function refreshMicList(){try{const devs=await navigator.mediaDevices.enumerateDevices();const mics=devs.filter(d=>d.kind==='audioinput');
     micSel.innerHTML='<option value="">🎤 Mic: predefinito</option>';mics.forEach((m,i)=>{const o=document.createElement('option');o.value=m.deviceId;o.textContent='🎤 '+(m.label||('Microfono '+(i+1)));if(m.deviceId===selectedMicId)o.selected=true;micSel.appendChild(o);});}catch(e){}}
@@ -1121,7 +1174,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!window.isSecureContext){toast('Microfono: serve HTTPS (contesto sicuro)');return;}
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Microfono non supportato dal browser');return;}
     // try selected device with exact; on failure, retry without device constraint, then simplest form
-    let stream=null;const base={echoCancellation:false,noiseSuppression:false,autoGainControl:false};
+    let stream=null;const base={echoCancellation:micEcho,noiseSuppression:micEcho,autoGainControl:false};
     const attempts=[];
     if(selectedMicId)attempts.push({audio:Object.assign({deviceId:{exact:selectedMicId}},base)});
     attempts.push({audio:base});
@@ -1140,10 +1193,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     micNode=audio.createMediaStreamSource(micStream);const proc=audio.createScriptProcessor(2048,2,2);const L=[],R=[];
     micNode.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(ev.inputBuffer.numberOfChannels>1?1:0)));};
-    micCapture={proc,L,R,silent};micRecording=true;micBtn.classList.add('on');micBtn.textContent='■';toast('Microfono: registro SOLO il mic (no altre tracce)');}
+    micCapture={proc,L,R,silent};micRecording=true;micBtn.classList.add('on');micBtn.textContent='■';
+    // #A auto-mute: silence the mix bus so the mic doesn't recapture other tracks from the speakers
+    if(micMuteOthers&&masterBus){_micPrevMaster=masterBus.gain.value;masterBus.gain.setTargetAtTime(0,audio.currentTime,0.02);}
+    toast(micMuteOthers?'Microfono: registro (altre tracce mutate)':'Microfono: registro SOLO il mic');}
   function stopMic(){if(!micCapture)return;const{proc,L,R,silent}=micCapture;proc.disconnect();silent.disconnect();try{micNode.disconnect();}catch(e){}proc.onaudioprocess=null;
+    if(micMuteOthers&&masterBus&&_micPrevMaster!=null){masterBus.gain.setTargetAtTime(_micPrevMaster,audio.currentTime,0.02);_micPrevMaster=null;}
     if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}micNode=null;let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);
-    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(buf,'Mic '+(clipCounter+1));else toast('Reg. mic troppo breve');}
+    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(snapRec?snapBufferToBeats(buf):buf,'Mic '+(clipCounter+1));else toast('Reg. mic troppo breve');}
   micBtn.addEventListener('click',()=>{if(!micRecording)startMic();else stopMic();});
   // populate mic list on load + when devices change (USB-C hub plugged/unplugged)
   if(navigator.mediaDevices){refreshMicList();navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',refreshMicList);}
