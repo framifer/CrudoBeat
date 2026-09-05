@@ -78,6 +78,7 @@
   #seqPanel .seqt{font-size:12px;font-weight:900;color:var(--red2);margin-right:auto;}
   #seqPanel .seqhead button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;}
   #seqPanel .seqhead button.on{background:var(--red);color:var(--cream);}
+  #seqPanel .seqhead select{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;padding:4px 6px;font-size:11px;font-weight:800;cursor:pointer;}
   #seqGrid{display:flex;flex-direction:column;gap:3px;}
   #seqGrid .seqrow{display:flex;align-items:center;gap:3px;}
   #seqGrid .seqlbl{width:74px;flex:0 0 74px;font-size:9px;font-weight:800;color:var(--ink);}
@@ -266,7 +267,8 @@
     <span class="seqt">🥁 DRUM MACHINE • 16 step</span>
     <button id="seqPlay" title="Play/Stop sequencer">▶</button>
     <button id="seqClear" title="Svuota pattern">🗑</button>
-    <button id="seqToClip" title="Registra il pattern come traccia audio (1 battuta ×?)">⤓ Traccia</button>
+    <button id="seqToClip" title="Registra il pattern come traccia audio">⤓ Traccia</button>
+    <select id="seqBars" title="Battute da registrare"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="seqClose" title="Chiudi">✕</button>
   </div>
   <div id="seqGrid"></div>
@@ -416,18 +418,19 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     g.connect(master);o.start(now);o.stop(now+.42);}
   function playDrum(node){node.flash=1;playDrumKind(drumForY(node.y));}
   function scheduleDrum(kind,when){playDrumKind(kind,when);}
-  function playDrumKind(kind,when){const now=when!=null?when:audio.currentTime;
-    if(kind==='kick'){const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(120,now);o.frequency.exponentialRampToValueAtTime(48,now+.14);
-      g.gain.setValueAtTime(1,now);g.gain.exponentialRampToValueAtTime(.001,now+.45);const click=audio.createBufferSource();click.buffer=noiseBuffer;const cf=audio.createBiquadFilter();cf.type='lowpass';cf.frequency.value=2500;
-      const cg=audio.createGain();cg.gain.setValueAtTime(.3,now);cg.gain.exponentialRampToValueAtTime(.001,now+.03);click.connect(cf);cf.connect(cg);cg.connect(master);o.connect(g);g.connect(master);o.start(now);o.stop(now+.47);click.start(now);click.stop(now+.05);}
-    else if(kind==='snare'){const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='bandpass';nf.frequency.value=1900;nf.Q.value=.7;
-      const ng=audio.createGain();ng.gain.setValueAtTime(.6,now);ng.gain.exponentialRampToValueAtTime(.001,now+.18);n.connect(nf);nf.connect(ng);ng.connect(master);
-      const o=audio.createOscillator(),og=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(210,now);o.frequency.exponentialRampToValueAtTime(150,now+.1);og.gain.setValueAtTime(.5,now);og.gain.exponentialRampToValueAtTime(.001,now+.13);o.connect(og);og.connect(master);
+  // kind: drum voice; when: start time; ctx/dest/nb optional (for OfflineAudioContext rendering).
+  function playDrumKind(kind,when,ctx,dest,nb){const ac=ctx||audio;const out=dest||master;const noise=nb||noiseBuffer;const now=when!=null?when:ac.currentTime;
+    if(kind==='kick'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(120,now);o.frequency.exponentialRampToValueAtTime(48,now+.14);
+      g.gain.setValueAtTime(1,now);g.gain.exponentialRampToValueAtTime(.001,now+.45);const click=ac.createBufferSource();click.buffer=noise;const cf=ac.createBiquadFilter();cf.type='lowpass';cf.frequency.value=2500;
+      const cg=ac.createGain();cg.gain.setValueAtTime(.3,now);cg.gain.exponentialRampToValueAtTime(.001,now+.03);click.connect(cf);cf.connect(cg);cg.connect(out);o.connect(g);g.connect(out);o.start(now);o.stop(now+.47);click.start(now);click.stop(now+.05);}
+    else if(kind==='snare'){const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=1900;nf.Q.value=.7;
+      const ng=ac.createGain();ng.gain.setValueAtTime(.6,now);ng.gain.exponentialRampToValueAtTime(.001,now+.18);n.connect(nf);nf.connect(ng);ng.connect(out);
+      const o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(210,now);o.frequency.exponentialRampToValueAtTime(150,now+.1);og.gain.setValueAtTime(.5,now);og.gain.exponentialRampToValueAtTime(.001,now+.13);o.connect(og);og.connect(out);
       n.start(now);n.stop(now+.2);o.start(now);o.stop(now+.15);}
-    else if(kind==='tom'){const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(200,now);o.frequency.exponentialRampToValueAtTime(85,now+.28);
-      g.gain.setValueAtTime(.9,now);g.gain.exponentialRampToValueAtTime(.001,now+.38);o.connect(g);g.connect(master);o.start(now);o.stop(now+.4);}
-    else{const open=kind==='hatOpen';const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='highpass';nf.frequency.value=6500;
-      const ng=audio.createGain();const dur=open?.32:.07;ng.gain.setValueAtTime(open?.4:.35,now);ng.gain.exponentialRampToValueAtTime(.001,now+dur);n.connect(nf);nf.connect(ng);ng.connect(master);n.start(now);n.stop(now+dur+.02);}}
+    else if(kind==='tom'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(200,now);o.frequency.exponentialRampToValueAtTime(85,now+.28);
+      g.gain.setValueAtTime(.9,now);g.gain.exponentialRampToValueAtTime(.001,now+.38);o.connect(g);g.connect(out);o.start(now);o.stop(now+.4);}
+    else{const open=kind==='hatOpen';const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();nf.type='highpass';nf.frequency.value=6500;
+      const ng=ac.createGain();const dur=open?.32:.07;ng.gain.setValueAtTime(open?.4:.35,now);ng.gain.exponentialRampToValueAtTime(.001,now+dur);n.connect(nf);nf.connect(ng);ng.connect(out);n.start(now);n.stop(now+dur+.02);}}
 
   // ---------- Held voices (LIVE) ----------
   function makeHeldVoice(instr,freq){const now=audio.currentTime;const g=audio.createGain();g.gain.setValueAtTime(.4,now);let oscs=[],extra={};
@@ -488,14 +491,33 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const seqPlayBtn=document.getElementById('seqPlay');
   seqPlayBtn.addEventListener('click',()=>{resumeAudio();seqOn=!seqOn;seqPlayBtn.classList.toggle('on',seqOn);seqPlayBtn.textContent=seqOn?'❚❚':'▶';if(seqOn){seqStep=0;seqLastTime=audio.currentTime-seqStepDur();}else highlightSeqStep(-1);});
   document.getElementById('seqClear').addEventListener('click',()=>{for(const row of seqPattern)row.fill(false);buildSeqGrid();toast('Pattern svuotato');});
-  // record the pattern (1 bar) as an audio clip via the existing capture path
+  // record the pattern as an audio clip, trimmed to an exact number of bars (sample-accurate loop)
+  function trimBufferToLength(buf,seconds){const rate=buf.sampleRate;const target=Math.max(1,Math.round(seconds*rate));
+    const out=audio.createBuffer(buf.numberOfChannels,target,rate);
+    for(let ch=0;ch<buf.numberOfChannels;ch++){const s=buf.getChannelData(ch),d=out.getChannelData(ch);for(let i=0;i<target;i++)d[i]=(i<s.length)?s[i]:0;}
+    return out;}
+  // Sample-accurate offline render of the pattern. First hit at sample 0, exact length = bars*barDur.
+  // Tail beyond the end is wrapped (summed) to the start so loops are seamless.
+  async function renderPatternExact(bars){const rate=audio.sampleRate;const barDur=beatInterval()*4;const stepDur=seqStepDur();
+    const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(1.0*rate); // 1s tail room for decays
+    const off=new OfflineAudioContext(2,targetLen+tailLen,rate);
+    // noise buffer must belong to the offline context
+    const nlen=Math.floor(rate*1.0),nb=off.createBuffer(1,nlen,rate);{const d=nb.getChannelData(0);for(let i=0;i<nlen;i++)d[i]=Math.random()*2-1;}
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,off.destination,nb);}}}
+    const rendered=await off.startRendering();
+    const out=audio.createBuffer(2,targetLen,rate);
+    for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
+      for(let i=0;i<targetLen;i++)dst[i]=src[i]||0;                         // exact body
+      for(let i=targetLen;i<src.length;i++)dst[i-targetLen]+=src[i]||0;     // wrap tail to the start
+    }
+    return out;}
   document.getElementById('seqToClip').addEventListener('click',async()=>{resumeAudio();
     if(seqPattern.every(row=>row.every(v=>!v))){toast('Pattern vuoto');return;}
-    const wasOn=seqOn;seqOn=false;seqPlayBtn.classList.remove('on');seqPlayBtn.textContent='▶';
-    const barDur=beatInterval()*4;toast('Registro pattern… '+barDur.toFixed(2)+'s');
-    startCapture();const t0=audio.currentTime;
-    for(let s=0;s<SEQ_STEPS;s++){const when=t0+s*seqStepDur();for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])scheduleDrum(SEQ_ROWS[r],when);}}
-    setTimeout(()=>{const buf=stopCapture();if(buf&&buf.length>1000)addClip(buf,'Drums '+(clipCounter+1));else toast('Registrazione fallita');if(wasOn){seqOn=true;seqPlayBtn.classList.add('on');seqPlayBtn.textContent='❚❚';seqStep=0;seqLastTime=audio.currentTime-seqStepDur();}},Math.ceil(barDur*1000)+120);
+    const bars=parseInt(document.getElementById('seqBars').value,10)||1;
+    try{toast('Rendering '+bars+' battut'+(bars>1?'e':'a')+'…');
+      const buf=await renderPatternExact(bars);addClip(buf,'Drums '+(clipCounter+1));
+      toast('Pattern esportato ('+bars+' battut'+(bars>1?'e':'a')+', loop preciso)');
+    }catch(e){toast('Errore rendering: '+e.message);}
   });
 
   // ---------- Interaction ----------
