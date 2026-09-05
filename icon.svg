@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#e33f1a"/>
+  <rect x="56" y="150" width="400" height="150" rx="20" fill="#0c0c0e" stroke="#000" stroke-width="8"/>
+  <g fill="#d9d9de">
+    <rect x="72" y="166" width="230" height="118" rx="8" fill="url(#mesh)"/>
+  </g>
+  <defs>
+    <pattern id="mesh" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#3a3a40"/>
+      <rect width="3" height="8" fill="#d9d9de"/>
+    </pattern>
+  </defs>
+  <rect x="312" y="196" width="130" height="58" rx="8" fill="#f4f4f0"/>
+  <text x="377" y="234" font-family="Brush Script MT, cursive" font-style="italic" font-weight="bold" font-size="30" fill="#16161a" text-anchor="middle">Crudo</text>
+  <text x="256" y="410" font-family="Arial, sans-serif" font-weight="900" font-style="italic" font-size="72" fill="#f7efdd" text-anchor="middle">CrudoBeat</text>
+</svg>
