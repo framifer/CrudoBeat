@@ -235,7 +235,7 @@
   <div class="grp" id="instrSwitch">
     <button data-instr="node">Node</button>
     <button data-fam="bass" data-instr="bass">Bass ▾</button>
-    <button data-instr="drums">Drums</button>
+    <button data-fam="drums" data-instr="drums">Drums ▾</button>
     <button data-fam="amb" data-instr="ambient">Amb ▾</button>
     <button data-fam="piano" data-instr="organ">Piano ▾</button>
     <button data-instr="synth">Syn</button>
@@ -430,6 +430,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const SCALES={'Pen Maggiore':[0,2,4,7,9],'Pen Minore':[0,3,5,7,10],'Maggiore':[0,2,4,5,7,9,11],'Minore':[0,2,3,5,7,8,10],'Dorica':[0,2,3,5,7,9,10],'Frigia':[0,1,3,5,7,8,10],'Blues':[0,3,5,6,7,10],'Cromatica':[0,1,2,3,4,5,6,7,8,9,10,11]};
   let currentKey='Do',currentScaleName='Pen Maggiore';
   let SCALE=SCALES[currentScaleName].slice(),SCALE_LEN=SCALE.length,KEY_OFF=0,BASE_OCTAVES=3,gridZoom=1,TOTAL_STEPS=0,VIS_OCT=3;
+  let drumZoom=1; // #1 vertical zoom for the drum grid rows
   function refreshScale(){SCALE=SCALES[currentScaleName].slice();SCALE_LEN=SCALE.length;KEY_OFF=KEY_SEMITONE[currentKey];updateTotalSteps();}
   function updateTotalSteps(){const oct=Math.max(1,Math.round(BASE_OCTAVES/gridZoom));TOTAL_STEPS=SCALE_LEN*oct;VIS_OCT=oct;}
 
@@ -443,7 +444,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function yForScaleStep(s){const rel=clamp(s,0,TOTAL_STEPS-1)/(TOTAL_STEPS-1);return GRID_BOTTOM-rel*(GRID_BOTTOM-GRID_TOP);}
   function contMidiForY(y,instr,oct){const rel=1-clamp((y-GRID_TOP)/(GRID_BOTTOM-GRID_TOP),0,1);return INSTR_BASE[instr]+KEY_OFF+rel*(VIS_OCT*12)+oct*12;}
   const DRUM_KITS=['kick','snare','clap','tom','hatClosed','hatOpen'];
-  function drumForY(y){const rel=clamp((y-GRID_TOP)/(GRID_BOTTOM-GRID_TOP),0,0.999);return DRUM_KITS[Math.floor(rel*DRUM_KITS.length)];}
+  function drumRowH(){return ((GRID_BOTTOM-GRID_TOP)/DRUM_KITS.length)*drumZoom;}
+  function drumForY(y){const rowH=drumRowH();const idx=Math.floor((y-GRID_TOP-panY)/rowH);return DRUM_KITS[clamp(idx,0,DRUM_KITS.length-1)];}
+  // 2x3 pad layout for the drum grid (6 big pads). Returns [{kind,x,y,w,h},...]
+  const DRUM_COLS=2, DRUM_ROWS=3, drumPadFlash={};
+  function drumPadRects(){const pad=10;const left=pad,top=GRID_TOP+pad,gw=W-pad*2,gh=(GRID_BOTTOM-GRID_TOP)-pad*2;
+    const cw=(gw-pad*(DRUM_COLS-1))/DRUM_COLS, ch=(gh-pad*(DRUM_ROWS-1))/DRUM_ROWS;const rects=[];
+    for(let i=0;i<DRUM_KITS.length;i++){const c=i%DRUM_COLS, r=Math.floor(i/DRUM_COLS);
+      rects.push({kind:DRUM_KITS[i],x:left+c*(cw+pad),y:top+r*(ch+pad),w:cw,h:ch});}
+    return rects;}
+  function drumPadAt(x,y){for(const p of drumPadRects()){if(x>=p.x&&x<=p.x+p.w&&y>=p.y&&y<=p.y+p.h)return p.kind;}return null;}
   const DRUM_LABEL={kick:'GRANCASSA',snare:'RULLANTE',clap:'CLAP',tom:'TOM',hatClosed:'CHARLESTON',hatOpen:'PIATTO'};
 
   // ---------- Instruments ----------
@@ -512,21 +522,26 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function playDrum(node){node.flash=1;playDrumKind(drumForY(node.y));}
   function scheduleDrum(kind,when){playDrumKind(kind,when);}
   // kind: drum voice; when: start time; ctx/dest/nb optional (for OfflineAudioContext rendering).
-  function playDrumKind(kind,when,ctx,dest,nb){const ac=ctx||audio;const out=dest||master;const noise=nb||noiseBuffer;const now=when!=null?when:ac.currentTime;
-    if(kind==='kick'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(120,now);o.frequency.exponentialRampToValueAtTime(48,now+.14);
-      g.gain.setValueAtTime(1,now);g.gain.exponentialRampToValueAtTime(.001,now+.45);const click=ac.createBufferSource();click.buffer=noise;const cf=ac.createBiquadFilter();cf.type='lowpass';cf.frequency.value=2500;
-      const cg=ac.createGain();cg.gain.setValueAtTime(.3,now);cg.gain.exponentialRampToValueAtTime(.001,now+.03);click.connect(cf);cf.connect(cg);cg.connect(out);o.connect(g);g.connect(out);o.start(now);o.stop(now+.47);click.start(now);click.stop(now+.05);}
-    else if(kind==='snare'){const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=1900;nf.Q.value=.7;
-      const ng=ac.createGain();ng.gain.setValueAtTime(.6,now);ng.gain.exponentialRampToValueAtTime(.001,now+.18);n.connect(nf);nf.connect(ng);ng.connect(out);
-      const o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(210,now);o.frequency.exponentialRampToValueAtTime(150,now+.1);og.gain.setValueAtTime(.5,now);og.gain.exponentialRampToValueAtTime(.001,now+.13);o.connect(og);og.connect(out);
-      n.start(now);n.stop(now+.2);o.start(now);o.stop(now+.15);}
-    else if(kind==='tom'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(200,now);o.frequency.exponentialRampToValueAtTime(85,now+.28);
-      g.gain.setValueAtTime(.9,now);g.gain.exponentialRampToValueAtTime(.001,now+.38);o.connect(g);g.connect(out);o.start(now);o.stop(now+.4);}
-    else if(kind==='clap'){const nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=1500;nf.Q.value=.9;nf.connect(out);
-      // 3 quick noise bursts = the classic clap
+  function playDrumKind(kind,when,ctx,dest,nb,kit){const ac=ctx||audio;const out=dest||master;const noise=nb||noiseBuffer;const now=when!=null?when:ac.currentTime;
+    const K=kit||(tracks[activeTrack]&&tracks[activeTrack].drumKit)||'pop';
+    if(kind==='kick'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';
+      // per-kit kick: electro = long 808-ish, acoustic = deep/soft, pop = punchy
+      const f0=K==='electro'?160:K==='acoustic'?110:120, f1=K==='electro'?40:K==='acoustic'?45:48, pitchT=K==='electro'?.22:K==='acoustic'?.18:.14, dec=K==='electro'?.7:K==='acoustic'?.55:.45;
+      o.frequency.setValueAtTime(f0,now);o.frequency.exponentialRampToValueAtTime(f1,now+pitchT);
+      g.gain.setValueAtTime(1,now);g.gain.exponentialRampToValueAtTime(.001,now+dec);
+      if(K!=='electro'){const click=ac.createBufferSource();click.buffer=noise;const cf=ac.createBiquadFilter();cf.type='lowpass';cf.frequency.value=K==='acoustic'?1500:2500;const cg=ac.createGain();cg.gain.setValueAtTime(K==='acoustic'?.2:.3,now);cg.gain.exponentialRampToValueAtTime(.001,now+.03);click.connect(cf);cf.connect(cg);cg.connect(out);click.start(now);click.stop(now+.05);}
+      o.connect(g);g.connect(out);o.start(now);o.stop(now+dec+.05);}
+    else if(kind==='snare'){const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();
+      nf.type=K==='electro'?'highpass':'bandpass';nf.frequency.value=K==='electro'?2400:K==='acoustic'?1400:1900;nf.Q.value=K==='acoustic'?.5:.7;
+      const ng=ac.createGain();const nDec=K==='electro'?.25:K==='acoustic'?.22:.18;ng.gain.setValueAtTime(K==='electro'?.7:.6,now);ng.gain.exponentialRampToValueAtTime(.001,now+nDec);n.connect(nf);nf.connect(ng);ng.connect(out);
+      const o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(K==='acoustic'?180:210,now);o.frequency.exponentialRampToValueAtTime(K==='acoustic'?130:150,now+.1);og.gain.setValueAtTime(K==='electro'?.3:.5,now);og.gain.exponentialRampToValueAtTime(.001,now+.13);o.connect(og);og.connect(out);
+      n.start(now);n.stop(now+nDec+.05);o.start(now);o.stop(now+.15);}
+    else if(kind==='tom'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';const t0=K==='acoustic'?180:200;o.frequency.setValueAtTime(t0,now);o.frequency.exponentialRampToValueAtTime(K==='acoustic'?75:85,now+.28);
+      g.gain.setValueAtTime(.9,now);g.gain.exponentialRampToValueAtTime(.001,now+(K==='acoustic'?.45:.38));o.connect(g);g.connect(out);o.start(now);o.stop(now+.5);}
+    else if(kind==='clap'){const nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=K==='electro'?2000:1500;nf.Q.value=.9;nf.connect(out);
       [0,0.012,0.024].forEach((off,i)=>{const n=ac.createBufferSource();n.buffer=noise;const ng=ac.createGain();const t=now+off;ng.gain.setValueAtTime(i===2?.5:.35,t);ng.gain.exponentialRampToValueAtTime(.001,t+(i===2?.16:.04));n.connect(ng);ng.connect(nf);n.start(t);n.stop(t+.18);});}
-    else{const open=kind==='hatOpen';const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();nf.type='highpass';nf.frequency.value=6500;
-      const ng=ac.createGain();const dur=open?.32:.07;ng.gain.setValueAtTime(open?.4:.35,now);ng.gain.exponentialRampToValueAtTime(.001,now+dur);n.connect(nf);nf.connect(ng);ng.connect(out);n.start(now);n.stop(now+dur+.02);}}
+    else{const open=kind==='hatOpen';const n=ac.createBufferSource();n.buffer=noise;const nf=ac.createBiquadFilter();nf.type='highpass';nf.frequency.value=K==='acoustic'?5000:K==='electro'?8000:6500;
+      const ng=ac.createGain();const dur=(open?.32:.07)*(K==='acoustic'?1.2:1);ng.gain.setValueAtTime(open?.4:.35,now);ng.gain.exponentialRampToValueAtTime(.001,now+dur);n.connect(nf);nf.connect(ng);ng.connect(out);n.start(now);n.stop(now+dur+.02);}}
 
   // ---------- Held voices (LIVE) ----------
   function makeHeldVoice(instr,freq){const now=audio.currentTime;const g=audio.createGain();g.gain.setValueAtTime(.4,now);let oscs=[],extra={};
@@ -553,7 +568,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---------- Model ----------
   const TRACK_COLORS=['#e33f1a','#2b8ccc','#3a9d5a','#c7952a'];
   const NUM_TRACKS=4;const DEFAULT_INSTR=['node','bass','drums','ambient'];
-  const tracks=[];for(let i=0;i<NUM_TRACKS;i++)tracks.push({nodes:[],muted:false,instr:DEFAULT_INSTR[i],oct:0});
+  const tracks=[];for(let i=0;i<NUM_TRACKS;i++)tracks.push({nodes:[],muted:false,instr:DEFAULT_INSTR[i],oct:0,drumKit:'pop'});
   let activeTrack=0;const CONNECT_DIST=160;
   let panX=0,panY=0; // grid pan offset (feature 11)
   let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){const tb=document.getElementById('topbar');const topH=(document.body.classList.contains('looperFull')?0:((tb&&tb.offsetHeight)||60));GRID_TOP=topH+12;GRID_BOTTOM=H-(H<480?54:76);}
@@ -603,7 +618,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const off=new OfflineAudioContext(2,targetLen+tailLen,rate);
     // noise buffer must belong to the offline context
     const nlen=Math.floor(rate*1.0),nb=off.createBuffer(1,nlen,rate);{const d=nb.getChannelData(0);for(let i=0;i<nlen;i++)d[i]=Math.random()*2-1;}
-    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,off.destination,nb);}}}
+    const _kit=(tracks[activeTrack]&&tracks[activeTrack].drumKit)||'pop';
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,off.destination,nb,_kit);}}}
     const rendered=await off.startRendering();
     const out=audio.createBuffer(2,targetLen,rate);
     for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
@@ -803,7 +819,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function onPointerDown(id,clientX,clientY){resumeAudio();hideHint();
     if(panActive){panLast={x:clientX,y:clientY};return;}
     if(!inCanvas(clientX))return;const{x,y}=ptrPos(clientX,clientY);
-    if(tool==='live'){const tr=tracks[activeTrack];if(tr.instr==='drums'){playDrum({x:x-panX,y:y-panY,track:activeTrack});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
+    // Drums grid = 2x3 pads: tap plays the pad (live), no nodes/pulsar here (use the drum machine for patterns)
+    if(tracks[activeTrack].instr==='drums'){const kind=drumPadAt(x,y);if(kind){playDrumKind(kind);drumPadFlash[kind]=1;}return;}
+    if(tool==='live'){const tr=tracks[activeTrack];
       const v=makeHeldVoice(tr.instr,freqForLiveY(y));liveVoices.set(id,{voice:v,x,y});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
     const hit=findNode(x,y);if(tool==='erase'){if(hit){const a=tracks[activeTrack].nodes;a.splice(a.indexOf(hit),1);}return;}
     if(hit)dragNode=hit;else{dragNode=addNode(x,y,tool);if(tool==='note'||tool==='kick'||tool==='snare')playNodeInstrument(dragNode);}}
@@ -835,7 +853,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const speed=520;for(let i=impulses.length-1;i>=0;i--){const im=impulses[i];im.travelled+=speed/60;const p=clamp(im.travelled/im.dist,0,1);im.x=im.sx+(im.tx-im.sx)*p;im.y=im.sy+(im.ty-im.sy)*p;if(p>=1){playNodeInstrument(im.target);impulses.splice(i,1);}}
     if(W>0)draw();requestAnimationFrame(loop);}
   function drawGrid(){if(!showGrid)return;const tr=tracks[activeTrack],instr=tr.instr;ctx.save();ctx.font='bold 12px -apple-system,sans-serif';ctx.textBaseline='middle';
-    if(instr==='drums'){const zh=(GRID_BOTTOM-GRID_TOP)/DRUM_KITS.length;for(let i=0;i<DRUM_KITS.length;i++){const yt=GRID_TOP+i*zh+panY;ctx.strokeStyle='rgba(43,33,24,0.12)';ctx.beginPath();ctx.moveTo(0,yt);ctx.lineTo(W,yt);ctx.stroke();ctx.fillStyle='rgba(43,33,24,0.5)';ctx.fillText(DRUM_LABEL[DRUM_KITS[i]],10,yt+zh/2);}}
+    if(instr==='drums'){ctx.textAlign='center';const col=TRACK_COLORS[activeTrack];
+      for(const p of drumPadRects()){const fl=drumPadFlash[p.kind]||0;drumPadFlash[p.kind]=fl*0.85;
+        ctx.fillStyle=fl>0.05?hexA(col,0.25+fl*0.5):'#efe2c4';
+        roundRect(ctx,p.x,p.y,p.w,p.h,12);ctx.fill();
+        ctx.strokeStyle=fl>0.05?col:'var(--panel-border)';ctx.lineWidth=3;ctx.strokeStyle=fl>0.05?col:'#c9b48a';roundRect(ctx,p.x,p.y,p.w,p.h,12);ctx.stroke();
+        ctx.fillStyle='#2b2118';ctx.font='bold 15px -apple-system,sans-serif';ctx.fillText(DRUM_LABEL[p.kind],p.x+p.w/2,p.y+p.h/2);
+      }
+      ctx.textAlign='start';ctx.restore();return;}
     else{for(let s=0;s<TOTAL_STEPS;s++){const y=GRID_BOTTOM-(s/(TOTAL_STEPS-1))*(GRID_BOTTOM-GRID_TOP)+panY;ctx.strokeStyle='rgba(43,33,24,0.1)';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();const midi=midiForStep(s,instr,tr.oct);
       ctx.fillStyle=(s%SCALE_LEN===0)?'#e33f1a':'rgba(43,33,24,0.55)';ctx.fillText(midiToName(midi),10,y);}}ctx.restore();}
   function draw(){ctx.fillStyle='#f2e7d0';ctx.fillRect(0,0,W,H);drawGrid();
@@ -851,6 +876,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(let i=livePulses.length-1;i>=0;i--){const lp=livePulses[i];lp.r+=2.2;lp.a*=.93;if(lp.a<.04){livePulses.splice(i,1);continue;}ctx.strokeStyle=hexA(lp.color,lp.a);ctx.lineWidth=3;ctx.beginPath();ctx.arc(lp.x,lp.y,lp.r,0,Math.PI*2);ctx.stroke();}
     for(const[,lv]of liveVoices){ctx.fillStyle=TRACK_COLORS[activeTrack];ctx.beginPath();ctx.arc(lv.x,lv.y,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}}
   function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.substr(0,2),16)},${parseInt(h.substr(2,2),16)},${parseInt(h.substr(4,2),16)},${a})`;}
+  function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
   // normalize a color to #rrggbb for <input type=color> (accepts hex or rgb())
   function rgbToHex(col){if(!col)return'#e33f1a';if(col[0]==='#'){if(col.length===7)return col;const h=col.replace('#','');if(h.length===3)return'#'+h.split('').map(x=>x+x).join('');return'#e33f1a';}
     const m=col.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);if(m){const to=(n)=>('0'+parseInt(n,10).toString(16)).slice(-2);return'#'+to(m[1])+to(m[2])+to(m[3]);}return'#e33f1a';}
@@ -897,6 +923,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('octDown').addEventListener('click',()=>{tracks[activeTrack].oct=clamp(tracks[activeTrack].oct-1,-3,3);refreshOct();});
   function doZoom(dir){ // dir +1 in, -1 out; zoom looper if open, else grid
     if(splitMode&&!looperHidden){clipZoom=clamp(clipZoom*(dir>0?1.3:1/1.3),0.3,8);refreshView();toast('Zoom '+clipZoom.toFixed(1)+'x');}
+    else if(tracks[activeTrack].instr==='drums'){toast('Batteria: pad a dimensione fissa (nessuno zoom)');}
     else{gridZoom=clamp(gridZoom*(dir>0?1.35:1/1.35),0.5,4);updateTotalSteps();toast('Zoom griglia '+gridZoom.toFixed(1)+'x');}}
   document.getElementById('gzIn').addEventListener('click',()=>doZoom(1));
   document.getElementById('gzOut').addEventListener('click',()=>doZoom(-1));
@@ -907,22 +934,28 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const FAMILIES={
     bass:[['bass','Elettrico'],['bassacoustic','Acustico']],
     amb:[['ambient','Effetto'],['pad','Pad'],['lead','Lead']],
-    piano:[['organ','Organo'],['piano','Piano acustico'],['epiano','E-piano']]
+    piano:[['organ','Organo'],['piano','Piano acustico'],['epiano','E-piano']],
+    drums:[['pop','Pop'],['acoustic','Acustica'],['electro','Elettrica']]  // kit variants, not instruments
   };
-  // which family an instrument id belongs to
-  function famOf(instr){for(const f in FAMILIES){if(FAMILIES[f].some(v=>v[0]===instr))return f;}return null;}
+  const FAM_BASE={bass:'Bass',amb:'Amb',piano:'Piano',drums:'Drums'};
+  // which family an instrument id belongs to (melodic families only)
+  function famOf(instr){for(const f in FAMILIES){if(f==='drums')continue;if(FAMILIES[f].some(v=>v[0]===instr))return f;}return null;}
   function setInstrument(instr){tracks[activeTrack].instr=instr;resumeAudio();refreshInstrSwitch();if(melPanel.classList.contains('show'))buildMelGrid();
     const lbl=(FAMILIES[famOf(instr)]||[]).find(v=>v[0]===instr);toast('→ '+(lbl?lbl[1]:instr));}
-  function refreshInstrSwitch(){const cur=tracks[activeTrack].instr;const curFam=famOf(cur);
+  function setDrumKit(kit){tracks[activeTrack].instr='drums';tracks[activeTrack].drumKit=kit;resumeAudio();refreshInstrSwitch();
+    const lbl=(FAMILIES.drums.find(v=>v[0]===kit)||[])[1];toast('Drums: '+(lbl||kit));}
+  function refreshInstrSwitch(){const cur=tracks[activeTrack].instr;const curFam=famOf(cur);const isDrums=(cur==='drums');const curKit=tracks[activeTrack].drumKit||'pop';
     [...instrEl.children].forEach(c=>{if(!c.dataset.instr&&!c.dataset.fam)return;
-      const active=(c.dataset.fam?c.dataset.fam===curFam:c.dataset.instr===cur);c.classList.toggle('active',active);
-      // update family label to show the chosen variant
-      if(c.dataset.fam){const base=c.dataset.fam==='bass'?'Bass':c.dataset.fam==='amb'?'Amb':'Piano';const v=(c.dataset.fam===curFam)?(FAMILIES[c.dataset.fam].find(x=>x[0]===cur)||[])[1]:null;c.textContent=(v?base+': '+v:base)+' ▾';}
+      const active=(c.dataset.fam?(c.dataset.fam==='drums'?isDrums:c.dataset.fam===curFam):c.dataset.instr===cur);c.classList.toggle('active',active);
+      if(c.dataset.fam){const base=FAM_BASE[c.dataset.fam];let v=null;
+        if(c.dataset.fam==='drums'){if(isDrums)v=(FAMILIES.drums.find(x=>x[0]===curKit)||[])[1];}
+        else if(c.dataset.fam===curFam)v=(FAMILIES[c.dataset.fam].find(x=>x[0]===cur)||[])[1];
+        c.textContent=(v?base+': '+v:base)+' ▾';}
     });
     synthPanel.classList.toggle('show',cur==='synth');}
-  function openInstrMenu(fam,btn){instrMenu.innerHTML='';const cur=tracks[activeTrack].instr;
+  function openInstrMenu(fam,btn){instrMenu.innerHTML='';const isDrums=(fam==='drums');const cur=isDrums?(tracks[activeTrack].drumKit||'pop'):tracks[activeTrack].instr;
     FAMILIES[fam].forEach(([id,label])=>{const b=document.createElement('button');b.textContent=label;if(id===cur)b.classList.add('active');
-      b.onclick=(e)=>{e.stopPropagation();setInstrument(id);instrMenu.classList.remove('show');};instrMenu.appendChild(b);});
+      b.onclick=(e)=>{e.stopPropagation();if(isDrums)setDrumKit(id);else setInstrument(id);instrMenu.classList.remove('show');};instrMenu.appendChild(b);});
     const r=btn.getBoundingClientRect();instrMenu.style.left=r.left+'px';instrMenu.style.top=(r.bottom+4)+'px';instrMenu.classList.add('show');
   }
   document.getElementById('synthMin').addEventListener('click',()=>{const m=synthPanel.classList.toggle('min');document.getElementById('synthMin').textContent=m?'+':'–';});
@@ -1505,7 +1538,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),
       trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
     // grid tracks with all nodes (note/pulsar/kick/snare)
-    const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,
+    const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,drumKit:tr.drumKit||'pop',
       nodes:tr.nodes.map(n=>({x:n.x,y:n.y,type:n.type}))}));
     return {
       _crudo:true,version:PROJECT_VERSION,name,ts:Date.now(),
@@ -1536,7 +1569,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       clips.push(clip);}catch(e){}}
     // grid
     if(p.grid&&p.grid.tracks){for(let i=0;i<tracks.length&&i<p.grid.tracks.length;i++){const gt=p.grid.tracks[i];
-      tracks[i].instr=gt.instr||tracks[i].instr;tracks[i].oct=gt.oct||0;tracks[i].muted=!!gt.muted;
+      tracks[i].instr=gt.instr||tracks[i].instr;tracks[i].oct=gt.oct||0;tracks[i].muted=!!gt.muted;tracks[i].drumKit=gt.drumKit||'pop';
       tracks[i].nodes=(gt.nodes||[]).map(n=>({x:n.x,y:n.y,type:n.type,flash:0,track:i}));}
       if(p.grid.activeTrack!=null)activeTrack=clamp(p.grid.activeTrack,0,tracks.length-1);}
     // drum machine
