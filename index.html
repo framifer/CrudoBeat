@@ -448,7 +448,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function drumForY(y){const rowH=drumRowH();const idx=Math.floor((y-GRID_TOP-panY)/rowH);return DRUM_KITS[clamp(idx,0,DRUM_KITS.length-1)];}
   // 2x3 pad layout for the drum grid (6 big pads). Returns [{kind,x,y,w,h},...]
   const DRUM_COLS=2, DRUM_ROWS=3, drumPadFlash={};
-  function drumPadRects(){const pad=10;const left=pad,top=GRID_TOP+pad,gw=W-pad*2,gh=(GRID_BOTTOM-GRID_TOP)-pad*2;
+  function drumPadRects(){const pad=6;const left=pad,top=GRID_TOP+pad,gw=W-pad*2,gh=(GRID_BOTTOM-GRID_TOP)-pad*2;
     const cw=(gw-pad*(DRUM_COLS-1))/DRUM_COLS, ch=(gh-pad*(DRUM_ROWS-1))/DRUM_ROWS;const rects=[];
     for(let i=0;i<DRUM_KITS.length;i++){const c=i%DRUM_COLS, r=Math.floor(i/DRUM_COLS);
       rects.push({kind:DRUM_KITS[i],x:left+c*(cw+pad),y:top+r*(ch+pad),w:cw,h:ch});}
@@ -571,7 +571,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const tracks=[];for(let i=0;i<NUM_TRACKS;i++)tracks.push({nodes:[],muted:false,instr:DEFAULT_INSTR[i],oct:0,drumKit:'pop'});
   let activeTrack=0;const CONNECT_DIST=160;
   let panX=0,panY=0; // grid pan offset (feature 11)
-  let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){const tb=document.getElementById('topbar');const topH=(document.body.classList.contains('looperFull')?0:((tb&&tb.offsetHeight)||60));GRID_TOP=topH+12;GRID_BOTTOM=H-(H<480?54:76);}
+  let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){const tb=document.getElementById('topbar');const topH=(document.body.classList.contains('looperFull')?0:((tb&&tb.offsetHeight)||60));GRID_TOP=topH+12;
+    const cb=document.getElementById('controls');const botH=(document.body.classList.contains('looperFull')?0:((cb&&cb.offsetHeight)||76));GRID_BOTTOM=H-botH-8;}
   function addNode(x,y,type){const n={x:x-panX,y:y-panY,type,flash:0,track:activeTrack};tracks[activeTrack].nodes.push(n);return n;}
   function playNodeInstrument(node){if(node.type==='kick'){playDrumKind('kick');node.flash=1;return;}if(node.type==='snare'){playDrumKind('snare');node.flash=1;return;}const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
 
@@ -858,7 +859,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         ctx.fillStyle=fl>0.05?hexA(col,0.25+fl*0.5):'#efe2c4';
         roundRect(ctx,p.x,p.y,p.w,p.h,12);ctx.fill();
         ctx.strokeStyle=fl>0.05?col:'var(--panel-border)';ctx.lineWidth=3;ctx.strokeStyle=fl>0.05?col:'#c9b48a';roundRect(ctx,p.x,p.y,p.w,p.h,12);ctx.stroke();
-        ctx.fillStyle='#2b2118';ctx.font='bold 15px -apple-system,sans-serif';ctx.fillText(DRUM_LABEL[p.kind],p.x+p.w/2,p.y+p.h/2);
+        ctx.fillStyle='#2b2118';const fs=clamp(Math.round(p.h*0.22),10,18);ctx.font='bold '+fs+'px -apple-system,sans-serif';ctx.fillText(DRUM_LABEL[p.kind],p.x+p.w/2,p.y+p.h/2);
       }
       ctx.textAlign='start';ctx.restore();return;}
     else{for(let s=0;s<TOTAL_STEPS;s++){const y=GRID_BOTTOM-(s/(TOTAL_STEPS-1))*(GRID_BOTTOM-GRID_TOP)+panY;ctx.strokeStyle='rgba(43,33,24,0.1)';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();const midi=midiForStep(s,instr,tr.oct);
