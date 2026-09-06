@@ -258,7 +258,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="display:none;background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -1083,6 +1083,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function refreshView(){ // show clip list (vertical) or studio (timeline)
     if(timelineView){clipListEl.style.display='none';studioEl.classList.add('show');buildStudio();}
     else{clipListEl.style.display='';studioEl.classList.remove('show');buildClipList();}
+    const tag=document.getElementById('studioTag');if(tag)tag.style.display=timelineView?'inline-block':'none';
   }
   // redraw whichever clip view is currently active (used by shared edit ops)
   function refreshClipsView(){if(timelineView)buildStudio();else buildClipList();}
@@ -1140,7 +1141,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(transportOn&&pos>=dur){pauseAll();transportPos=0;}
       playfill.style.width=Math.min(100,(pos/dur)*100)+'%';playlbl.textContent=pos.toFixed(1)+'s / '+dur.toFixed(1)+'s'+(transportOn?'':' ⏸');
       // move studio playhead
-      if(studioEl&&studioEl.classList.contains('show')){const pps=TL_PX_PER_SEC*clipZoom;playhead.style.left=(LANE_HEAD+pos*pps)+'px';}
+      if(studioEl&&studioEl.classList.contains('show')){const pps=TL_PX_PER_SEC*clipZoom;const px=LANE_HEAD+pos*pps;playhead.style.left=px+'px';
+        // #3 auto-scroll to keep the playhead in view while playing (like BandLab)
+        if(transportOn&&!studioUserScrolling){const sc=document.getElementById('studioScroll');if(sc){const vw=sc.clientWidth;const target=px-vw*0.4;const maxScroll=sc.scrollWidth-vw;_autoScrolling=true;sc.scrollLeft=clamp(target,0,Math.max(0,maxScroll));setTimeout(()=>_autoScrolling=false,0);}}
+      }
       if(transportOn)scheduleTimeline();
       requestAnimationFrame(updatePlaybar);return;
     }
@@ -1160,7 +1164,29 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- Build Studio (BandLab-style) view: ruler + lanes + draggable blocks ----
   const studioRuler=document.getElementById('studioRuler'),studioLanes=document.getElementById('studioLanes'),studioInner=document.getElementById('studioInner'),playhead=document.getElementById('playhead');
   const blockToolsEl=document.getElementById('blockTools');
+  // #3/#4 manual-scroll awareness + drag-to-pan for the Studio timeline
+  let studioUserScrolling=false,_studioScrollTimer=null;
+  (function(){const sc=document.getElementById('studioScroll');if(!sc)return;
+    const mark=()=>{studioUserScrolling=true;clearTimeout(_studioScrollTimer);_studioScrollTimer=setTimeout(()=>studioUserScrolling=false,2000);};
+    sc.addEventListener('wheel',mark,{passive:true});sc.addEventListener('scroll',()=>{if(!_autoScrolling)mark();},{passive:true});
+    // drag empty timeline area to pan horizontally (and vertically)
+    let dragging=false,sx=0,sy=0,sl=0,st=0;
+    const isBlank=(t)=>!(t.closest&&t.closest('.block'));
+    sc.addEventListener('mousedown',(e)=>{if(!isBlank(e.target))return;dragging=true;sx=e.clientX;sy=e.clientY;sl=sc.scrollLeft;st=sc.scrollTop;mark();});
+    window.addEventListener('mousemove',(e)=>{if(!dragging)return;sc.scrollLeft=sl-(e.clientX-sx);sc.scrollTop=st-(e.clientY-sy);});
+    window.addEventListener('mouseup',()=>dragging=false);
+  })();
+  let _autoScrolling=false;
   const LANE_HEAD=96;
+  // trimmed duration of a clip in seconds
+  function clipDurT(c){const fd=c.buffer?c.buffer.duration:0;return fd*((c.trimEnd==null?1:c.trimEnd)-(c.trimStart||0));}
+  // #1 magnetic snap: snap a dragged clip's start to nearby edges (0, or other clips' start/end)
+  function snapClipTime(self,t,pxPerSec){const SNAP_PX=12;const snapSec=SNAP_PX/pxPerSec;
+    const edges=[0];for(const o of clips){if(o===self)continue;const st=o.t||0;edges.push(st);edges.push(st+clipDurT(o));}
+    const selEnd=t+clipDurT(self);let best=t,bestD=snapSec;
+    for(const e of edges){ if(Math.abs(t-e)<bestD){bestD=Math.abs(t-e);best=e;}                     // snap start to edge
+      const d2=Math.abs(selEnd-e); if(d2<bestD){bestD=d2;best=Math.max(0,e-clipDurT(self));} }        // snap end to edge
+    return best;}
   function buildStudio(){
     const total=Math.max(projectDuration()+4,10);const pxPerSec=TL_PX_PER_SEC*clipZoom;const timelineW=Math.round(total*pxPerSec);
     studioInner.style.width=(LANE_HEAD+timelineW)+'px';
@@ -1202,8 +1228,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(c.loop){const lb2=document.createElement('div');lb2.className='loopbadge';lb2.textContent='⟳';block.appendChild(lb2);}
       // drag: horizontal = time (t), vertical = move to another lane
       const startDrag=(clientX,clientY)=>{selectedClip=i;const r=block.getBoundingClientRect();const grab=clientX-r.left;
-        const move=(cx,cy)=>{const laneR=lane.getBoundingClientRect();let nx=cx-laneR.left-LANE_HEAD-grab;let nt=Math.max(0,nx/pxPerSec);c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';
-          // detect lane under pointer
+        const move=(cx,cy)=>{const laneR=lane.getBoundingClientRect();let nx=cx-laneR.left-LANE_HEAD-grab;let nt=Math.max(0,nx/pxPerSec);
+          nt=snapClipTime(c,nt,pxPerSec);   // #1 magnetic snap to neighbouring clip edges
+          c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';
           let overLane=null;for(const le of laneEls){const rr=le.getBoundingClientRect();if(cy>=rr.top&&cy<=rr.bottom){overLane=le;break;}}
           if(overLane&&+overLane.dataset.lane!==(c.lane||0)){c.lane=+overLane.dataset.lane;}
         };
