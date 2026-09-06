@@ -113,6 +113,8 @@
   #looperHead .latrow{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:var(--ink);padding:0 2px;}
   #looperHead .latrow input[type=range]{flex:1;min-width:0;accent-color:var(--red);}
   #masterRow button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:6px;padding:3px 7px;font-size:10px;font-weight:800;cursor:pointer;}
+  #latRow #calibBtn{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:6px;padding:3px 7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  #latRow #calibBtn.on{background:var(--red);color:var(--cream);}
   #masterRow button.on{background:var(--red);color:var(--cream);}
   #looperHead .playbar{position:relative;height:16px;border:2px solid var(--red2);border-radius:6px;background:#efe2c4;overflow:hidden;margin:2px 2px 0;}
   #looperHead .playfill{position:absolute;top:0;left:0;bottom:0;width:0;background:rgba(227,63,26,.45);}
@@ -256,9 +258,9 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
-    <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span></div>
+    <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
     <div class="playbar" id="playbar"><div class="playfill" id="playfill"></div><div class="playlbl" id="playlbl"></div></div>
   </div>
@@ -581,8 +583,31 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const impulses=[];function beatInterval(){return 60/bpm;}
   function firePulsars(){for(let ti=0;ti<NUM_TRACKS;ti++){if(tracks[ti].muted)continue;for(const p of tracks[ti].nodes){if(p.type!=='pulsar')continue;p.flash=1;
     for(const n of tracks[ti].nodes){if(n===p||(n.type!=='note'&&n.type!=='kick'&&n.type!=='snare'))continue;const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<=CONNECT_DIST)impulses.push({sx:p.x,sy:p.y,x:p.x,y:p.y,tx:n.x,ty:n.y,target:n,dist:d,travelled:0,color:TRACK_COLORS[ti]});}}}}
-  let metroOn=false,lastMetroBeat=0,metroCount=0,countingIn=false;
-  function tickMetro(){const now=audio.currentTime,strong=(metroCount%4===0);const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=strong?1600:1100;g.gain.setValueAtTime(strong?.6:.35,now);g.gain.exponentialRampToValueAtTime(.0005,now+.05);o.connect(g);g.connect(metroGain);o.start(now);o.stop(now+.06);metroCount++;}
+  let metroOn=false,countingIn=false;
+  // Look-ahead metronome (Chris Wilson "two clocks"): schedule clicks on the audio clock, jitter-free.
+  let nextNoteTime=0, metroBeat=0, metroTimer=null, countInLeft=0, onDownbeat=null;
+  const LOOKAHEAD=0.1;        // seconds of audio scheduled ahead
+  const SCHED_INTERVAL=25;    // ms between scheduler wakeups
+  let beatFlash=0, beatIndicator=0; // for the visual beat indicator (C)
+  function metroClickAt(time,strong){const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=strong?1600:1100;g.gain.setValueAtTime(strong?.6:.35,time);g.gain.exponentialRampToValueAtTime(.0005,time+.05);o.connect(g);g.connect(metroGain);o.start(time);o.stop(time+.06);}
+  function metroScheduler(){if(!audio)return;const spb=beatInterval();
+    while(nextNoteTime < audio.currentTime + LOOKAHEAD){
+      const isDownbeat=(metroBeat%4===0);
+      const playClick = metroOn || countingIn;
+      if(playClick) metroClickAt(nextNoteTime, isDownbeat);
+      // schedule the visual beat flash to fire around the click time
+      const dt=(nextNoteTime-audio.currentTime)*1000; const bn=(metroBeat%4)+1;
+      setTimeout(()=>{beatFlash=1;beatIndicator=bn;},Math.max(0,dt));
+      // count-in handling: fire the callback exactly on the downbeat after the count
+      if(countingIn){countInLeft--;if(countInLeft<=0){const cb=onDownbeat;const t=nextNoteTime+spb;setTimeout(()=>{countingIn=false;metroBeat=0;if(cb)cb();},Math.max(0,(t-audio.currentTime)*1000));onDownbeat=null;}}
+      nextNoteTime+=spb;metroBeat++;
+    }
+  }
+  function startMetroClock(){if(metroTimer)return;nextNoteTime=audio.currentTime+0.06;metroBeat=0;metroScheduler();metroTimer=setInterval(metroScheduler,SCHED_INTERVAL);}
+  function stopMetroClock(){if(!metroOn&&!countingIn){clearInterval(metroTimer);metroTimer=null;}}
+  // Precise count-in: N beats of clicks, then cb() fires exactly on the next downbeat (audio clock)
+  function doPrerollPrecise(beats,cb){resumeAudio();countingIn=true;countInLeft=beats;onDownbeat=cb;
+    metroBtn.classList.add('on');nextNoteTime=audio.currentTime+0.12;metroBeat=0;startMetroClock();toast('Conteggio '+beats+' battute…');}
 
   // ---------- #1 Drum machine / step sequencer (16 steps, 5 voices) ----------
   const SEQ_STEPS=16;const SEQ_ROWS=DRUM_KITS.slice(); // kick,snare,tom,hatClosed,hatOpen
@@ -818,6 +843,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   window.addEventListener('mouseup',()=>{if(panActive){panActive=false;speaker.classList.remove('panning');panLast=null;}});
 
   function onPointerDown(id,clientX,clientY){resumeAudio();hideHint();
+    if(calibrating){calibTapNow();return;} // calibration: taps only measure timing
     if(panActive){panLast={x:clientX,y:clientY};return;}
     if(!inCanvas(clientX))return;const{x,y}=ptrPos(clientX,clientY);
     // Drums grid = 2x3 pads: tap plays the pad (live), no nodes/pulsar here (use the drum machine for patterns)
@@ -848,7 +874,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---------- Loop ----------
   function loop(){const now=audio?audio.currentTime:0;
     if(playing&&audio&&now-lastPulseTime>=beatInterval()){lastPulseTime=now;firePulsars();}
-    if(metroOn&&!countingIn&&audio&&now-lastMetroBeat>=beatInterval()){lastMetroBeat=now;tickMetro();}
+    beatFlash*=0.85;
     if(seqOn&&audio&&now-seqLastTime>=seqStepDur()){seqLastTime=now;seqTick();}
     if(melOn&&audio&&now-melLastTime>=seqStepDur()){melLastTime=now;melTick();}
     const speed=520;for(let i=impulses.length-1;i>=0;i--){const im=impulses[i];im.travelled+=speed/60;const p=clamp(im.travelled/im.dist,0,1);im.x=im.sx+(im.tx-im.sx)*p;im.y=im.sy+(im.ty-im.sy)*p;if(p>=1){playNodeInstrument(im.target);impulses.splice(i,1);}}
@@ -875,7 +901,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       }ctx.globalAlpha=1;}}
     ctx.restore();
     for(let i=livePulses.length-1;i>=0;i--){const lp=livePulses[i];lp.r+=2.2;lp.a*=.93;if(lp.a<.04){livePulses.splice(i,1);continue;}ctx.strokeStyle=hexA(lp.color,lp.a);ctx.lineWidth=3;ctx.beginPath();ctx.arc(lp.x,lp.y,lp.r,0,Math.PI*2);ctx.stroke();}
-    for(const[,lv]of liveVoices){ctx.fillStyle=TRACK_COLORS[activeTrack];ctx.beginPath();ctx.arc(lv.x,lv.y,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}}
+    for(const[,lv]of liveVoices){ctx.fillStyle=TRACK_COLORS[activeTrack];ctx.beginPath();ctx.arc(lv.x,lv.y,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}
+    // C: visual beat indicator (pulses on each click during metronome / count-in / recording)
+    if((metroOn||countingIn||recording)&&beatIndicator){const cx=W/2,cy=GRID_TOP+30,base=16,r=base+beatFlash*14;const strong=(beatIndicator===1);
+      ctx.globalAlpha=0.35+beatFlash*0.6;ctx.fillStyle=strong?'#e33f1a':'#2b2118';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle='#f7efdd';ctx.font='bold 18px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(countingIn?'●':String(beatIndicator),cx,cy);ctx.textAlign='start';}}
   function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.substr(0,2),16)},${parseInt(h.substr(2,2),16)},${parseInt(h.substr(4,2),16)},${a})`;}
   function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
   // normalize a color to #rrggbb for <input type=color> (accepts hex or rgb())
@@ -886,16 +916,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---------- UI ----------
   const hint=document.getElementById('hint');let hintHidden=false;function hideHint(){if(!hintHidden){hint.classList.add('fade');hintHidden=true;}}
   const playBtn=document.getElementById('playBtn');playBtn.addEventListener('click',()=>{resumeAudio();playing=!playing;playBtn.textContent=playing?'❚❚ PULSAR':'▶ PULSAR';playBtn.classList.toggle('on',playing);if(playing)lastPulseTime=audio.currentTime-beatInterval();});
-  const metroBtn=document.getElementById('metroBtn');metroBtn.addEventListener('click',()=>{resumeAudio();metroOn=!metroOn;metroBtn.classList.toggle('on',metroOn);if(metroOn){lastMetroBeat=audio.currentTime-beatInterval();metroCount=0;}toast(metroOn?'Metronomo ON (non registrato)':'Metronomo OFF');});
-  function clickOnce(strong){const now=audio.currentTime;const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=strong?1600:1100;g.gain.setValueAtTime(strong?.6:.35,now);g.gain.exponentialRampToValueAtTime(.0005,now+.05);o.connect(g);g.connect(metroGain);o.start(now);o.stop(now+.06);}
-  // always 4-beat count-in before recording; can be stopped by turning metronome OFF during the count
-  function doPreroll(cb){resumeAudio();metroOn=true;metroBtn.classList.add('on');countingIn=true;lastMetroBeat=audio.currentTime;metroCount=0;
-    let n=0;const iv=beatInterval()*1000;clickOnce(true);n++;toast('Conteggio… (spegni 🎚 per saltarlo)');
-    const t=setInterval(()=>{
-      if(!metroOn){clearInterval(t);countingIn=false;cb();return;} // user turned metronome off → start now
-      if(n>=4){clearInterval(t);countingIn=false;lastMetroBeat=audio.currentTime;metroCount=0;cb();return;}
-      clickOnce(false);n++;
-    },iv);}
+  const metroBtn=document.getElementById('metroBtn');metroBtn.addEventListener('click',()=>{resumeAudio();metroOn=!metroOn;metroBtn.classList.toggle('on',metroOn);if(metroOn){startMetroClock();}else{stopMetroClock();}toast(metroOn?'Metronomo ON (non registrato)':'Metronomo OFF');});
+  // 4-beat precise count-in on the audio clock, then cb() fires exactly on the downbeat
+  function doPreroll(cb){doPrerollPrecise(4,cb);}
   const delayBtn=document.getElementById('delayBtn');const DELAY_LEVELS=[{n:'off',wet:0,fb:0},{n:'basso',wet:.3,fb:.28},{n:'medio',wet:.5,fb:.45},{n:'alto',wet:.7,fb:.62}];
   delayBtn.addEventListener('click',()=>{resumeAudio();delayLevel=(delayLevel+1)%DELAY_LEVELS.length;const L=DELAY_LEVELS[delayLevel];delayWet.gain.setTargetAtTime(L.wet,audio.currentTime,.03);delayFb.gain.setTargetAtTime(L.fb,audio.currentTime,.03);delayBtn.classList.toggle('on',delayLevel>0);delayBtn.textContent='Delay: '+L.n;updateDelayTime();});
   const reverbBtn=document.getElementById('reverbBtn');const REV_LEVELS=[{n:'off',w:0},{n:'basso',w:.3},{n:'medio',w:.55},{n:'alto',w:.8}];let revLevel=0;
@@ -1012,6 +1035,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- Loop mode + latency compensation ----
   const LOOP_BEATS=8;let loopMode=false,latencyMs=20,loopStart=null;
   let snapRec=true;
+  let qStart=true; // D: quantize first transient to the start
+  const qStartBtn=document.getElementById('qStartBtn');qStartBtn.classList.add('on');
+  qStartBtn.addEventListener('click',()=>{qStart=!qStart;qStartBtn.classList.toggle('on',qStart);qStartBtn.textContent='⏮ Quant: '+(qStart?'on':'off');toast(qStart?'Quantizza inizio ON':'Quantizza inizio OFF');});
+  // apply quantize-start then snap, per the current toggles
+  function processRec(buf){let b=buf;if(qStart)b=quantizeStart(b);if(snapRec)b=snapBufferToBeats(b);return b;}
   const snapBtn=document.getElementById('snapBtn');
   snapBtn.classList.add('on');
   snapBtn.addEventListener('click',()=>{snapRec=!snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');toast(snapRec?'Snap ON: registrazioni allineate al tempo':'Snap OFF: durata libera');});
@@ -1019,6 +1047,27 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const modeBtn=document.getElementById('modeBtn'),latSlider=document.getElementById('latSlider'),latVal=document.getElementById('latVal');
   modeBtn.addEventListener('click',()=>{loopMode=!loopMode;modeBtn.classList.toggle('on',loopMode);modeBtn.textContent=loopMode?'Loop 8':'Libera';toast(loopMode?('Modalità Loop • '+loopDur().toFixed(2)+'s (8 battute)'):'Modalità Libera');});
   latSlider.addEventListener('input',()=>{latencyMs=+latSlider.value;latVal.textContent=latencyMs+'ms';});
+  // E: guided latency calibration — user taps in time with the click; we measure the average offset.
+  let calibrating=false,calibTaps=[],calibBeatTimes=[];
+  const calibBtn=document.getElementById('calibBtn');
+  function calibTapNow(){if(!calibrating||!audio)return;const t=audio.currentTime;calibTaps.push(t);}
+  calibBtn.addEventListener('click',()=>{resumeAudio();if(calibrating)return;calibrating=true;calibBtn.classList.add('on');calibTaps=[];calibBeatTimes=[];
+    toast('Calibrazione: tocca lo schermo A TEMPO col click (8 volte)');
+    // schedule 8 clicks on the audio clock and remember their times
+    const spb=beatInterval();const t0=audio.currentTime+0.4;for(let i=0;i<8;i++){const t=t0+i*spb;calibBeatTimes.push(t);metroClickAt(t,i%4===0);}
+    // finish shortly after the last click
+    const endMs=(t0+8*spb-audio.currentTime)*1000+300;
+    setTimeout(()=>{calibrating=false;calibBtn.classList.remove('on');
+      if(calibTaps.length<3){toast('Calibrazione annullata (pochi tocchi)');return;}
+      // for each tap, offset to nearest scheduled beat
+      const offs=calibTaps.map(tp=>{let best=1e9;for(const bt of calibBeatTimes){const d=tp-bt;if(Math.abs(d)<Math.abs(best))best=d;}return best;});
+      offs.sort((a,b)=>a-b);const med=offs[Math.floor(offs.length/2)];   // median offset (s)
+      // if user taps AFTER the click (positive), that is roughly the round-trip latency to compensate
+      const ms=clamp(Math.round(Math.abs(med)*1000),0,300);
+      latencyMs=ms;latSlider.value=ms;latVal.textContent=ms+'ms';
+      toast('Latenza calibrata: '+ms+'ms ('+calibTaps.length+' tocchi)');
+    },Math.max(500,endMs));
+  });
   // ---- Master bus controls ----
   const masterVolEl=document.getElementById('masterVol'),masterVolVal=document.getElementById('masterVolVal'),limiterBtn=document.getElementById('limiterBtn');
   masterVolEl.addEventListener('input',()=>{masterVol=(+masterVolEl.value)/100;masterVolVal.textContent=(+masterVolEl.value)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);});
@@ -1227,6 +1276,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const out=audio.createBuffer(2,Math.max(1,target),rate);
     for(let ch=0;ch<2;ch++){const src=buf.getChannelData(Math.min(ch,buf.numberOfChannels-1)),dst=out.getChannelData(ch);
       for(let i=0;i<target;i++){const si=i+shift;dst[i]=(si>=0&&si<src.length)?src[si]:0;}}
+    return out;}
+  // D: shift audio so the first transient lands on sample 0 (only if the onset is near the start).
+  function quantizeStart(buf){const rate=buf.sampleRate;const ch0=buf.getChannelData(0);
+    // find first sample above threshold within the first beat
+    const thr=0.02, maxSearch=Math.min(ch0.length,Math.floor((60/bpm)*rate));let onset=-1;
+    for(let i=0;i<maxSearch;i++){if(Math.abs(ch0[i])>thr){onset=i;break;}}
+    if(onset<=0)return buf;                              // already at start or silent → leave as is
+    const len=buf.length;const out=audio.createBuffer(buf.numberOfChannels,len,rate);
+    for(let ch=0;ch<buf.numberOfChannels;ch++){const s=buf.getChannelData(ch),d=out.getChannelData(ch);
+      for(let i=0;i<len;i++){const si=i+onset;d[i]=si<len?s[si]:0;}}  // shift earlier by 'onset' samples
     return out;}
 
   const CAPTURE_BUF=2048; // ScriptProcessor block size (samples). Smaller = lower latency, but riskier for glitches
@@ -1469,7 +1528,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       });
     }else{
       if(loopMode){finishLoopRec();}
-      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(snapRec?snapBufferToBeats(buf):buf);else toast('Clip troppo breve');}
+      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(processRec(buf));else toast('Clip troppo breve');}
     }});
 
   // ---------- Microphone ----------
@@ -1513,7 +1572,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function stopMic(){if(!micCapture)return;const{proc,L,R,silent}=micCapture;proc.disconnect();silent.disconnect();try{micNode.disconnect();}catch(e){}proc.onaudioprocess=null;
     if(micMuteOthers&&masterBus&&_micPrevMaster!=null){masterBus.gain.setTargetAtTime(_micPrevMaster,audio.currentTime,0.02);_micPrevMaster=null;}
     if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}micNode=null;let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);
-    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(snapRec?snapBufferToBeats(buf):buf,'Mic '+(clipCounter+1));else toast('Reg. mic troppo breve');}
+    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(processRec(buf),'Mic '+(clipCounter+1));else toast('Reg. mic troppo breve');}
   micBtn.addEventListener('click',()=>{if(!micRecording)startMic();else stopMic();});
   // populate mic list on load + when devices change (USB-C hub plugged/unplugged)
   if(navigator.mediaDevices){refreshMicList();navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',refreshMicList);}
