@@ -258,7 +258,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -1111,6 +1111,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('allPauseBtn').addEventListener('click',()=>{try{pauseAll();}catch(err){toast('Errore Pausa: '+(err&&err.message||err));}});
   document.getElementById('allStopBtn').addEventListener('click',()=>{try{stopAll();}catch(err){toast('Errore Stop: '+(err&&err.message||err));}});
   document.getElementById('addTrackBtn').addEventListener('click',addEmptyTrack);
+  document.getElementById('bpmAllBtn').addEventListener('click',async()=>{if(!clips.length){toast('Nessuna traccia');return;}
+    const v=await askText('Nuovo BPM per TUTTE le tracce:',Math.round(bpm));if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<40||nb>240){toast('BPM non valido (40-240)');return;}
+    pushGlobal();for(const c of clips){const f=nb/(c.bpm||bpm);retimeClip(c,f);}setBpm(nb);refreshClipsView();toast('Tutte le tracce → '+nb+' BPM');});
   document.getElementById('gUndoBtn').addEventListener('click',globalUndo);
   document.getElementById('gRedoBtn').addEventListener('click',globalRedo);
   // timeline scheduler: start each clip once at its t (relative to transport)
@@ -1285,6 +1288,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     blockToolsEl.appendChild(mk('✁','Trim non distruttivo (inizio/fine %)',async()=>{const s=await askText('Trim inizio %:',Math.round((c.trimStart||0)*100));if(s===null)return;const e=await askText('Trim fine %:',Math.round((c.trimEnd==null?1:c.trimEnd)*100));if(e===null)return;let sf=clamp((parseFloat(s)||0)/100,0,0.98),ef=clamp((parseFloat(e)||100)/100,sf+0.02,1);c.trimStart=sf;c.trimEnd=ef;restartClip(c);buildStudio();toast(c.name+' trim '+(sf*100|0)+'–'+(ef*100|0)+'%');},((c.trimStart||0)>0||(c.trimEnd==null?1:c.trimEnd)<1)));
     blockToolsEl.appendChild(mk('📊','Normalizza volume',()=>{normalizeClip(c);buildStudio();}));
     blockToolsEl.appendChild(mk('◀◁','Inverti (reverse)',()=>{reverseClip(c);buildStudio();}));
+    blockToolsEl.appendChild(mk('♩bpm','Cambia tempo di questa traccia (resampling)',async()=>{const cur=Math.round(c.bpm||bpm);const v=await askText('Nuovo BPM per '+c.name+' (attuale ~'+cur+'):',cur);if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<40||nb>240){toast('BPM non valido (40-240)');return;}retimeClipToBpm(c,nb);buildStudio();toast(c.name+' → '+nb+' BPM');}));
     blockToolsEl.appendChild(mk('⧉','Copia',()=>{clipboard=c.buffer;toast('Copiato');}));
     blockToolsEl.appendChild(mk('📋','Incolla',()=>{if(!clipboard){toast('Niente da incollare');return;}pushGlobal();clipCounter++;const nc={buffer:clipboard,name:'Clip '+clipCounter,muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(c.t||0),_tlScheduled:false,lane:c.lane||0,loop:false};clips.splice(idx+1,0,nc);selectedClip=idx+1;buildStudio();}));
     blockToolsEl.appendChild(mk('🗑','Cancella',()=>{pushGlobal();stopClipPlayback(c);clips.splice(idx,1);if(selectedClip>=clips.length)selectedClip=clips.length-1;buildStudio();}));
@@ -1333,7 +1337,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}capture=null;return buf;}
   function addClip(buffer,name,atTime,newLane){pushGlobal();clipCounter++;
     const lane=newLane?((clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1):clips.length;
-    const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(atTime||0),_tlScheduled:false,lane:lane,loop:false};
+    const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,bpm:bpm,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(atTime||0),_tlScheduled:false,lane:lane,loop:false};
     clips.push(clip);startClipPlayback(clip);if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();toast('Traccia audio aggiunta • '+clip.name);}
   // Add an empty (silent) track — a real clip with a silent buffer, so all tools (rec-over, paste, trim, drag) work.
   function addEmptyTrack(){resumeAudio();pushGlobal();
@@ -1396,6 +1400,15 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(let ch=0;ch<b.numberOfChannels;ch++){const src=b.getChannelData(ch),dst=nb.getChannelData(ch);
       for(let i=0;i<newLen;i++){const pos=i*ratio;const i0=Math.floor(pos),frac=pos-i0;const a=src[i0]||0,bb=src[i0+1]||0;dst[i]=a+(bb-a)*frac;}}
     clip.buffer=nb;clip.offset=0;restartClip(clip);refreshClipsView();}
+  // Method B retime: resample the clip by a speed factor (>1 = faster/shorter, also raises pitch).
+  function retimeClip(clip,factor){if(!(factor>0)||Math.abs(factor-1)<0.001)return;snapshot(clip);
+    const b=clip.buffer,rate=b.sampleRate;const newLen=Math.max(1,Math.round(b.length/factor));
+    const nb=audio.createBuffer(b.numberOfChannels,newLen,rate);
+    for(let ch=0;ch<b.numberOfChannels;ch++){const src=b.getChannelData(ch),dst=nb.getChannelData(ch);
+      for(let i=0;i<newLen;i++){const pos=i*factor;const i0=Math.floor(pos),frac=pos-i0;const a=src[i0]||0,bb=src[i0+1]||0;dst[i]=a+(bb-a)*frac;}}
+    clip.buffer=nb;clip.offset=0;clip.bpm=(clip.bpm||bpm)*factor;restartClip(clip);}
+  // Retime a clip to match a target BPM, based on the BPM it was created at.
+  function retimeClipToBpm(clip,targetBpm){const src=clip.bpm||bpm;const factor=targetBpm/src;retimeClip(clip,factor);}
   // #3 Normalize: scale so the loudest sample hits ~0.99 (no clipping, max headroom use)
   function normalizeClip(clip){const b=clip.buffer;let peak=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a;}}
     if(peak<1e-5){toast('Traccia silenziosa: niente da normalizzare');return;}
@@ -1634,7 +1647,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const clipData=[];
     for(const c of clips){clipData.push({name:c.name,muted:!!c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,
       t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),
-      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
+      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),bpm:(c.bpm||bpm),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
     // grid tracks with all nodes (note/pulsar/kick/snare)
     const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,drumKit:tr.drumKit||'pop',
       nodes:tr.nodes.map(n=>({x:n.x,y:n.y,type:n.type}))}));
@@ -1661,7 +1674,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       let ab;if(cd.wavB64)ab=base64ToAb(cd.wavB64);else if(cd.wav)ab=await cd.wav.arrayBuffer();else continue;
       const buf=await audio.decodeAudioData(ab);clipCounter++;
       const clip={buffer:buf,name:cd.name,muted:!!cd.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,
-        vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),
+        vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),bpm:(cd.bpm||bpm),
         color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,
         fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop};
       clips.push(clip);}catch(e){}}
