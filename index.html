@@ -672,13 +672,28 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     return out;}
   // Sample-accurate offline render of the pattern. First hit at sample 0, exact length = bars*barDur.
   // Tail beyond the end is wrapped (summed) to the start so loops are seamless.
+  // #2 Build an offline bus that mirrors the LIVE global delay+reverb sends, so exported
+  // sequencer/drum clips carry the same effects you heard. Returns the node to feed sounds into.
+  function offlineGlobalFxBus(off){
+    const inBus=off.createGain();const dest=off.destination;
+    inBus.connect(dest); // dry
+    // reverb send (current global level)
+    const rw=REV_LEVELS[revLevel].w;
+    if(rw>0){const rev=off.createConvolver();rev.buffer=reverb.buffer;const rg=off.createGain();rg.gain.value=rw;inBus.connect(rev);rev.connect(rg);rg.connect(dest);}
+    // delay send (current global level)
+    const dl=DELAY_LEVELS[delayLevel];
+    if(dl.wet>0){const d=off.createDelay(2.0);d.delayTime.value=(60/bpm)*0.75;const df=off.createBiquadFilter();df.type='lowpass';df.frequency.value=3000;const fb=off.createGain();fb.gain.value=dl.fb;const wet=off.createGain();wet.gain.value=dl.wet;
+      inBus.connect(d);d.connect(df);df.connect(fb);fb.connect(d);df.connect(wet);wet.connect(dest);}
+    return inBus;
+  }
   async function renderPatternExact(bars){const rate=audio.sampleRate;const barDur=beatInterval()*4;const stepDur=seqStepDur();
-    const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(1.0*rate); // 1s tail room for decays
+    const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(2.5*rate); // room for fx tails
     const off=new OfflineAudioContext(2,targetLen+tailLen,rate);
+    const fxBus=offlineGlobalFxBus(off);
     // noise buffer must belong to the offline context
     const nlen=Math.floor(rate*1.0),nb=off.createBuffer(1,nlen,rate);{const d=nb.getChannelData(0);for(let i=0;i<nlen;i++)d[i]=Math.random()*2-1;}
     const _kit=(tracks[activeTrack]&&tracks[activeTrack].drumKit)||'pop';
-    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,off.destination,nb,_kit);}}}
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,fxBus,nb,_kit);}}}
     const rendered=await off.startRendering();
     const out=audio.createBuffer(2,targetLen,rate);
     for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
@@ -757,8 +772,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       g.gain.setValueAtTime(.5,now);g.gain.exponentialRampToValueAtTime(.0008,now+1.8);o1.start(now);o2.start(now);o1.stop(now+1.9);o2.stop(now+1.9);}
   }
   async function renderMelodyExact(bars){const rate=audio.sampleRate;const barDur=beatInterval()*4;const stepDur=seqStepDur();
-    const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(2.0*rate);
-    const off=new OfflineAudioContext(2,targetLen+tailLen,rate);const mg=off.createGain();mg.gain.value=0.9;mg.connect(off.destination);
+    const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(2.5*rate);
+    const off=new OfflineAudioContext(2,targetLen+tailLen,rate);const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.9;mg.connect(fxBus);
     const instr=melInstr();
     for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;
       for(let r=0;r<melRows;r++){if(melPattern[r][s])renderToneOffline(off,mg,instr,midiToFreq(melMidiForRow(r)),when);}}}
@@ -939,8 +954,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function loop(){const now=audio?audio.currentTime:0;
     if(playing&&audio&&now-lastPulseTime>=beatInterval()){lastPulseTime=now;firePulsars();}
     beatFlash*=0.85;
-    if(seqOn&&audio&&now-seqLastTime>=seqStepDur()){seqLastTime=now;seqTick();}
-    if(melOn&&audio&&now-melLastTime>=seqStepDur()){melLastTime=now;melTick();}
+    if(seqOn&&audio&&now-seqLastTime>=seqStepDur()){seqLastTime+=seqStepDur();if(now-seqLastTime>seqStepDur()*2)seqLastTime=now;seqTick();}
+    if(melOn&&audio&&now-melLastTime>=seqStepDur()){melLastTime+=seqStepDur();if(now-melLastTime>seqStepDur()*2)melLastTime=now;melTick();}
     const speed=520;for(let i=impulses.length-1;i>=0;i--){const im=impulses[i];im.travelled+=speed/60;const p=clamp(im.travelled/im.dist,0,1);im.x=im.sx+(im.tx-im.sx)*p;im.y=im.sy+(im.ty-im.sy)*p;if(p>=1){playNodeInstrument(im.target);impulses.splice(i,1);}}
     if(W>0)draw();requestAnimationFrame(loop);}
   function drawGrid(){if(!showGrid)return;const tr=tracks[activeTrack],instr=tr.instr;ctx.save();ctx.font='bold 12px -apple-system,sans-serif';ctx.textBaseline='middle';
