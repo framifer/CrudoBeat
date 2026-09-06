@@ -350,7 +350,6 @@
   <button class="btn icon" id="micBtn" title="Microfono">🎤</button>
   <select class="sel" id="micSel" title="Microfono di ingresso"><option value="">Mic: predefinito</option></select>
   <button class="btn" id="micEchoBtn" title="Anti-rientro (cancella l'eco degli altoparlanti): attiva se registri senza cuffie">🎧 Anti-rientro: off</button>
-  <button class="btn" id="micMuteBtn" title="Muta le altre tracce mentre registri col microfono">🔇 Muta tracce: on</button>
 </div>
 
 <script>
@@ -1090,7 +1089,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function refreshClipsView(){buildStudio();}
 
   // ---- Unified transport ----
-  let transportOn=true,transportT0=0,transportPos=0; // pos in seconds
+  let transportOn=false,transportT0=0,transportPos=0; // pos in seconds
   function stopAllTransport(){for(const c of clips)stopClipPlayback(c);transportOn=false;allPlayBtn.textContent='▶';}
   function playAll(){resumeAudio();
     if(timelineView){transportOn=true;transportT0=audio.currentTime-transportPos;allPlayBtn.textContent='❚❚';scheduleTimeline();}
@@ -1108,9 +1107,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(wasPlaying){transportOn=true;transportT0=audio.currentTime-transportPos;if(timelineView){scheduleTimeline();}else{loopStart=audio.currentTime;for(const c of clips){if(!c.paused)startClipPlayback(c);}}allPlayBtn.textContent='❚❚';}
     else{transportOn=false;}
   }
-  allPlayBtn.addEventListener('click',()=>{if(transportOn)pauseAll();else playAll();});
-  document.getElementById('allPauseBtn').addEventListener('click',pauseAll);
-  document.getElementById('allStopBtn').addEventListener('click',stopAll);
+  allPlayBtn.addEventListener('click',()=>{try{if(transportOn)pauseAll();else playAll();}catch(err){toast('Errore Play: '+(err&&err.message||err));}});
+  document.getElementById('allPauseBtn').addEventListener('click',()=>{try{pauseAll();}catch(err){toast('Errore Pausa: '+(err&&err.message||err));}});
+  document.getElementById('allStopBtn').addEventListener('click',()=>{try{stopAll();}catch(err){toast('Errore Stop: '+(err&&err.message||err));}});
   document.getElementById('addTrackBtn').addEventListener('click',addEmptyTrack);
   document.getElementById('gUndoBtn').addEventListener('click',globalUndo);
   document.getElementById('gRedoBtn').addEventListener('click',globalRedo);
@@ -1122,20 +1121,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(c.loop){
         // looping clip: start once we've reached (or passed) its start point
         if(pos>=at){
-          const src=audio.createBufferSource();src.buffer=c.buffer;src.loop=true;src.loopStart=ts;src.loopEnd=te;const g=audio.createGain();g.gain.value=1;clip_connectOnce(c,src,g);
+          const src=audio.createBufferSource();src.buffer=c.buffer;src.loop=true;src.loopStart=ts;src.loopEnd=te;const g=audio.createGain();g.gain.value=1;c.gain=g;clip_connectOnce(c,src,g);
           let off=ts;if(dur>0&&pos>at)off=ts+((pos-at)%dur+dur)%dur;
-          src.start(now,off);c.source=src;c.gain=g;c._tlScheduled=true;
+          src.start(now,off);c.source=src;c._tlScheduled=true;
         }
       }else{
         // one-shot clip: schedule if it starts within the look-ahead window, OR
         // if a dropped frame put us just past its start but it's still playing (recover with offset)
         if(dur>0&&at<=pos+SCHED_AHEAD&&pos<at+dur){
-          const src=audio.createBufferSource();src.buffer=c.buffer;const g=audio.createGain();g.gain.value=1;clip_connectOnce(c,src,g);
+          const src=audio.createBufferSource();src.buffer=c.buffer;const g=audio.createGain();g.gain.value=1;c.gain=g;clip_connectOnce(c,src,g);
           const startAt=transportT0+at;         // absolute audio-clock time this clip should begin
           const into=Math.max(0,now-startAt);   // if we're already past it, skip into the buffer
           const off=ts+into;
           src.start(Math.max(now,startAt),off,Math.max(0.01,dur-into)); // play only the trimmed length
-          c.source=src;c.gain=g;c._tlScheduled=true;src.onended=()=>{c._tlScheduled=false;};
+          c.source=src;c._tlScheduled=true;src.onended=()=>{c._tlScheduled=false;};
         }
       }
     }
@@ -1143,6 +1142,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function clip_connectOnce(clip,src,g){const inNode=buildClipChain(clip);src.connect(inNode);connectClipOutput(clip,dryGain);}
 
   function updatePlaybar(){
+   try{
     if(timelineView){
       const dur=projectDuration()||1;const pos=transportOn?(audio.currentTime-transportT0):transportPos;
       if(transportOn&&pos>=dur){pauseAll();transportPos=0;}
@@ -1164,7 +1164,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const pos=((audio?audio.currentTime:0)-(loopStart||0));const ph=((pos%cycle)+cycle)%cycle;
       playfill.style.width=(ph/cycle*100)+'%';playlbl.textContent=(ph).toFixed(1)+'s / '+cycle.toFixed(1)+'s';
     }else{playfill.style.width='0%';playlbl.textContent=clips.length?(transportOn?'':'in pausa'):'';}
-    requestAnimationFrame(updatePlaybar);
+   }catch(err){if(!window._pbErr){window._pbErr=1;toast('Errore playbar: '+(err&&err.message||err));}}
+   requestAnimationFrame(updatePlaybar);
   }
   requestAnimationFrame(updatePlaybar);
   // fit a recorded buffer to exact loop length, compensating latency (shift audio earlier)
@@ -1326,9 +1327,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const CAPTURE_BUF=2048; // ScriptProcessor block size (samples). Smaller = lower latency, but riskier for glitches
   // Real device latency: output latency + one capture block. Far more accurate than a fixed guess.
   function measuredLatencyMs(){if(!audio)return 20;const base=audio.baseLatency||0,out=audio.outputLatency||0;return Math.round((base+out)*1000);}
-  function startCapture(){const proc=audio.createScriptProcessor(CAPTURE_BUF,2,2);const L=[],R=[];dryGain.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
+  function startCapture(){const proc=audio.createScriptProcessor(CAPTURE_BUF,2,2);const L=[],R=[];master.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(1)));};capture={proc,L,R,silent};}
-  function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{dryGain.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
+  function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{master.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
     let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}capture=null;return buf;}
   function addClip(buffer,name,atTime,newLane){pushGlobal();clipCounter++;
     const lane=newLane?((clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1):clips.length;
@@ -1554,27 +1555,27 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // clip zoom buttons in the wave area header (feature 3) — add small +/- in saverow area via keyboard/pinch too
   looperEl.addEventListener('wheel',(e)=>{if(e.ctrlKey){e.preventDefault();clipZoom=clamp(clipZoom*(e.deltaY<0?1.12:0.9),1,8);buildStudio();}},{passive:false});
 
-  let loopStopTimer=null,recStart=0;
+  let loopStopTimer=null,recStart=0,recClipPos=0;
   function finishLoopRec(){const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(loopStopTimer){clearTimeout(loopStopTimer);loopStopTimer=null;}
     if(buf&&buf.length>1000){const fitted=fitToLoop(buf);addClip(fitted);}else toast('Clip troppo breve');}
   recBtn.addEventListener('click',()=>{resumeAudio();
     if(!recording){
       doPreroll(()=>{startCapture();recording=true;recBtn.classList.add('armed');recBtn.textContent='■';
+        recClipPos=transportPos; // remember where recording started, to place the clip there
+        if(!transportOn)playAll(); // overdub: hear existing tracks from the playhead while recording
         if(loopMode){if(loopStart===null)loopStart=audio.currentTime;recStart=audio.currentTime;toast('Loop… '+loopDur().toFixed(2)+'s');loopStopTimer=setTimeout(finishLoopRec,loopDur()*1000);}
-        else{toast('Registrazione… suona!');}
+        else{toast('Registrazione… (senti le tracce sotto)');}
       });
     }else{
       if(loopMode){finishLoopRec();}
-      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(processRec(buf),null,transportPos,true);else toast('Clip troppo breve');}
+      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(transportOn)pauseAll();if(buf&&buf.length>1000)addClip(processRec(buf),null,recClipPos,true);else toast('Clip troppo breve');}
     }});
 
   // ---------- Microphone ----------
   let micRecording=false,micStream=null,micNode=null,micCapture=null;
-  let micEcho=false,micMuteOthers=true,_micPrevMaster=null;
-  const micEchoBtn=document.getElementById('micEchoBtn'),micMuteBtn=document.getElementById('micMuteBtn');
+  let micEcho=false,micClipPos=0;
+  const micEchoBtn=document.getElementById('micEchoBtn');
   micEchoBtn.addEventListener('click',()=>{micEcho=!micEcho;micEchoBtn.classList.toggle('on',micEcho);micEchoBtn.textContent='🎧 Anti-rientro: '+(micEcho?'on':'off');toast(micEcho?'Anti-rientro ON (per registrare senza cuffie)':'Anti-rientro OFF (usa le cuffie per la max qualità)');});
-  micMuteBtn.classList.add('on');
-  micMuteBtn.addEventListener('click',()=>{micMuteOthers=!micMuteOthers;micMuteBtn.classList.toggle('on',micMuteOthers);micMuteBtn.textContent='🔇 Muta tracce: '+(micMuteOthers?'on':'off');toast(micMuteOthers?'Le altre tracce saranno mutate durante la reg. mic':'Le altre tracce suoneranno durante la reg. mic');});
   const micSel=document.getElementById('micSel');let selectedMicId='';
   async function refreshMicList(){try{const devs=await navigator.mediaDevices.enumerateDevices();const mics=devs.filter(d=>d.kind==='audioinput');
     micSel.innerHTML='<option value="">🎤 Mic: predefinito</option>';mics.forEach((m,i)=>{const o=document.createElement('option');o.value=m.deviceId;o.textContent='🎤 '+(m.label||('Microfono '+(i+1)));if(m.deviceId===selectedMicId)o.selected=true;micSel.appendChild(o);});}catch(e){}}
@@ -1603,13 +1604,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     micNode.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(ev.inputBuffer.numberOfChannels>1?1:0)));};
     micCapture={proc,L,R,silent};micRecording=true;micBtn.classList.add('on');micBtn.textContent='■';
-    // #A auto-mute: silence the mix bus so the mic doesn't recapture other tracks from the speakers
-    if(micMuteOthers&&masterBus){_micPrevMaster=masterBus.gain.value;masterBus.gain.setTargetAtTime(0,audio.currentTime,0.02);}
-    toast(micMuteOthers?'Microfono: registro (altre tracce mutate)':'Microfono: registro SOLO il mic');}
+    // Overdub: hear existing tracks from the playhead while recording the mic (use headphones to avoid bleed)
+    micClipPos=transportPos;if(!transportOn)playAll();
+    toast('Microfono: registro (senti le tracce sotto — usa le cuffie)');}
   function stopMic(){if(!micCapture)return;const{proc,L,R,silent}=micCapture;proc.disconnect();silent.disconnect();try{micNode.disconnect();}catch(e){}proc.onaudioprocess=null;
-    if(micMuteOthers&&masterBus&&_micPrevMaster!=null){masterBus.gain.setTargetAtTime(_micPrevMaster,audio.currentTime,0.02);_micPrevMaster=null;}
+    if(transportOn)pauseAll();
     if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}micNode=null;let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);
-    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(processRec(buf),'Mic '+(clipCounter+1),transportPos,true);else toast('Reg. mic troppo breve');}
+    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(processRec(buf),'Mic '+(clipCounter+1),micClipPos,true);else toast('Reg. mic troppo breve');}
   micBtn.addEventListener('click',()=>{if(!micRecording)startMic();else stopMic();});
   // populate mic list on load + when devices change (USB-C hub plugged/unplugged)
   if(navigator.mediaDevices){refreshMicList();navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',refreshMicList);}
