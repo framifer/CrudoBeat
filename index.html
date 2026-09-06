@@ -305,6 +305,7 @@
     <button id="seqToClip" title="Registra il pattern come traccia audio">⤓ Traccia</button>
     <select id="seqBars" title="Battute da registrare"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="seqBpmDown" title="BPM −">♩−</button><span id="seqBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="seqBpmUp" title="BPM +">♩+</button>
+    <select id="seqKitSel" title="Tipo di batteria"><option value="pop">Pop</option><option value="acoustic">Acustica</option><option value="electro">Elettrica</option></select>
     <button id="seqClose" title="Chiudi">✕</button>
   </div>
   <div id="seqGrid"></div>
@@ -316,6 +317,8 @@
     <button id="melPlay" title="Play/Stop melodia">▶</button>
     <button id="melClear" title="Svuota">🗑</button>
     <button id="melRand" title="Genera riff casuale">🎲</button>
+    <button id="melChordBtn" title="Genera seguendo una progressione di accordi (per tracce coerenti)">🎼</button>
+    <select id="melProgSel" title="Progressione di accordi" style="display:none"><option value="I-V-vi-IV">I-V-vi-IV</option><option value="vi-IV-I-V">vi-IV-I-V</option><option value="ii-V-I">ii-V-I</option><option value="I-vi-IV-V">I-vi-IV-V</option><option value="last">Ultima usata</option></select>
     <button id="melToClip" title="Registra come traccia audio">⤓ Traccia</button>
     <select id="melBars" title="Battute"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="melBpmDown" title="BPM −">♩−</button><span id="melBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="melBpmUp" title="BPM +">♩+</button>
@@ -393,7 +396,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   // ---------- Audio ----------
   const AC=window.AudioContext||window.webkitAudioContext;
-  let audio=null,master=null,reverb=null,reverbWet=null,dryGain=null;
+  let audio=null,master=null,reverb=null,reverbWet=null,dryGain=null,instrFxBus=null;
   let masterBus=null,masterLimiter=null,masterVol=0.9,limiterOn=true;
   let delayNode=null,delayFb=null,delayWet=null,delayFilter=null,delaySendBus=null,delayLevel=0;
   let metroGain=null,noiseBuffer=null;
@@ -412,7 +415,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     master.connect(delaySendBus);delaySendBus.connect(delayNode);
     delayNode.connect(delayFilter);delayFilter.connect(delayFb);delayFb.connect(delayNode);delayFilter.connect(delayWet);
     master.connect(reverb);reverb.connect(reverbWet);
-    master.connect(dryGain);delayWet.connect(dryGain);reverbWet.connect(dryGain);
+    // instrFxBus = instruments (dry) + their global delay/reverb, separate from recorded tracks.
+    // Used for recording so LIVE grid recordings carry the effects, without capturing existing tracks.
+    instrFxBus=audio.createGain();
+    master.connect(instrFxBus);delayWet.connect(instrFxBus);reverbWet.connect(instrFxBus);
+    instrFxBus.connect(dryGain);
     // ---- Master bus: dryGain -> masterBus(volume) -> limiter(optional) -> destination ----
     masterBus=audio.createGain();masterBus.gain.value=masterVol;
     masterLimiter=audio.createDynamicsCompressor();
@@ -660,7 +667,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function highlightSeqStep(st){const cells=seqGrid.querySelectorAll('.cell');cells.forEach(c=>{c.classList.toggle('playing',+c.dataset.s===st);});}
   function seqTick(){for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][seqStep])playDrumKind(SEQ_ROWS[r]);}highlightSeqStep(seqStep);seqStep=(seqStep+1)%SEQ_STEPS;}
   const seqBtn=document.getElementById('seqBtn');
-  seqBtn.addEventListener('click',()=>{resumeAudio();const showing=seqPanel.classList.toggle('show');seqBtn.classList.toggle('on',showing);if(showing)buildSeqGrid();});
+  seqBtn.addEventListener('click',()=>{resumeAudio();const showing=seqPanel.classList.toggle('show');seqBtn.classList.toggle('on',showing);if(showing){buildSeqGrid();const ks=document.getElementById('seqKitSel');if(ks)ks.value=tracks[activeTrack].drumKit||'pop';}});
   document.getElementById('seqClose').addEventListener('click',()=>{seqPanel.classList.remove('show');seqBtn.classList.remove('on');});
   const seqPlayBtn=document.getElementById('seqPlay');
   seqPlayBtn.addEventListener('click',()=>{resumeAudio();seqOn=!seqOn;seqPlayBtn.classList.toggle('on',seqOn);seqPlayBtn.textContent=seqOn?'❚❚':'▶';if(seqOn){seqStep=0;seqLastTime=audio.currentTime-seqStepDur();}else highlightSeqStep(-1);});
@@ -785,7 +792,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function melExportToTrack(){resumeAudio();
     if(melPattern.every(row=>row.every(v=>!v))){toast('Melodia vuota');return;}
     const bars=parseInt(document.getElementById('melBars').value,10)||1;
-    try{toast('Rendering melodia '+bars+' battut'+(bars>1?'e':'a')+'…');const buf=await renderMelodyExact(bars);addClip(buf,'Riff '+(clipCounter+1),transportPos,true);toast('Riff esportato (loop preciso)');}
+    try{toast('Rendering melodia '+bars+' battut'+(bars>1?'e':'a')+'…');const buf=await renderMelodyExact(bars);addClip(buf,'Riff '+(clipCounter+1),transportPos,true);
+      if(chordMode){lastUsedProg=(chordProg==='last'?(lastUsedProg||'I-V-vi-IV'):chordProg);}  // remember only when committed to a track
+      toast('Riff esportato (loop preciso)');}
     catch(e){toast('Errore rendering: '+e.message);}
   }
   document.getElementById('melToClip').addEventListener('click',melExportToTrack);
@@ -825,9 +834,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     else if(chance(.3)){clap[12]=true;}
     return P;
   }
+  // ---- Chord progressions (scale-degree roots, 0-based: I=0 ii=1 iii=2 IV=3 V=4 vi=5) ----
+  const PROGRESSIONS={'I-V-vi-IV':[0,4,5,3],'vi-IV-I-V':[5,3,0,4],'ii-V-I':[1,4,0,0],'I-vi-IV-V':[0,5,3,4]};
+  let chordMode=false, chordProg='I-V-vi-IV', lastUsedProg=null;
+  function currentProgRoots(){if(chordProg==='last'&&lastUsedProg)return PROGRESSIONS[lastUsedProg]||PROGRESSIONS['I-V-vi-IV'];return PROGRESSIONS[chordProg]||PROGRESSIONS['I-V-vi-IV'];}
   // Riff: array of {step,degree} within the scale, motif-based for musicality.
   function randomRiff(genre){
     const notes=[];
+    if(chordMode){ // follow a chord progression: one chord per 4 steps, notes on chord tones
+      const roots=currentProgRoots();const range=Math.min(SCALE_LEN*2,TOTAL_STEPS-1);
+      for(let bar=0;bar<4;bar++){const root=roots[bar%roots.length];const tones=[root,root+2,root+4].map(d=>clamp(d,0,range));
+        for(let i=0;i<4;i++){const s=bar*4+i;if(chance(.8)){const d=tones[i%tones.length];notes.push({step:s,degree:d});}}}
+      if(!notes.length)notes.push({step:0,degree:0});
+      return notes;
+    }
     if(genre==='Electro'){ // fast 16th arpeggio over chord tones (root/3rd/5th/octave) — Justice/CC vibe
       const range=Math.min(SCALE_LEN*2,TOTAL_STEPS-1);
       // chord tones as scale-degree offsets from a random root degree
@@ -902,6 +922,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('randRiffBtn').addEventListener('click',()=>openRandomizer('riff'));
   document.getElementById('seqRandBtn').addEventListener('click',()=>openRandomizer('beat'));
   document.getElementById('melRand').addEventListener('click',()=>openRandomizer('riff'));
+  (function(){const cb=document.getElementById('melChordBtn'),ps=document.getElementById('melProgSel');
+    if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
+    if(ps)ps.addEventListener('change',()=>{chordProg=ps.value;toast('Progressione: '+(chordProg==='last'?(lastUsedProg||'nessuna ancora'):chordProg));});})();
 
   // ---------- Interaction ----------
   const toolsEl=document.getElementById('tools');let tool='live';
@@ -1050,7 +1073,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function setInstrument(instr){tracks[activeTrack].instr=instr;resumeAudio();refreshInstrSwitch();if(melPanel.classList.contains('show'))buildMelGrid();
     const lbl=(FAMILIES[famOf(instr)]||[]).find(v=>v[0]===instr);toast('→ '+(lbl?lbl[1]:instr));}
   function setDrumKit(kit){tracks[activeTrack].instr='drums';tracks[activeTrack].drumKit=kit;resumeAudio();refreshInstrSwitch();
+    const ks=document.getElementById('seqKitSel');if(ks)ks.value=kit;
     const lbl=(FAMILIES.drums.find(v=>v[0]===kit)||[])[1];toast('Drums: '+(lbl||kit));}
+  (function(){const ks=document.getElementById('seqKitSel');if(ks)ks.addEventListener('change',()=>setDrumKit(ks.value));})();
   function refreshInstrSwitch(){const cur=tracks[activeTrack].instr;const curFam=famOf(cur);const isDrums=(cur==='drums');const curKit=tracks[activeTrack].drumKit||'pop';
     [...instrEl.children].forEach(c=>{if(!c.dataset.instr&&!c.dataset.fam)return;
       const active=(c.dataset.fam?(c.dataset.fam==='drums'?isDrums:c.dataset.fam===curFam):c.dataset.instr===cur);c.classList.toggle('active',active);
@@ -1451,9 +1476,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const CAPTURE_BUF=2048; // ScriptProcessor block size (samples). Smaller = lower latency, but riskier for glitches
   // Real device latency: output latency + one capture block. Far more accurate than a fixed guess.
   function measuredLatencyMs(){if(!audio)return 20;const base=audio.baseLatency||0,out=audio.outputLatency||0;return Math.round((base+out)*1000);}
-  function startCapture(){const proc=audio.createScriptProcessor(CAPTURE_BUF,2,2);const L=[],R=[];master.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
+  function startCapture(){const proc=audio.createScriptProcessor(CAPTURE_BUF,2,2);const L=[],R=[];instrFxBus.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(1)));};capture={proc,L,R,silent};}
-  function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{master.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
+  function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{instrFxBus.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
     let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}capture=null;return buf;}
   function addClip(buffer,name,atTime,newLane){pushGlobal();clipCounter++;
     const lane=newLane?((clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1):clips.length;
