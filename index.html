@@ -247,7 +247,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="40"><span id="latVal">40ms</span></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -294,6 +294,7 @@
 <div id="toast"></div>
 
 <div id="loadDlg"><div id="loadBox"><h3>📂 Carica progetto</h3><div id="prjList"></div><button class="close" id="loadClose">Chiudi</button></div></div>
+<input type="file" id="importFile" accept=".crudo,application/json" style="display:none" />
 
 <div id="askDlg"><div id="loadBox"><h3 id="askTitle"></h3><input id="askInput" type="text" style="width:100%;box-sizing:border-box;border:2px solid var(--red2);border-radius:8px;padding:8px;font-size:14px;font-weight:800;color:var(--ink);background:#fff8ea;margin-bottom:8px;display:none"><div style="display:flex;gap:8px"><button id="askCancel" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:36px;font-weight:800;cursor:pointer">Annulla</button><button id="askOk" style="flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:9px;height:36px;font-weight:800;cursor:pointer">OK</button></div></div></div>
 
@@ -1010,6 +1011,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function bufferToWav(buffer){const len=buffer.length,rate=buffer.sampleRate;const l=buffer.getChannelData(0),r=buffer.numberOfChannels>1?buffer.getChannelData(1):l;const inter=new Float32Array(len*2);for(let i=0,j=0;i<len;i++){inter[j++]=l[i];inter[j++]=r[i];}
     const ab=new ArrayBuffer(44+inter.length*2),view=new DataView(ab);const ws=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};let o=0;ws(o,'RIFF');o+=4;view.setUint32(o,36+inter.length*2,true);o+=4;ws(o,'WAVE');o+=4;ws(o,'fmt ');o+=4;view.setUint32(o,16,true);o+=4;view.setUint16(o,1,true);o+=2;view.setUint16(o,2,true);o+=2;view.setUint32(o,rate,true);o+=4;view.setUint32(o,rate*4,true);o+=4;view.setUint16(o,4,true);o+=2;view.setUint16(o,16,true);o+=2;ws(o,'data');o+=4;view.setUint32(o,inter.length*2,true);o+=4;for(let i=0;i<inter.length;i++,o+=2){let s=Math.max(-1,Math.min(1,inter[i]));view.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);}return new Blob([view],{type:'audio/wav'});}
   function download(blob,fn){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
+  // base64 <-> ArrayBuffer helpers for portable single-file project export
+  function abToBase64(ab){const bytes=new Uint8Array(ab);let bin='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));}return btoa(bin);}
+  function base64ToAb(b64){const bin=atob(b64);const len=bin.length;const bytes=new Uint8Array(len);for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);return bytes.buffer;}
+  async function blobToBase64(blob){const ab=await blob.arrayBuffer();return abToBase64(ab);}
+  function projFileName(name){const safe=(name||'progetto').replace(/[^\w\-]+/g,'_');const d=new Date(),p=(n)=>String(n).padStart(2,'0');return`crudobeat-${safe}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}.crudo`;}
   function fileName(suffix){const d=new Date(),p=(n)=>String(n).padStart(2,'0');return`crudobeat-${suffix||'mix'}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.wav`;}
 
   // ---- Export single clip (feature 4) ----
@@ -1217,28 +1223,122 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function dbAll(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readonly');const rq=tx.objectStore(DB_STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
   async function storageInfo(){try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();const mb=(n)=>Math.round(n/1048576);return ' • '+mb(e.usage)+'/'+mb(e.quota)+' MB usati';}}catch(e){}return '';}
 
+  // ---- Full project serialization (clips + audio + grid + drum machine + all settings) ----
+  const PROJECT_VERSION=1;
+  async function collectProject(name){
+    // clips: audio as base64 WAV + every per-clip setting
+    const clipData=[];
+    for(const c of clips){clipData.push({name:c.name,muted:!!c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,
+      t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),
+      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
+    // grid tracks with all nodes (note/pulsar/kick/snare)
+    const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,
+      nodes:tr.nodes.map(n=>({x:n.x,y:n.y,type:n.type}))}));
+    return {
+      _crudo:true,version:PROJECT_VERSION,name,ts:Date.now(),
+      clips:clipData,
+      grid:{tracks:gridTracks,activeTrack:activeTrack},
+      drum:{pattern:seqPattern.map(row=>row.slice()),bars:parseInt((document.getElementById('seqBars')||{}).value||'1',10)},
+      settings:{
+        bpm:bpm,key:currentKey,scale:currentScaleName,gridZoom:gridZoom,clipZoom:clipZoom,
+        timelineView:timelineView,loopMode:loopMode,snapRec:snapRec,
+        masterVol:masterVol,limiterOn:limiterOn,latencyMs:latencyMs,
+        laneNames:Object.assign({},laneNames),
+        synth:{wave:synthWave,cut:synthCutoff,q:synthQ,drive:synthDrive}
+      }
+    };
+  }
+  async function applyProject(p){
+    resumeAudio();
+    // stop & clear current clips
+    for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;
+    // clips (supports new wavB64 and legacy Blob wav)
+    for(const cd of (p.clips||[])){try{
+      let ab;if(cd.wavB64)ab=base64ToAb(cd.wavB64);else if(cd.wav)ab=await cd.wav.arrayBuffer();else continue;
+      const buf=await audio.decodeAudioData(ab);clipCounter++;
+      const clip={buffer:buf,name:cd.name,muted:!!cd.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,
+        vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),
+        color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,
+        fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop};
+      clips.push(clip);}catch(e){}}
+    // grid
+    if(p.grid&&p.grid.tracks){for(let i=0;i<tracks.length&&i<p.grid.tracks.length;i++){const gt=p.grid.tracks[i];
+      tracks[i].instr=gt.instr||tracks[i].instr;tracks[i].oct=gt.oct||0;tracks[i].muted=!!gt.muted;
+      tracks[i].nodes=(gt.nodes||[]).map(n=>({x:n.x,y:n.y,type:n.type,flash:0,track:i}));}
+      if(p.grid.activeTrack!=null)activeTrack=clamp(p.grid.activeTrack,0,tracks.length-1);}
+    // drum machine
+    if(p.drum&&p.drum.pattern){for(let r=0;r<seqPattern.length&&r<p.drum.pattern.length;r++){for(let s=0;s<seqPattern[r].length;s++)seqPattern[r][s]=!!p.drum.pattern[r][s];}
+      const sb=document.getElementById('seqBars');if(sb&&p.drum.bars)sb.value=String(p.drum.bars);}
+    // settings
+    const st=p.settings||{};
+    if(st.bpm)setBpm(st.bpm);
+    if(st.key){currentKey=st.key;const ks=document.getElementById('keySel');if(ks)ks.value=currentKey;}
+    if(st.scale){currentScaleName=st.scale;const ss=document.getElementById('scaleSel');if(ss)ss.value=currentScaleName;}
+    if(st.gridZoom){gridZoom=st.gridZoom;}
+    refreshScale();
+    if(st.clipZoom)clipZoom=st.clipZoom;
+    if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');}
+    if(st.loopMode!=null&&st.loopMode!==loopMode){loopMode=st.loopMode;modeBtn.classList.toggle('on',loopMode);modeBtn.textContent=loopMode?'Loop 8':'Libera';}
+    if(st.masterVol!=null){masterVol=st.masterVol;const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
+    if(st.limiterOn!=null){limiterOn=st.limiterOn;limiterBtn.classList.toggle('on',limiterOn);rewireMaster();}
+    if(st.latencyMs!=null){latencyMs=st.latencyMs;const ls=document.getElementById('latSlider'),lv=document.getElementById('latVal');if(ls)ls.value=latencyMs;if(lv)lv.textContent=latencyMs+'ms';}
+    for(const k in laneNames)delete laneNames[k];Object.assign(laneNames,st.laneNames||{});
+    if(st.synth){synthWave=st.synth.wave||synthWave;synthCutoff=st.synth.cut||synthCutoff;synthQ=st.synth.q||synthQ;synthDrive=st.synth.drive!=null?st.synth.drive:synthDrive;syncSynthUI&&syncSynthUI();}
+    // view last (rebuilds UI)
+    if(st.timelineView!=null){timelineView=st.timelineView;viewBtn.textContent=timelineView?'S':'V';}
+    refreshInstrSwitch();refreshOct();
+    // start playback of clips per current view
+    for(const c of clips)startClipPlayback(c);
+    splitMode=true;looperHidden=false;applyLayout();refreshView();
+  }
+
   async function saveProject(){resumeAudio();
     let name=currentProject.name;let count=0;try{count=(await dbAll()).length;}catch(e){}
     name=await askText('Nome del progetto:',name||('Progetto '+(count+1)));if(!name)return;
     toast('Salvataggio…');
-    // store clips as binary WAV Blobs (no base64 bloat)
-    const clipData=clips.map(c=>({name:c.name,muted:c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),wav:bufferToWav(c.buffer)}));
-    try{await dbPut({name,ts:Date.now(),clips:clipData});currentProject.name=name;refreshProjName();
-      toast('Progetto "'+name+'" salvato ('+clipData.length+' tracce)'+await storageInfo());}
+    try{const proj=await collectProject(name);await dbPut(proj);currentProject.name=name;refreshProjName();
+      toast('Progetto "'+name+'" salvato ('+proj.clips.length+' tracce)'+await storageInfo());}
     catch(e){toast('Salvataggio fallito: '+(e&&e.name==='QuotaExceededError'?'quota dispositivo piena':e.message));}
   }
   async function loadProject(name){resumeAudio();let p;try{p=await dbGet(name);}catch(e){}if(!p)return;
-    for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;
-    for(const cd of p.clips){try{const ab=await cd.wav.arrayBuffer();const buf=await audio.decodeAudioData(ab);clipCounter++;
-      const clip={buffer:buf,name:cd.name,muted:cd.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop};clips.push(clip);startClipPlayback(clip);}catch(e){}}
-    currentProject.name=name;refreshProjName();splitMode=true;looperHidden=false;applyLayout();refreshView();closeLoad();toast('Progetto "'+name+'" caricato');}
+    await applyProject(p);
+    currentProject.name=name;refreshProjName();closeLoad();toast('Progetto "'+name+'" caricato');}
   function newProject(){for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;loopStart=null;currentProject.name=null;refreshProjName();refreshView();}
 
   document.getElementById('saveBtn').addEventListener('click',saveProject);
+  // ---- Export / Import full project as a single portable .crudo file (works in browser and APK) ----
+  async function exportProjectFile(){resumeAudio();
+    if(!clips.length&&tracks.every(t=>!t.nodes.length)){toast('Niente da esportare');return;}
+    const name=currentProject.name||await askText('Nome del progetto da esportare:','Progetto');if(!name)return;
+    toast('Esporto progetto…');
+    try{const proj=await collectProject(name);const json=JSON.stringify(proj);
+      download(new Blob([json],{type:'application/json'}),projFileName(name));
+      toast('Progetto "'+name+'" esportato ('+proj.clips.length+' tracce)');}
+    catch(e){toast('Errore esportazione: '+e.message);}
+  }
+  async function importProjectData(p){
+    if(!p||!p._crudo){toast('File non valido (.crudo)');return;}
+    let name=p.name||'Progetto importato';
+    // (b) add to library; on name collision ask overwrite or rename
+    try{const existing=await dbGet(name);
+      if(existing){const ov=await askConfirm('Esiste già "'+name+'". Sovrascrivere? (Annulla = rinomina)');
+        if(!ov){const nn=await askText('Nuovo nome:',name+' (importato)');if(!nn)return;name=nn;}}
+    }catch(e){}
+    p.name=name;p.ts=Date.now();
+    try{await dbPut(p);}catch(e){toast('Salvataggio import fallito: '+(e&&e.name==='QuotaExceededError'?'memoria piena':e.message));return;}
+    await applyProject(p);currentProject.name=name;refreshProjName();toast('Progetto "'+name+'" importato e aperto');
+  }
+  const importFileEl=document.getElementById('importFile');
+  document.getElementById('exportProjBtn').addEventListener('click',exportProjectFile);
+  document.getElementById('importProjBtn').addEventListener('click',()=>{importFileEl.value='';importFileEl.click();});
+  importFileEl.addEventListener('change',()=>{const f=importFileEl.files&&importFileEl.files[0];if(!f)return;
+    resumeAudio();toast('Importo…');const rd=new FileReader();
+    rd.onload=async()=>{try{const p=JSON.parse(rd.result);await importProjectData(p);}catch(e){toast('File .crudo non leggibile: '+e.message);}};
+    rd.onerror=()=>toast('Errore lettura file');rd.readAsText(f);});
   const loadDlg=document.getElementById('loadDlg'),prjList=document.getElementById('prjList');
   async function openLoad(){let all=[];try{all=await dbAll();}catch(e){}all.sort((a,b)=>b.ts-a.ts);prjList.innerHTML='';
     if(!all.length)prjList.innerHTML='<div style="opacity:.6">Nessun progetto salvato.</div>';
-    all.forEach(p=>{const n=p.name;const row=document.createElement('div');row.className='prj';const pn=document.createElement('span');pn.className='pn';pn.textContent=n+' ('+p.clips.length+' tr.)';row.appendChild(pn);
+    all.forEach(p=>{const n=p.name;const row=document.createElement('div');row.className='prj';const pn=document.createElement('span');pn.className='pn';pn.textContent=n+' ('+((p.clips&&p.clips.length)||0)+' tr.)';row.appendChild(pn);
       const open=document.createElement('button');open.textContent='Apri';open.onclick=()=>loadProject(n);row.appendChild(open);
       const ren=document.createElement('button');ren.textContent='✎';ren.title='Rinomina';ren.onclick=async()=>{const nn=await askText('Nuovo nome:',n);if(nn&&nn!==n){const rec=await dbGet(n);rec.name=nn;await dbPut(rec);await dbDel(n);if(currentProject.name===n){currentProject.name=nn;refreshProjName();}openLoad();}};row.appendChild(ren);
       const del=document.createElement('button');del.textContent='🗑';del.onclick=async()=>{if(await askConfirm('Eliminare "'+n+'"?')){await dbDel(n);openLoad();}};row.appendChild(del);
