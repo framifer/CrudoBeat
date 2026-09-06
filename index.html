@@ -63,8 +63,8 @@
   #octave .oct{width:28px;height:28px;border-radius:7px;border:none;background:var(--red);color:var(--cream);font-size:15px;font-weight:900;cursor:pointer;}
   #octave .octlbl{font-size:9px;font-weight:800;min-width:38px;text-align:center;}
 
-  #synthPanel{position:fixed;right:var(--edge);bottom:calc(120px + env(safe-area-inset-bottom,0px));z-index:11;display:none;flex-direction:column;gap:5px;
-    background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:8px;box-shadow:0 2px 0 var(--red2);width:200px;max-width:calc(100vw - 60px);}
+  #synthPanel{position:fixed;right:var(--edge);top:calc(66px + env(safe-area-inset-top,0px));z-index:11;display:none;flex-direction:column;gap:5px;
+    background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:8px;box-shadow:0 2px 0 var(--red2);width:200px;max-width:calc(100vw - 60px);max-height:calc(100vh - 130px);overflow-y:auto;}
   #synthPanel.show{display:flex;}
   #synthPanel .synthhead{display:flex;align-items:center;gap:6px;width:100%;}
   #synthPanel .synthhead .st{font-size:11px;font-weight:900;color:var(--red2);margin-right:auto;}
@@ -249,7 +249,7 @@
   <div id="looperHead">
     <div class="titrow"><span class="t">🎛 MULTITRACCIA</span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
-    <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="40"><span id="latVal">40ms</span></div>
+    <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
     <div class="playbar" id="playbar"><div class="playfill" id="playfill"></div><div class="playlbl" id="playlbl"></div></div>
   </div>
@@ -703,7 +703,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   tracceBtn.addEventListener('click',()=>{if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();buildClipList();});
 
   // ---- Loop mode + latency compensation ----
-  const LOOP_BEATS=8;let loopMode=false,latencyMs=40,loopStart=null;
+  const LOOP_BEATS=8;let loopMode=false,latencyMs=20,loopStart=null;
   let snapRec=true;
   const snapBtn=document.getElementById('snapBtn');
   snapBtn.classList.add('on');
@@ -924,7 +924,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   const CAPTURE_BUF=2048; // ScriptProcessor block size (samples). Smaller = lower latency, but riskier for glitches
   // Real device latency: output latency + one capture block. Far more accurate than a fixed guess.
-  function measuredLatencyMs(){if(!audio)return 40;const base=audio.baseLatency||0,out=audio.outputLatency||0;const blk=CAPTURE_BUF/audio.sampleRate;return Math.round((base+out+blk)*1000);}
+  function measuredLatencyMs(){if(!audio)return 20;const base=audio.baseLatency||0,out=audio.outputLatency||0;return Math.round((base+out)*1000);}
   function startCapture(){const proc=audio.createScriptProcessor(CAPTURE_BUF,2,2);const L=[],R=[];dryGain.connect(proc);const silent=audio.createGain();silent.gain.value=0;proc.connect(silent);silent.connect(audio.destination);
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(1)));};capture={proc,L,R,silent};}
   function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{dryGain.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
