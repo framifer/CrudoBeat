@@ -258,7 +258,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="display:none;background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="viewBtn" title="Vista: V=Verticale, S=Studio (timeline)">V</button><button id="modeBtn" title="Modalità: Libera o Loop 8 battute">Libera</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta tutte le tracce (esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -657,7 +657,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(seqPattern.every(row=>row.every(v=>!v))){toast('Pattern vuoto');return;}
     const bars=parseInt(document.getElementById('seqBars').value,10)||1;
     try{toast('Rendering '+bars+' battut'+(bars>1?'e':'a')+'…');
-      const buf=await renderPatternExact(bars);addClip(buf,'Drums '+(clipCounter+1));
+      const buf=await renderPatternExact(bars);addClip(buf,'Drums '+(clipCounter+1),transportPos,true);
       toast('Pattern esportato ('+bars+' battut'+(bars>1?'e':'a')+', loop preciso)');
     }catch(e){toast('Errore rendering: '+e.message);}
   }
@@ -735,7 +735,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function melExportToTrack(){resumeAudio();
     if(melPattern.every(row=>row.every(v=>!v))){toast('Melodia vuota');return;}
     const bars=parseInt(document.getElementById('melBars').value,10)||1;
-    try{toast('Rendering melodia '+bars+' battut'+(bars>1?'e':'a')+'…');const buf=await renderMelodyExact(bars);addClip(buf,'Riff '+(clipCounter+1));toast('Riff esportato (loop preciso)');}
+    try{toast('Rendering melodia '+bars+' battut'+(bars>1?'e':'a')+'…');const buf=await renderMelodyExact(bars);addClip(buf,'Riff '+(clipCounter+1),transportPos,true);toast('Riff esportato (loop preciso)');}
     catch(e){toast('Errore rendering: '+e.message);}
   }
   document.getElementById('melToClip').addEventListener('click',melExportToTrack);
@@ -1028,9 +1028,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const recBtn=document.getElementById('recBtn'),micBtn=document.getElementById('micBtn');const clipList=document.getElementById('clipList');
   const projNameEl=document.getElementById('projName');
   function refreshProjName(){projNameEl.textContent='Progetto: '+(currentProject.name||'(nuovo)');}
-  document.getElementById('expandBtn').addEventListener('click',()=>{looperFull=!looperFull;applyLayout();buildClipList();});
+  document.getElementById('expandBtn').addEventListener('click',()=>{looperFull=!looperFull;applyLayout();refreshView();});
   document.getElementById('closeLooper').addEventListener('click',()=>{looperHidden=true;applyLayout();toast('Multitraccia chiuso • le tracce continuano');});
-  tracceBtn.addEventListener('click',()=>{if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();buildClipList();});
+  tracceBtn.addEventListener('click',()=>{if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();});
 
   // ---- Loop mode + latency compensation ----
   const LOOP_BEATS=8;let loopMode=false,latencyMs=20,loopStart=null;
@@ -1044,8 +1044,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   snapBtn.classList.add('on');
   snapBtn.addEventListener('click',()=>{snapRec=!snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');toast(snapRec?'Snap ON: registrazioni allineate al tempo':'Snap OFF: durata libera');});
   function loopDur(){return LOOP_BEATS*(60/bpm);} // loop length in seconds at current BPM
-  const modeBtn=document.getElementById('modeBtn'),latSlider=document.getElementById('latSlider'),latVal=document.getElementById('latVal');
-  modeBtn.addEventListener('click',()=>{loopMode=!loopMode;modeBtn.classList.toggle('on',loopMode);modeBtn.textContent=loopMode?'Loop 8':'Libera';toast(loopMode?('Modalità Loop • '+loopDur().toFixed(2)+'s (8 battute)'):'Modalità Libera');});
+  const modeBtn={classList:{toggle:()=>{},add:()=>{},remove:()=>{}},textContent:'Libera'};const latSlider=document.getElementById('latSlider'),latVal=document.getElementById('latVal');
+  // Loop/Libera mode removed: always Libera (free recording). Loops are made in grid/sequencer.
   latSlider.addEventListener('input',()=>{latencyMs=+latSlider.value;latVal.textContent=latencyMs+'ms';});
   // E: guided latency calibration — user taps in time with the click; we measure the average offset.
   let calibrating=false,calibTaps=[],calibBeatTimes=[];
@@ -1075,22 +1075,19 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- Global Play/Pause for all clips + reading bar ----
   const allPlayBtn=document.getElementById('allPlayBtn');
   const playbar=document.getElementById('playbar'),playfill=document.getElementById('playfill'),playlbl=document.getElementById('playlbl');
+  playbar.style.cursor='pointer';
+  playbar.addEventListener('click',(e)=>{const r=playbar.getBoundingClientRect();const frac=clamp((e.clientX-r.left)/r.width,0,1);
+    let dur;if(timelineView)dur=projectDuration();else if(loopMode)dur=loopDur();else{dur=0;for(const c of clips)if(c.buffer)dur=Math.max(dur,c.buffer.duration);}
+    if(dur>0)seekTo(frac*dur);});
   // ---- Views: vertical loop-station vs horizontal timeline ----
-  let timelineView=false;const viewBtn=document.getElementById('viewBtn');
+  let timelineView=true;const viewBtn={textContent:'S'}; // view V/S removed: always Studio timeline
   const clipListEl=document.getElementById('clipList'),studioEl=document.getElementById('studio');
   let TL_PX_PER_SEC=60; // timeline horizontal scale (mutable via zoom)
   function projectDuration(){let m=0;for(const c of clips){const fd=c.buffer?c.buffer.duration:0;const seg=fd*((c.trimEnd==null?1:c.trimEnd)-(c.trimStart||0));const end=(c.t||0)+seg;if(end>m)m=end;}return Math.max(m,8);}
-  function refreshView(){ // show clip list (vertical) or studio (timeline)
-    if(timelineView){clipListEl.style.display='none';studioEl.classList.add('show');buildStudio();}
-    else{clipListEl.style.display='';studioEl.classList.remove('show');buildClipList();}
-    const tag=document.getElementById('studioTag');if(tag)tag.style.display=timelineView?'inline-block':'none';
+  function refreshView(){ // Studio-only now
+    clipListEl.style.display='none';studioEl.classList.add('show');buildStudio();
   }
-  // redraw whichever clip view is currently active (used by shared edit ops)
-  function refreshClipsView(){if(timelineView)buildStudio();else buildClipList();}
-  viewBtn.addEventListener('click',()=>{
-    stopAllTransport();timelineView=!timelineView;viewBtn.textContent=timelineView?'S':'V';transportPos=0;
-    refreshView();toast(timelineView?'Vista Studio (timeline, suonano insieme)':'Vista Verticale (loop insieme)');
-  });
+  function refreshClipsView(){buildStudio();}
 
   // ---- Unified transport ----
   let transportOn=true,transportT0=0,transportPos=0; // pos in seconds
@@ -1101,6 +1098,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   }
   function pauseAll(){if(timelineView){transportPos=transportOn?(audio.currentTime-transportT0):transportPos;}for(const c of clips){stopClipPlayback(c);c._tlScheduled=false;}transportOn=false;allPlayBtn.textContent='▶';}
   function stopAll(){for(const c of clips){stopClipPlayback(c);c._tlScheduled=false;}transportOn=false;transportPos=0;loopStart=audio.currentTime;allPlayBtn.textContent='▶';}
+  // #3 seek: move the play position to a given time (seconds); resumes from there if playing
+  function seekTo(sec){resumeAudio();sec=Math.max(0,sec);
+    const wasPlaying=transportOn;
+    // stop currently sounding clips and clear their scheduled flags
+    for(const c of clips){stopClipPlayback(c);c._tlScheduled=false;}
+    transportPos=sec;
+    if(timelineView){const pps=TL_PX_PER_SEC*clipZoom;playhead.style.left=(LANE_HEAD+sec*pps)+'px';}
+    if(wasPlaying){transportOn=true;transportT0=audio.currentTime-transportPos;if(timelineView){scheduleTimeline();}else{loopStart=audio.currentTime;for(const c of clips){if(!c.paused)startClipPlayback(c);}}allPlayBtn.textContent='❚❚';}
+    else{transportOn=false;}
+  }
   allPlayBtn.addEventListener('click',()=>{if(transportOn)pauseAll();else playAll();});
   document.getElementById('allPauseBtn').addEventListener('click',pauseAll);
   document.getElementById('allStopBtn').addEventListener('click',stopAll);
@@ -1191,8 +1198,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const total=Math.max(projectDuration()+4,10);const pxPerSec=TL_PX_PER_SEC*clipZoom;const timelineW=Math.round(total*pxPerSec);
     studioInner.style.width=(LANE_HEAD+timelineW)+'px';
     // ruler (seconds ticks)
-    studioRuler.innerHTML='';studioRuler.style.marginLeft=LANE_HEAD+'px';studioRuler.style.width=timelineW+'px';
+    studioRuler.innerHTML='';studioRuler.style.marginLeft=LANE_HEAD+'px';studioRuler.style.width=timelineW+'px';studioRuler.style.cursor='pointer';
     for(let s=0;s<=total;s++){const t=document.createElement('div');t.className='tick';t.style.left=(s*pxPerSec)+'px';t.textContent=s+'s';studioRuler.appendChild(t);}
+    studioRuler.onclick=(e)=>{const r=studioRuler.getBoundingClientRect();const x=e.clientX-r.left;seekTo(x/pxPerSec);};
     // lanes: group clips by their lane index (multiple clips can share a lane, in sequence)
     studioLanes.innerHTML='';
     let laneIdxs=[...new Set(clips.map(c=>c.lane||0))].sort((a,b)=>a-b);
@@ -1322,12 +1330,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     proc.onaudioprocess=(ev)=>{L.push(new Float32Array(ev.inputBuffer.getChannelData(0)));R.push(new Float32Array(ev.inputBuffer.getChannelData(1)));};capture={proc,L,R,silent};}
   function stopCapture(){if(!capture)return null;const{proc,L,R,silent}=capture;proc.disconnect();silent.disconnect();try{dryGain.disconnect(proc);}catch(e){}proc.onaudioprocess=null;
     let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}capture=null;return buf;}
-  function addClip(buffer,name){pushGlobal();clipCounter++;const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:0,_tlScheduled:false,lane:clips.length,loop:false};
+  function addClip(buffer,name,atTime,newLane){pushGlobal();clipCounter++;
+    const lane=newLane?((clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1):clips.length;
+    const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(atTime||0),_tlScheduled:false,lane:lane,loop:false};
     clips.push(clip);startClipPlayback(clip);if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();toast('Traccia audio aggiunta • '+clip.name);}
   // Add an empty (silent) track — a real clip with a silent buffer, so all tools (rec-over, paste, trim, drag) work.
   function addEmptyTrack(){resumeAudio();pushGlobal();
-    const secs=loopMode?loopDur():4;const rate=audio.sampleRate;const buf=audio.createBuffer(2,Math.max(1,Math.round(secs*rate)),rate); // silent
-    clipCounter++;const clip={buffer:buf,name:'Traccia '+clipCounter,muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:0,_tlScheduled:false,lane:clips.length,loop:false,empty:true};
+    const secs=4;const rate=audio.sampleRate;const buf=audio.createBuffer(2,Math.max(1,Math.round(secs*rate)),rate); // silent
+    clipCounter++;const newLane=(clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1;const clip={buffer:buf,name:'Traccia '+clipCounter,muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:0,_tlScheduled:false,lane:newLane,loop:false,empty:true};
     clips.push(clip);selectedClip=clips.length-1;startClipPlayback(clip);if(!splitMode)splitMode=true;looperHidden=false;applyLayout();refreshView();toast('Traccia vuota aggiunta • '+clip.name);}
   function snapshot(clip){clip.history.push(clip.buffer);if(clip.history.length>30)clip.history.shift();clip.redo.length=0;}
   // per-clip effect chain: dry + reverb send + delay send, all summed to dryGain (audible & recordable)
@@ -1371,7 +1381,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(let ch=0;ch<b.numberOfChannels;ch++){left.getChannelData(ch).set(b.getChannelData(ch).subarray(0,cut));right.getChannelData(ch).set(b.getChannelData(ch).subarray(cut));}
     clip.buffer=left;clip.offset=0;restartClip(clip);
     clipCounter++;const nc={buffer:right,name:clip.name+'b',muted:clip.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:(clip.vol==null?1:clip.vol),pan:(clip.pan||0),trimStart:0,trimEnd:1,color:clip.color,history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:clip.fxRev,fxDelay:clip.fxDelay,t:(clip.t||0),_tlScheduled:false};
-    clips.splice(idx+1,0,nc);startClipPlayback(nc);buildClipList();toast(clip.name+' divisa');}
+    clips.splice(idx+1,0,nc);startClipPlayback(nc);refreshClipsView();toast(clip.name+' divisa');}
   // apply fade in/out (seconds) destructively to buffer, with snapshot for undo
   function applyFade(clip,which){askText((which==='in'?'Fade-IN':'Fade-OUT')+' in secondi (0 = nessuno):', which==='in'?(clip.fadeIn||0):(clip.fadeOut||0)).then(secStr=>{if(secStr===null)return;const sec=Math.max(0,parseFloat(secStr)||0);
     snapshot(clip);const b=clip.buffer,rate=b.sampleRate,n=Math.min(b.length,Math.floor(sec*rate));
@@ -1384,7 +1394,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const nb=audio.createBuffer(b.numberOfChannels,newLen,rate);
     for(let ch=0;ch<b.numberOfChannels;ch++){const src=b.getChannelData(ch),dst=nb.getChannelData(ch);
       for(let i=0;i<newLen;i++){const pos=i*ratio;const i0=Math.floor(pos),frac=pos-i0;const a=src[i0]||0,bb=src[i0+1]||0;dst[i]=a+(bb-a)*frac;}}
-    clip.buffer=nb;clip.offset=0;restartClip(clip);buildClipList();}
+    clip.buffer=nb;clip.offset=0;restartClip(clip);refreshClipsView();}
   // #3 Normalize: scale so the loudest sample hits ~0.99 (no clipping, max headroom use)
   function normalizeClip(clip){const b=clip.buffer;let peak=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a;}}
     if(peak<1e-5){toast('Traccia silenziosa: niente da normalizzare');return;}
@@ -1542,7 +1552,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   }
 
   // clip zoom buttons in the wave area header (feature 3) — add small +/- in saverow area via keyboard/pinch too
-  looperEl.addEventListener('wheel',(e)=>{if(e.ctrlKey){e.preventDefault();clipZoom=clamp(clipZoom*(e.deltaY<0?1.12:0.9),1,8);buildClipList();}},{passive:false});
+  looperEl.addEventListener('wheel',(e)=>{if(e.ctrlKey){e.preventDefault();clipZoom=clamp(clipZoom*(e.deltaY<0?1.12:0.9),1,8);buildStudio();}},{passive:false});
 
   let loopStopTimer=null,recStart=0;
   function finishLoopRec(){const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(loopStopTimer){clearTimeout(loopStopTimer);loopStopTimer=null;}
@@ -1555,7 +1565,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       });
     }else{
       if(loopMode){finishLoopRec();}
-      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(processRec(buf));else toast('Clip troppo breve');}
+      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(buf&&buf.length>1000)addClip(processRec(buf),null,transportPos,true);else toast('Clip troppo breve');}
     }});
 
   // ---------- Microphone ----------
@@ -1599,7 +1609,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function stopMic(){if(!micCapture)return;const{proc,L,R,silent}=micCapture;proc.disconnect();silent.disconnect();try{micNode.disconnect();}catch(e){}proc.onaudioprocess=null;
     if(micMuteOthers&&masterBus&&_micPrevMaster!=null){masterBus.gain.setTargetAtTime(_micPrevMaster,audio.currentTime,0.02);_micPrevMaster=null;}
     if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}micNode=null;let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);
-    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(processRec(buf),'Mic '+(clipCounter+1));else toast('Reg. mic troppo breve');}
+    let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}micCapture=null;micRecording=false;micBtn.classList.remove('on');micBtn.textContent='🎤';if(buf.length>1000)addClip(processRec(buf),'Mic '+(clipCounter+1),transportPos,true);else toast('Reg. mic troppo breve');}
   micBtn.addEventListener('click',()=>{if(!micRecording)startMic();else stopMic();});
   // populate mic list on load + when devices change (USB-C hub plugged/unplugged)
   if(navigator.mediaDevices){refreshMicList();navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',refreshMicList);}
@@ -1671,14 +1681,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     refreshScale();
     if(st.clipZoom)clipZoom=st.clipZoom;
     if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');}
-    if(st.loopMode!=null&&st.loopMode!==loopMode){loopMode=st.loopMode;modeBtn.classList.toggle('on',loopMode);modeBtn.textContent=loopMode?'Loop 8':'Libera';}
+    loopMode=false; // Loop mode removed: always free
     if(st.masterVol!=null){masterVol=st.masterVol;const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
     if(st.limiterOn!=null){limiterOn=st.limiterOn;limiterBtn.classList.toggle('on',limiterOn);rewireMaster();}
     if(st.latencyMs!=null){latencyMs=st.latencyMs;const ls=document.getElementById('latSlider'),lv=document.getElementById('latVal');if(ls)ls.value=latencyMs;if(lv)lv.textContent=latencyMs+'ms';}
     for(const k in laneNames)delete laneNames[k];Object.assign(laneNames,st.laneNames||{});
     if(st.synth){synthWave=st.synth.wave||synthWave;synthCutoff=st.synth.cut||synthCutoff;synthQ=st.synth.q||synthQ;synthDrive=st.synth.drive!=null?st.synth.drive:synthDrive;syncSynthUI&&syncSynthUI();}
-    // view last (rebuilds UI)
-    if(st.timelineView!=null){timelineView=st.timelineView;viewBtn.textContent=timelineView?'S':'V';}
+    // view: always Studio now
+    timelineView=true;
     refreshInstrSwitch();refreshOct();
     // start playback of clips per current view
     for(const c of clips)startClipPlayback(c);
@@ -1754,8 +1764,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   askCancel.addEventListener('click',()=>{_askClose(askInput.style.display==='none'?false:null);});
   askDlg.addEventListener('click',e=>{if(e.target===askDlg)askCancel.click();});
   askInput.addEventListener('keydown',e=>{if(e.key==='Enter')askOk.click();else if(e.key==='Escape')askCancel.click();});
-  window.addEventListener('resize',()=>{applyLayout();if(splitMode&&!looperHidden)buildClipList();});
-  window.addEventListener('orientationchange',()=>setTimeout(()=>{applyLayout();if(splitMode&&!looperHidden)buildClipList();},200));
+  window.addEventListener('resize',()=>{applyLayout();if(splitMode&&!looperHidden)refreshView();});
+  window.addEventListener('orientationchange',()=>setTimeout(()=>{applyLayout();if(splitMode&&!looperHidden)refreshView();},200));
   // start on a fresh project (feature 10)
   newProject();applyLayout();
 })();
