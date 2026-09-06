@@ -306,6 +306,7 @@
     <select id="seqBars" title="Battute da registrare"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="seqBpmDown" title="BPM −">♩−</button><span id="seqBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="seqBpmUp" title="BPM +">♩+</button>
     <select id="seqKitSel" title="Tipo di batteria"><option value="pop">Pop</option><option value="acoustic">Acustica</option><option value="electro">Elettrica</option></select>
+    <button id="seqRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="seqDelayBtn" title="Delay (globale, 0-3)">D</button>
     <button id="seqClose" title="Chiudi">✕</button>
   </div>
   <div id="seqGrid"></div>
@@ -319,6 +320,7 @@
     <button id="melRand" title="Genera riff casuale">🎲</button>
     <button id="melChordBtn" title="Genera seguendo una progressione di accordi (per tracce coerenti)">🎼</button>
     <select id="melProgSel" title="Progressione di accordi" style="display:none"><option value="I-V-vi-IV">I-V-vi-IV</option><option value="vi-IV-I-V">vi-IV-I-V</option><option value="ii-V-I">ii-V-I</option><option value="I-vi-IV-V">I-vi-IV-V</option><option value="last">Ultima usata</option></select>
+    <button id="melRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="melDelayBtn" title="Delay (globale, 0-3)">D</button>
     <button id="melToClip" title="Registra come traccia audio">⤓ Traccia</button>
     <select id="melBars" title="Battute"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="melBpmDown" title="BPM −">♩−</button><span id="melBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="melBpmUp" title="BPM +">♩+</button>
@@ -1022,9 +1024,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // 4-beat precise count-in on the audio clock, then cb() fires exactly on the downbeat
   function doPreroll(cb){doPrerollPrecise(4,cb);}
   const delayBtn=document.getElementById('delayBtn');const DELAY_LEVELS=[{n:'off',wet:0,fb:0},{n:'basso',wet:.3,fb:.28},{n:'medio',wet:.5,fb:.45},{n:'alto',wet:.7,fb:.62}];
-  delayBtn.addEventListener('click',()=>{resumeAudio();delayLevel=(delayLevel+1)%DELAY_LEVELS.length;const L=DELAY_LEVELS[delayLevel];delayWet.gain.setTargetAtTime(L.wet,audio.currentTime,.03);delayFb.gain.setTargetAtTime(L.fb,audio.currentTime,.03);delayBtn.classList.toggle('on',delayLevel>0);delayBtn.textContent='Delay: '+L.n;updateDelayTime();});
   const reverbBtn=document.getElementById('reverbBtn');const REV_LEVELS=[{n:'off',w:0},{n:'basso',w:.3},{n:'medio',w:.55},{n:'alto',w:.8}];let revLevel=0;
-  reverbBtn.addEventListener('click',()=>{resumeAudio();revLevel=(revLevel+1)%REV_LEVELS.length;const L=REV_LEVELS[revLevel];reverbWet.gain.setTargetAtTime(L.w,audio.currentTime,.05);reverbBtn.classList.toggle('on',revLevel>0);reverbBtn.textContent='Riv: '+L.n;});
+  function syncFxButtons(){
+    delayBtn.classList.toggle('on',delayLevel>0);delayBtn.textContent='Delay: '+DELAY_LEVELS[delayLevel].n;
+    reverbBtn.classList.toggle('on',revLevel>0);reverbBtn.textContent='Riv: '+REV_LEVELS[revLevel].n;
+    ['seqDelayBtn','melDelayBtn'].forEach(id=>{const b=document.getElementById(id);if(b){b.classList.toggle('on',delayLevel>0);b.textContent='D'+(delayLevel||'');}});
+    ['seqRevBtn','melRevBtn'].forEach(id=>{const b=document.getElementById(id);if(b){b.classList.toggle('on',revLevel>0);b.textContent='R'+(revLevel||'');}});
+  }
+  function cycleDelay(){resumeAudio();delayLevel=(delayLevel+1)%DELAY_LEVELS.length;const L=DELAY_LEVELS[delayLevel];delayWet.gain.setTargetAtTime(L.wet,audio.currentTime,.03);delayFb.gain.setTargetAtTime(L.fb,audio.currentTime,.03);updateDelayTime();syncFxButtons();}
+  function cycleReverb(){resumeAudio();revLevel=(revLevel+1)%REV_LEVELS.length;const L=REV_LEVELS[revLevel];reverbWet.gain.setTargetAtTime(L.w,audio.currentTime,.05);syncFxButtons();}
+  delayBtn.addEventListener('click',cycleDelay);
+  reverbBtn.addEventListener('click',cycleReverb);
+  ['seqRevBtn','melRevBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',cycleReverb);});
+  ['seqDelayBtn','melDelayBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',cycleDelay);});
+  syncFxButtons();
   const bpmValEl=document.getElementById('bpmVal'),bpmDownEl=document.getElementById('bpmDown'),bpmUpEl=document.getElementById('bpmUp');
   function setBpm(v){bpm=clamp(Math.round(v),60,180);bpmValEl.textContent='♩'+bpm;
     const sv=document.getElementById('seqBpmVal'),mv=document.getElementById('melBpmVal');if(sv)sv.textContent=bpm;if(mv)mv.textContent=bpm;
