@@ -1057,16 +1057,22 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(wb)wb.addEventListener('click',()=>{const i=(HI_WAVES.indexOf(hiWave)+1)%HI_WAVES.length;hiWave=HI_WAVES[i];drawHiWave();toast('HiCrudo onda: '+hiWave);});
     if(ab)ab.addEventListener('click',()=>{hiArp=!hiArp;ab.classList.toggle('on',hiArp);toast('Arpeggiatore '+(hiArp?'ON':'OFF'));});
     if(cl)cl.addEventListener('click',()=>{document.getElementById('hiPanel').classList.remove('show');});
-    // #2 joystick: X = chord type (at press) + modulation, Y = tone/brightness. Stays where left (expressive).
+    // #2 joystick: omnidirectional. X = chord type (at press) + modulation; Y = tone/brightness. Springs to center on release.
     if(joy){let dragging=false;
-      const set=(clientX,clientY)=>{const r=joy.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
-        hiJX=clamp((clientX-cx)/(r.width/2),-1,1);hiJY=clamp((clientY-cy)/(r.height/2),-1,1);
-        hiTone=clamp(0.5-hiJY*0.5,0,1);updateHiJoy();hiModulateLive();};   // live filter modulation on held chords
+      const set=(clientX,clientY)=>{const r=joy.getBoundingClientRect();const half=(r.width||96)/2;const cx=r.left+r.width/2,cy=r.top+r.height/2;
+        // radial clamp so the stick can go in ANY direction, limited to the knob radius
+        let dx=(clientX-cx)/half, dy=(clientY-cy)/half;const mag=Math.hypot(dx,dy);if(mag>1){dx/=mag;dy/=mag;}
+        hiJX=dx;hiJY=dy;hiTone=clamp(0.5-hiJY*0.5,0,1);updateHiJoy();hiModulateLive();};
       const down=(x,y)=>{dragging=true;joy.style.cursor='grabbing';set(x,y);};
       const move=(x,y)=>{if(dragging)set(x,y);};
-      const up=()=>{dragging=false;joy.style.cursor='grab';hiJX=0;hiJY=0;hiTone=0.5;updateHiJoy();hiModulateLive();}; // spring back to center + reapply center sound
-      joy.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
-      joy.addEventListener('touchstart',(e)=>{e.preventDefault();down(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchend',up);joy.addEventListener('touchcancel',up);}
+      const up=()=>{if(!dragging)return;dragging=false;joy.style.cursor='grab';hiJX=0;hiJY=0;hiTone=0.5;updateHiJoy();hiModulateLive();};
+      joy.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});
+      window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));
+      window.addEventListener('mouseup',up);
+      joy.addEventListener('touchstart',(e)=>{e.preventDefault();const t=e.touches[0];down(t.clientX,t.clientY);},{passive:false});
+      joy.addEventListener('touchmove',(e)=>{e.preventDefault();const t=e.touches[0];move(t.clientX,t.clientY);},{passive:false});
+      joy.addEventListener('touchend',(e)=>{e.preventDefault();up();},{passive:false});
+      joy.addEventListener('touchcancel',up);}
     drawHiWave();updateHiJoy();
   })();
 
