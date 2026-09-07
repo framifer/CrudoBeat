@@ -1058,19 +1058,15 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(ab)ab.addEventListener('click',()=>{hiArp=!hiArp;ab.classList.toggle('on',hiArp);toast('Arpeggiatore '+(hiArp?'ON':'OFF'));});
     if(cl)cl.addEventListener('click',()=>{document.getElementById('hiPanel').classList.remove('show');});
     // #2 joystick: omnidirectional. X = chord type (at press) + modulation; Y = tone/brightness. Springs to center on release.
-    if(joy){let dragging=false;
+    if(joy){let joyPid=null;   // the pointer id currently controlling the joystick (multitouch-safe)
       const set=(clientX,clientY)=>{const r=joy.getBoundingClientRect();const half=(r.width||96)/2;const cx=r.left+r.width/2,cy=r.top+r.height/2;
-        // radial clamp so the stick can go in ANY direction, limited to the knob radius
         let dx=(clientX-cx)/half, dy=(clientY-cy)/half;const mag=Math.hypot(dx,dy);if(mag>1){dx/=mag;dy/=mag;}
         hiJX=dx;hiJY=dy;hiTone=clamp(0.5-hiJY*0.5,0,1);updateHiJoy();hiModulateLive();};
-      const down=(x,y)=>{dragging=true;joy.style.cursor='grabbing';set(x,y);};
-      const move=(x,y)=>{if(dragging)set(x,y);};
-      const up=()=>{if(!dragging)return;dragging=false;joy.style.cursor='grab';hiJX=0;hiJY=0;hiTone=0.5;updateHiJoy();hiModulateLive();};
-      // Pointer Events unify mouse+touch and keep tracking even if the finger leaves the knob.
-      joy.addEventListener('pointerdown',(e)=>{e.preventDefault();try{joy.setPointerCapture(e.pointerId);}catch(_){}down(e.clientX,e.clientY);});
-      joy.addEventListener('pointermove',(e)=>{if(!dragging)return;e.preventDefault();move(e.clientX,e.clientY);});
-      joy.addEventListener('pointerup',(e)=>{try{joy.releasePointerCapture(e.pointerId);}catch(_){}up();});
-      joy.addEventListener('pointercancel',up);
+      const up=()=>{if(joyPid===null)return;joyPid=null;joy.style.cursor='grab';hiJX=0;hiJY=0;hiTone=0.5;updateHiJoy();hiModulateLive();};
+      joy.addEventListener('pointerdown',(e)=>{if(joyPid!==null)return;joyPid=e.pointerId;e.preventDefault();try{joy.setPointerCapture(e.pointerId);}catch(_){}joy.style.cursor='grabbing';set(e.clientX,e.clientY);});
+      joy.addEventListener('pointermove',(e)=>{if(e.pointerId!==joyPid)return;e.preventDefault();set(e.clientX,e.clientY);});   // ignore other fingers (pads)
+      joy.addEventListener('pointerup',(e)=>{if(e.pointerId!==joyPid)return;try{joy.releasePointerCapture(e.pointerId);}catch(_){}up();});
+      joy.addEventListener('pointercancel',(e)=>{if(e.pointerId!==joyPid)return;up();});
       joy.style.touchAction='none';}
     drawHiWave();updateHiJoy();
   })();
