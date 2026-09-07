@@ -105,8 +105,9 @@
     background:linear-gradient(180deg,#efeae2,#ded8cd);border:2px solid #b9b0a0;border-radius:16px;padding:12px;
     box-shadow:0 6px 24px rgba(60,40,20,.4);width:min(94vw,420px);max-height:calc(100vh - 140px);overflow:visible;}
   #hiPanel.show{display:flex;}
-  #hiPanel .hitop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  #hiPanel .hidisplay{flex:1 1 auto;}
+  #hiPanel .hitop{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+  #hiPanel .hidisplay{flex:1 1 0;min-width:0;text-overflow:ellipsis;}
+  #hiPanel .hitop .hib{flex:0 0 auto;}
   #hiPanel .hibody{display:flex;gap:12px;align-items:flex-start;}
   #hiPanel .hijoywrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;}
   #hiPanel .hijoy{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#2a2a30,#0c0c0e);border:3px solid #b9b0a0;box-shadow:0 3px 6px rgba(0,0,0,.4),inset 0 2px 6px rgba(0,0,0,.8);position:relative;cursor:grab;touch-action:none;}
