@@ -106,7 +106,7 @@
     box-shadow:0 6px 24px rgba(60,40,20,.4);width:min(94vw,420px);max-height:calc(100vh - 140px);overflow:visible;}
   #hiPanel.show{display:flex;}
   #hiPanel .hitop{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
-  #hiPanel .hidisplay{flex:1 1 0;min-width:0;text-overflow:ellipsis;}
+  #hiPanel .hidisplay{flex:1 1 auto;min-width:0;}
   #hiPanel .hitop .hib{flex:0 0 auto;}
   #hiPanel .hibody{display:flex;gap:12px;align-items:flex-start;}
   #hiPanel .hijoywrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;}
@@ -364,12 +364,11 @@
 <div id="hiPanel">
   <div class="hitop">
     <div class="hibrand">HiCrudo</div>
-    <div class="hispeaker"></div>
+    <button class="hib arp" id="hiArpBtn" title="Arpeggiatore">🕐</button>
     <button class="hib close" id="hiClose" title="Chiudi">✕</button>
     <div class="hidisplay" id="hiDisplay">Do Maggiore</div>
     <button class="hib key" id="hiKeyBtn" title="Cambia tonalità">🔑</button>
     <button class="hib wave" id="hiWaveBtn" title="Forma d'onda"><canvas id="hiWaveCv" width="28" height="20"></canvas></button>
-    <button class="hib arp" id="hiArpBtn" title="Arpeggiatore">🕐</button>
   </div>
   <div class="hibody">
     <div class="hijoywrap"><div class="hijoy" id="hiJoy"><div class="hijoystick" id="hiStick"></div></div><span class="hiknoblbl">TONO</span></div>
