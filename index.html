@@ -598,23 +598,50 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     g.connect(master);carrier.start(now);mod.start(now);carrier.stop(now+1.3);mod.stop(now+1.3);}
   // ---------- HiChord: chord synth (organ-like, warm) ----------
   let hiWave='sawtooth';                         // HiChord waveform (〰 button)
-  let hiTone=0.5;                                // joystick vertical: 0 = dark, 1 = bright
-  let hiMod=0;                                   // joystick horizontal: -1..1 detune/movement
-  // one HiChord voice = a soft filtered oscillator note
-  function hiChordNote(freq,when,dur,ac,dest){const a=ac||audio,now=(when!=null?when:a.currentTime),out=dest||master;
-    const o=a.createOscillator();o.type=hiWave;o.frequency.value=freq;
-    const o2=a.createOscillator();o2.type=hiWave;o2.frequency.value=freq*(1.005+hiMod*0.02);const o2g=a.createGain();o2g.gain.value=.5;  // detune driven by joystick X
-    const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*(1.5+hiTone*6)+400+hiTone*2000;f.Q.value=1;   // brightness driven by joystick Y
-    const g=a.createGain();o.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(g);g.connect(out);
-    const d=dur||0.7;g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.28,now+.02);g.gain.setValueAtTime(.28,now+d*0.6);g.gain.exponentialRampToValueAtTime(.0006,now+d);
-    o.start(now);o2.start(now);o.stop(now+d+.05);o2.stop(now+d+.05);}
-  // diatonic triad midi notes for scale-degree 'deg' (root, +2, +4 in the current scale)
-  function chordMidis(deg,oct){const base=INSTR_BASE.piano;const midi=(s)=>{const o=Math.floor(s/SCALE_LEN),dd=((s%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;return base+KEY_OFF+o*12+SCALE[dd]+(oct||0)*12;};
-    return [midi(deg),midi(deg+2),midi(deg+4)];}
+  let hiTone=0.5;                                // brightness (from joystick Y), 0..1
+  let hiJX=0,hiJY=0;                              // raw joystick position -1..1 (X,Y)
+  const hiVoices=new Map();                      // active sustained chord voices, keyed by pad degree
+  // chord degrees (diatonic scale-degree offsets) for a given type
+  function chordDegrees(deg,type){
+    if(type==='sus2')return [deg,deg+1,deg+4];
+    if(type==='sus4')return [deg,deg+3,deg+4];
+    if(type==='6th') return [deg,deg+2,deg+4,deg+5];
+    if(type==='7th') return [deg,deg+2,deg+4,deg+6];
+    if(type==='9th') return [deg,deg+2,deg+4,deg+6,deg+8];
+    return [deg,deg+2,deg+4]; // base triad
+  }
+  // pick chord type from the joystick position (decided at pad press)
+  function hiChordType(){const x=hiJX,y=hiJY;
+    if(y<-0.55)return (Math.abs(x)>0.5)?'9th':'7th';   // up = 7th, up+side = 9th
+    if(y>0.55)return '6th';                             // down = 6th
+    if(x<-0.55)return 'sus2';                           // left
+    if(x>0.55)return 'sus4';                            // right
+    return 'base';}
+  const CHORD_LABEL={base:'',sus2:'sus2',sus4:'sus4','6th':'6','7th':'7','9th':'9'};
+  function chordMidis(deg,oct,type){const base=INSTR_BASE.piano;const midi=(s)=>{const o=Math.floor(s/SCALE_LEN),dd=((s%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;return base+KEY_OFF+o*12+SCALE[dd]+(oct||0)*12;};
+    return chordDegrees(deg,type||'base').map(midi);}
+  function hiCutoff(freq){return freq*(1.5+hiTone*6)+400+hiTone*2000;} // brightness from joystick Y
   let hiArp=false;                                // arpeggiator (🕐 button)
-  function playHiChord(deg,oct){const ms=chordMidis(deg,oct);
-    if(hiArp){const now=audio.currentTime,st=seqStepDur?Math.max(.09,(60/bpm)/2):.12;ms.forEach((m,i)=>hiChordNote(midiToFreq(m),now+i*st,.5));}
-    else{ms.forEach(m=>hiChordNote(midiToFreq(m),null,0.9));}}
+  // ---- Sustained chord voice: plays until released; filter modulated live by the joystick ----
+  function hiStartChord(deg,oct){
+    hiStopChord(deg); // retrigger safety
+    const type=hiChordType();const ms=chordMidis(deg,oct,type);const now=audio.currentTime;
+    const vg=audio.createGain();vg.gain.setValueAtTime(0,now);vg.gain.linearRampToValueAtTime(.26,now+.02);vg.connect(master);
+    const filters=[],oscs=[];
+    const startNote=(freq,t)=>{const o=audio.createOscillator();o.type=hiWave;o.frequency.value=freq;
+      const o2=audio.createOscillator();o2.type=hiWave;o2.frequency.value=freq*1.005;const o2g=audio.createGain();o2g.gain.value=.5;
+      const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=hiCutoff(freq);f.Q.value=2+hiJX*4>0?(2+Math.abs(hiJX)*6):2;f._freq=freq;
+      o.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(vg);o.start(t);o2.start(t);filters.push(f);oscs.push(o,o2);};
+    if(hiArp){const st=Math.max(.09,(60/bpm)/2);ms.forEach((m,i)=>startNote(midiToFreq(m),now+i*st));}
+    else{ms.forEach(m=>startNote(midiToFreq(m),now));}
+    hiVoices.set(deg,{vg,filters,oscs,type});
+    return type;
+  }
+  function hiStopChord(deg){const v=hiVoices.get(deg);if(!v)return;const now=audio.currentTime;
+    v.vg.gain.cancelScheduledValues(now);v.vg.gain.setValueAtTime(v.vg.gain.value,now);v.vg.gain.exponentialRampToValueAtTime(.0005,now+.4);
+    v.oscs.forEach(o=>{try{o.stop(now+.45);}catch(e){}});hiVoices.delete(deg);}
+  // live: update all active chord filters when the joystick moves (continuous modulation)
+  function hiModulateLive(){const t=audio?audio.currentTime:0;for(const[,v]of hiVoices){for(const f of v.filters){f.frequency.setTargetAtTime(hiCutoff(f._freq),t,0.03);f.Q.setTargetAtTime(2+Math.abs(hiJX)*6,t,0.03);}}}
   let synthWave='sawtooth',synthCutoff=1600,synthQ=10,synthDrive=35,synthMode='freq';
   function playSynthTone(freq){const now=audio.currentTime,g=audio.createGain();
     let oscs;
@@ -1006,9 +1033,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const deg=document.createElement('div');deg.className='deg';deg.textContent=(SCALE_LEN>=7?HI_ROMAN[d]:('°'+(d+1)));
       const nm=document.createElement('div');nm.className='nm';nm.textContent=hiRootName(d)+(d>=SCALE_LEN?'▲':'');
       pad.appendChild(deg);pad.appendChild(nm);
-      const hit=()=>{resumeAudio();playHiChord(d,0);pad.classList.add('hit');setTimeout(()=>pad.classList.remove('hit'),160);};
-      pad.addEventListener('mousedown',(e)=>{e.preventDefault();hit();});
-      pad.addEventListener('touchstart',(e)=>{e.preventDefault();hit();},{passive:false});
+      const press=()=>{resumeAudio();const type=hiStartChord(d,0);pad.classList.add('hit');
+        if(hiDisplayEl){const lab=CHORD_LABEL[type]||'';hiDisplayEl.textContent=hiRootName(d)+(lab?(' '+lab):'')+' • '+currentKey;}};
+      const release=()=>{hiStopChord(d);pad.classList.remove('hit');};
+      pad.addEventListener('mousedown',(e)=>{e.preventDefault();press();});
+      pad.addEventListener('mouseup',release);pad.addEventListener('mouseleave',()=>{if(pad.classList.contains('hit'))release();});
+      pad.addEventListener('touchstart',(e)=>{e.preventDefault();press();},{passive:false});
+      pad.addEventListener('touchend',(e)=>{e.preventDefault();release();});pad.addEventListener('touchcancel',release);
       hiPadsEl.appendChild(pad);}
   }
   function drawHiWave(){const cv=document.getElementById('hiWaveCv');if(!cv)return;const c=cv.getContext('2d'),w=cv.width,h=cv.height;c.clearRect(0,0,w,h);c.strokeStyle='#2b2118';c.lineWidth=2;c.beginPath();
@@ -1019,21 +1050,21 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       else y=((x/w)%1)*2-1; // sawtooth
       const py=h/2 - y*(h/2-3);if(x===0)c.moveTo(x,py);else c.lineTo(x,py);}
     c.stroke();}
-  function updateHiJoy(){const st=document.getElementById('hiStick');if(!st)return;const R=28;st.style.transform='translate('+(hiMod*R)+'px,'+(-(hiTone-0.5)*2*R)+'px)';}
+  function updateHiJoy(){const st=document.getElementById('hiStick');if(!st)return;const R=28;st.style.transform='translate('+(hiJX*R)+'px,'+(hiJY*R)+'px)';}
   (function(){
     const kb=document.getElementById('hiKeyBtn'),wb=document.getElementById('hiWaveBtn'),ab=document.getElementById('hiArpBtn'),cl=document.getElementById('hiClose'),joy=document.getElementById('hiJoy');
     if(kb)kb.addEventListener('click',()=>{const i=(KEYS.indexOf(currentKey)+1)%KEYS.length;currentKey=KEYS[i];const ks=document.getElementById('keySel');if(ks)ks.value=currentKey;refreshScale();buildHiChord();toast('Tonalità: '+currentKey);});
     if(wb)wb.addEventListener('click',()=>{const i=(HI_WAVES.indexOf(hiWave)+1)%HI_WAVES.length;hiWave=HI_WAVES[i];drawHiWave();toast('HiCrudo onda: '+hiWave);});
     if(ab)ab.addEventListener('click',()=>{hiArp=!hiArp;ab.classList.toggle('on',hiArp);toast('Arpeggiatore '+(hiArp?'ON':'OFF'));});
     if(cl)cl.addEventListener('click',()=>{document.getElementById('hiPanel').classList.remove('show');});
-    // #2 joystick: drag in any direction. X = modulation (detune), Y = tone (brightness). Spring back to center on release.
+    // #2 joystick: X = chord type (at press) + modulation, Y = tone/brightness. Stays where left (expressive).
     if(joy){let dragging=false;
       const set=(clientX,clientY)=>{const r=joy.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
-        let dx=(clientX-cx)/(r.width/2),dy=(clientY-cy)/(r.height/2);dx=clamp(dx,-1,1);dy=clamp(dy,-1,1);
-        hiMod=dx;hiTone=clamp(0.5-dy*0.5,0,1);updateHiJoy();};
+        hiJX=clamp((clientX-cx)/(r.width/2),-1,1);hiJY=clamp((clientY-cy)/(r.height/2),-1,1);
+        hiTone=clamp(0.5-hiJY*0.5,0,1);updateHiJoy();hiModulateLive();};   // live filter modulation on held chords
       const down=(x,y)=>{dragging=true;joy.style.cursor='grabbing';set(x,y);};
       const move=(x,y)=>{if(dragging)set(x,y);};
-      const up=()=>{if(!dragging)return;dragging=false;joy.style.cursor='grab';hiMod=0;hiTone=0.5;updateHiJoy();}; // spring to center
+      const up=()=>{dragging=false;joy.style.cursor='grab';}; // stays in place (no spring) for continuous expression
       joy.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
       joy.addEventListener('touchstart',(e)=>{e.preventDefault();down(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchend',up);joy.addEventListener('touchcancel',up);}
     drawHiWave();updateHiJoy();
