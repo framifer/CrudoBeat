@@ -1033,7 +1033,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const deg=document.createElement('div');deg.className='deg';deg.textContent=(SCALE_LEN>=7?HI_ROMAN[d]:('°'+(d+1)));
       const nm=document.createElement('div');nm.className='nm';nm.textContent=hiRootName(d)+(d>=SCALE_LEN?'▲':'');
       pad.appendChild(deg);pad.appendChild(nm);
-      const press=()=>{resumeAudio();const type=hiStartChord(d,0);pad.classList.add('hit');
+      const press=()=>{resumeAudio();const type=hiStartChord(d,tracks[activeTrack].oct||0);pad.classList.add('hit');
         if(hiDisplayEl){const lab=CHORD_LABEL[type]||'';hiDisplayEl.textContent=hiRootName(d)+(lab?(' '+lab):'')+' • '+currentKey;}};
       const release=()=>{hiStopChord(d);pad.classList.remove('hit');};
       pad.addEventListener('mousedown',(e)=>{e.preventDefault();press();});
@@ -1064,7 +1064,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         hiTone=clamp(0.5-hiJY*0.5,0,1);updateHiJoy();hiModulateLive();};   // live filter modulation on held chords
       const down=(x,y)=>{dragging=true;joy.style.cursor='grabbing';set(x,y);};
       const move=(x,y)=>{if(dragging)set(x,y);};
-      const up=()=>{dragging=false;joy.style.cursor='grab';}; // stays in place (no spring) for continuous expression
+      const up=()=>{dragging=false;joy.style.cursor='grab';hiJX=0;hiJY=0;hiTone=0.5;updateHiJoy();hiModulateLive();}; // spring back to center + reapply center sound
       joy.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
       joy.addEventListener('touchstart',(e)=>{e.preventDefault();down(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchend',up);joy.addEventListener('touchcancel',up);}
     drawHiWave();updateHiJoy();
