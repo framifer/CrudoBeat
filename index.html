@@ -100,6 +100,36 @@
   #seqGrid .cell.beat,#melGrid .cell.beat{border-left:2px solid var(--red2);}
   #seqGrid .cell.playing,#melGrid .cell.playing{outline:2px solid #2b2118;}
   @media (max-width:520px){#seqGrid .cell,#melGrid .cell{width:16px;height:20px;}#seqGrid .seqlbl,#melGrid .seqlbl{width:60px;flex-basis:60px;}}
+  /* ---- HiChord panel (device look, centered) ---- */
+  #hiPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:13;display:none;flex-direction:column;gap:8px;
+    background:linear-gradient(180deg,#efeae2,#ded8cd);border:2px solid #b9b0a0;border-radius:16px;padding:12px;
+    box-shadow:0 6px 24px rgba(60,40,20,.4);width:min(94vw,420px);max-height:calc(100vh - 140px);overflow:auto;}
+  #hiPanel.show{display:flex;}
+  #hiPanel .hitop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  #hiPanel .hidisplay{flex:1 1 auto;}
+  #hiPanel .hibody{display:flex;gap:12px;align-items:flex-start;}
+  #hiPanel .hijoywrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;}
+  #hiPanel .hijoy{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#2a2a30,#0c0c0e);border:3px solid #b9b0a0;box-shadow:0 3px 6px rgba(0,0,0,.4),inset 0 2px 6px rgba(0,0,0,.8);position:relative;cursor:grab;touch-action:none;}
+  #hiPanel .hijoystick{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fbf8f0,#cfc7b6);border:2px solid #8f877a;box-shadow:0 2px 4px rgba(0,0,0,.5);}
+  #hiPanel .hibrand{font-family:"Brush Script MT","Segoe Script",cursive;font-style:italic;font-weight:800;font-size:18px;color:#2b2118;}
+  #hiPanel .hispeaker{width:34px;height:26px;border-radius:5px;background:radial-gradient(circle,#3a3a40 1px,transparent 1.5px);background-size:5px 5px;background-color:#c9c2b5;}
+  #hiPanel .hidisplay{background:#12303a;color:#7fe3c0;font-family:monospace;font-weight:800;font-size:11px;border-radius:5px;padding:4px 6px;text-align:center;white-space:nowrap;overflow:hidden;}
+  #hiPanel .hib{width:34px;height:30px;border-radius:7px;border:2px solid rgba(0,0,0,.25);font-size:14px;font-weight:800;cursor:pointer;color:#2b2118;}
+  #hiPanel .hib.key{background:#c9c2b5;}#hiPanel .hib.wave{background:#f2c53d;padding:0;}#hiPanel .hib.arp{background:#e33f1a;color:#fff;}#hiPanel .hib.close{background:#efe2c4;}
+  #hiPanel .hib.wave canvas{display:block;}
+  #hiPanel .hib.on{outline:3px solid #2b2118;}
+  #hiPanel .hipads{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
+  #hiPanel .hipad{border-radius:10px;border:2px solid #cfc7b6;background:linear-gradient(180deg,#f7f2e6,#e9e1d0);
+    box-shadow:0 2px 0 #cfc7b6, inset 0 1px 2px #fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;color:#2b2118;user-select:none;touch-action:none;}
+  #hiPanel .hipad.small{flex:1 1 28%;height:44px;}
+  #hiPanel .hipad.big{flex:1 1 22%;height:78px;}
+  #hiPanel .hipad .deg{font-size:15px;}#hiPanel .hipad .nm{font-size:10px;opacity:.65;}
+  #hiPanel .hipad.hit{background:linear-gradient(180deg,#ffd9c9,#ffb79c);border-color:#e33f1a;}
+  #hiPanel .hiknobrow{display:flex;align-items:center;gap:8px;margin-top:2px;}
+  #hiPanel .hiknob{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fbf8f0,#d3cabb);border:2px solid #b9b0a0;box-shadow:0 2px 4px rgba(0,0,0,.3),inset 0 1px 2px #fff;position:relative;cursor:ns-resize;touch-action:none;}
+  #hiPanel .hiknobmark{position:absolute;left:50%;top:4px;width:3px;height:14px;background:#2b2118;border-radius:2px;transform-origin:50% 18px;}
+  #hiPanel .hiknoblbl{font-size:9px;font-weight:800;color:#2b2118;opacity:.7;}
+  @media (max-height:560px){#hiPanel .hipad{height:56px;}}
 
   #looper{position:fixed;left:0;top:calc(60px + env(safe-area-inset-top,0px));bottom:56px;width:0;overflow-y:auto;overflow-x:hidden;z-index:11;
     padding:6px;display:none;flex-direction:column;gap:6px;background:var(--bg2);border-right:3px solid var(--red2);}
@@ -248,6 +278,7 @@
     <button data-fam="amb" data-instr="ambient">Amb ▾</button>
     <button data-fam="piano" data-instr="organ">Piano ▾</button>
     <button data-instr="synth">Syn</button>
+    <button data-instr="hichord">HiCrudo</button>
   </div>
   <div id="instrMenu"></div>
   <select class="sel" id="keySel" title="Tonalità"></select>
@@ -327,6 +358,22 @@
     <button id="melClose" title="Chiudi">✕</button>
   </div>
   <div id="melGrid"></div>
+</div>
+
+<div id="hiPanel">
+  <div class="hitop">
+    <div class="hibrand">HiCrudo</div>
+    <div class="hispeaker"></div>
+    <button class="hib close" id="hiClose" title="Chiudi">✕</button>
+    <div class="hidisplay" id="hiDisplay">Do Maggiore</div>
+    <button class="hib key" id="hiKeyBtn" title="Cambia tonalità">🔑</button>
+    <button class="hib wave" id="hiWaveBtn" title="Forma d'onda"><canvas id="hiWaveCv" width="28" height="20"></canvas></button>
+    <button class="hib arp" id="hiArpBtn" title="Arpeggiatore">🕐</button>
+  </div>
+  <div class="hibody">
+    <div class="hijoywrap"><div class="hijoy" id="hiJoy"><div class="hijoystick" id="hiStick"></div></div><span class="hiknoblbl">TONO</span></div>
+    <div class="hipads" id="hiPads"></div>
+  </div>
 </div>
 
 <div id="hint">
@@ -549,6 +596,25 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const mod=audio.createOscillator();mod.type='sine';mod.frequency.value=freq*2;const modg=audio.createGain();modg.gain.value=freq*1.2;mod.connect(modg);modg.connect(carrier.frequency);
     carrier.connect(g);g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.55,now+.005);g.gain.exponentialRampToValueAtTime(.0006,now+1.2);
     g.connect(master);carrier.start(now);mod.start(now);carrier.stop(now+1.3);mod.stop(now+1.3);}
+  // ---------- HiChord: chord synth (organ-like, warm) ----------
+  let hiWave='sawtooth';                         // HiChord waveform (〰 button)
+  let hiTone=0.5;                                // joystick vertical: 0 = dark, 1 = bright
+  let hiMod=0;                                   // joystick horizontal: -1..1 detune/movement
+  // one HiChord voice = a soft filtered oscillator note
+  function hiChordNote(freq,when,dur,ac,dest){const a=ac||audio,now=(when!=null?when:a.currentTime),out=dest||master;
+    const o=a.createOscillator();o.type=hiWave;o.frequency.value=freq;
+    const o2=a.createOscillator();o2.type=hiWave;o2.frequency.value=freq*(1.005+hiMod*0.02);const o2g=a.createGain();o2g.gain.value=.5;  // detune driven by joystick X
+    const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*(1.5+hiTone*6)+400+hiTone*2000;f.Q.value=1;   // brightness driven by joystick Y
+    const g=a.createGain();o.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(g);g.connect(out);
+    const d=dur||0.7;g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.28,now+.02);g.gain.setValueAtTime(.28,now+d*0.6);g.gain.exponentialRampToValueAtTime(.0006,now+d);
+    o.start(now);o2.start(now);o.stop(now+d+.05);o2.stop(now+d+.05);}
+  // diatonic triad midi notes for scale-degree 'deg' (root, +2, +4 in the current scale)
+  function chordMidis(deg,oct){const base=INSTR_BASE.piano;const midi=(s)=>{const o=Math.floor(s/SCALE_LEN),dd=((s%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;return base+KEY_OFF+o*12+SCALE[dd]+(oct||0)*12;};
+    return [midi(deg),midi(deg+2),midi(deg+4)];}
+  let hiArp=false;                                // arpeggiator (🕐 button)
+  function playHiChord(deg,oct){const ms=chordMidis(deg,oct);
+    if(hiArp){const now=audio.currentTime,st=seqStepDur?Math.max(.09,(60/bpm)/2):.12;ms.forEach((m,i)=>hiChordNote(midiToFreq(m),now+i*st,.5));}
+    else{ms.forEach(m=>hiChordNote(midiToFreq(m),null,0.9));}}
   let synthWave='sawtooth',synthCutoff=1600,synthQ=10,synthDrive=35,synthMode='freq';
   function playSynthTone(freq){const now=audio.currentTime,g=audio.createGain();
     let oscs;
@@ -928,6 +994,51 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
     if(ps)ps.addEventListener('change',()=>{chordProg=ps.value;toast('Progressione: '+(chordProg==='last'?(lastUsedProg||'nessuna ancora'):chordProg));});})();
 
+  // ---------- HiChord panel logic ----------
+  const HI_ROMAN=['I','ii','iii','IV','V','vi','vii°','VIII','IX'];
+  const hiPadsEl=document.getElementById('hiPads'),hiDisplayEl=document.getElementById('hiDisplay');
+  const HI_WAVES=['sawtooth','square','triangle','sine'];
+  function hiRootName(deg){const dd=((deg%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;const midi=INSTR_BASE.piano+KEY_OFF+SCALE[dd];return NOTE_IT[((midi%12)+12)%12];}
+  function buildHiChord(){if(!hiPadsEl)return;hiPadsEl.innerHTML='';
+    if(hiDisplayEl)hiDisplayEl.textContent=currentKey+' '+currentScaleName;
+    const n=(SCALE_LEN>=7)?9:Math.min(SCALE_LEN+2,SCALE_LEN*2); // scale degrees + 2 extension pads (octave/ninth)
+    for(let d=0;d<n;d++){const pad=document.createElement('div');pad.className='hipad '+(d<3?'small':'big');
+      const deg=document.createElement('div');deg.className='deg';deg.textContent=(SCALE_LEN>=7?HI_ROMAN[d]:('°'+(d+1)));
+      const nm=document.createElement('div');nm.className='nm';nm.textContent=hiRootName(d)+(d>=SCALE_LEN?'▲':'');
+      pad.appendChild(deg);pad.appendChild(nm);
+      const hit=()=>{resumeAudio();playHiChord(d,0);pad.classList.add('hit');setTimeout(()=>pad.classList.remove('hit'),160);};
+      pad.addEventListener('mousedown',(e)=>{e.preventDefault();hit();});
+      pad.addEventListener('touchstart',(e)=>{e.preventDefault();hit();},{passive:false});
+      hiPadsEl.appendChild(pad);}
+  }
+  function drawHiWave(){const cv=document.getElementById('hiWaveCv');if(!cv)return;const c=cv.getContext('2d'),w=cv.width,h=cv.height;c.clearRect(0,0,w,h);c.strokeStyle='#2b2118';c.lineWidth=2;c.beginPath();
+    for(let x=0;x<=w;x++){const p=x/w*2*Math.PI;let y;
+      if(hiWave==='sine')y=Math.sin(p);
+      else if(hiWave==='square')y=(x%w<w/2)?-1:1;
+      else if(hiWave==='triangle')y=(4/w)*Math.abs(((x-w/4)%w+w)%w - w/2)-1;
+      else y=((x/w)%1)*2-1; // sawtooth
+      const py=h/2 - y*(h/2-3);if(x===0)c.moveTo(x,py);else c.lineTo(x,py);}
+    c.stroke();}
+  function updateHiJoy(){const st=document.getElementById('hiStick');if(!st)return;const R=28;st.style.transform='translate('+(hiMod*R)+'px,'+(-(hiTone-0.5)*2*R)+'px)';}
+  (function(){
+    const kb=document.getElementById('hiKeyBtn'),wb=document.getElementById('hiWaveBtn'),ab=document.getElementById('hiArpBtn'),cl=document.getElementById('hiClose'),joy=document.getElementById('hiJoy');
+    if(kb)kb.addEventListener('click',()=>{const i=(KEYS.indexOf(currentKey)+1)%KEYS.length;currentKey=KEYS[i];const ks=document.getElementById('keySel');if(ks)ks.value=currentKey;refreshScale();buildHiChord();toast('Tonalità: '+currentKey);});
+    if(wb)wb.addEventListener('click',()=>{const i=(HI_WAVES.indexOf(hiWave)+1)%HI_WAVES.length;hiWave=HI_WAVES[i];drawHiWave();toast('HiCrudo onda: '+hiWave);});
+    if(ab)ab.addEventListener('click',()=>{hiArp=!hiArp;ab.classList.toggle('on',hiArp);toast('Arpeggiatore '+(hiArp?'ON':'OFF'));});
+    if(cl)cl.addEventListener('click',()=>{document.getElementById('hiPanel').classList.remove('show');});
+    // #2 joystick: drag in any direction. X = modulation (detune), Y = tone (brightness). Spring back to center on release.
+    if(joy){let dragging=false;
+      const set=(clientX,clientY)=>{const r=joy.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
+        let dx=(clientX-cx)/(r.width/2),dy=(clientY-cy)/(r.height/2);dx=clamp(dx,-1,1);dy=clamp(dy,-1,1);
+        hiMod=dx;hiTone=clamp(0.5-dy*0.5,0,1);updateHiJoy();};
+      const down=(x,y)=>{dragging=true;joy.style.cursor='grabbing';set(x,y);};
+      const move=(x,y)=>{if(dragging)set(x,y);};
+      const up=()=>{if(!dragging)return;dragging=false;joy.style.cursor='grab';hiMod=0;hiTone=0.5;updateHiJoy();}; // spring to center
+      joy.addEventListener('mousedown',(e)=>{e.preventDefault();down(e.clientX,e.clientY);});window.addEventListener('mousemove',(e)=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
+      joy.addEventListener('touchstart',(e)=>{e.preventDefault();down(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});joy.addEventListener('touchend',up);joy.addEventListener('touchcancel',up);}
+    drawHiWave();updateHiJoy();
+  })();
+
   // ---------- Interaction ----------
   const toolsEl=document.getElementById('tools');let tool='live';
   toolsEl.addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b||!b.dataset.tool)return;
@@ -952,6 +1063,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!inCanvas(clientX))return;const{x,y}=ptrPos(clientX,clientY);
     // Drums grid = 2x3 pads: tap plays the pad (live), no nodes/pulsar here (use the drum machine for patterns)
     if(tracks[activeTrack].instr==='drums'){const kind=drumPadAt(x,y);if(kind){playDrumKind(kind);drumPadFlash[kind]=1;}return;}
+    if(tracks[activeTrack].instr==='hichord'){return;} // HiChord is played from its dedicated panel
     if(tool==='live'){const tr=tracks[activeTrack];
       const v=makeHeldVoice(tr.instr,freqForLiveY(y));liveVoices.set(id,{voice:v,x,y});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
     const hit=findNode(x,y);if(tool==='erase'){if(hit){const a=tracks[activeTrack].nodes;a.splice(a.indexOf(hit),1);}return;}
@@ -1097,7 +1209,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         else if(c.dataset.fam===curFam)v=(FAMILIES[c.dataset.fam].find(x=>x[0]===cur)||[])[1];
         c.textContent=(v?base+': '+v:base)+' ▾';}
     });
-    synthPanel.classList.toggle('show',cur==='synth');}
+    synthPanel.classList.toggle('show',cur==='synth');
+    const hp=document.getElementById('hiPanel');if(hp){const showHi=(cur==='hichord');hp.classList.toggle('show',showHi);if(showHi)buildHiChord();}}
   function openInstrMenu(fam,btn){instrMenu.innerHTML='';const isDrums=(fam==='drums');const cur=isDrums?(tracks[activeTrack].drumKit||'pop'):tracks[activeTrack].instr;
     FAMILIES[fam].forEach(([id,label])=>{const b=document.createElement('button');b.textContent=label;if(id===cur)b.classList.add('active');
       b.onclick=(e)=>{e.stopPropagation();if(isDrums)setDrumKit(id);else setInstrument(id);instrMenu.classList.remove('show');};instrMenu.appendChild(b);});
@@ -1115,8 +1228,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   KEYS.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;keySel.appendChild(o);});
   Object.keys(SCALES).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;scaleSel.appendChild(o);});
   keySel.value=currentKey;scaleSel.value=currentScaleName;
-  keySel.addEventListener('change',()=>{currentKey=keySel.value;refreshScale();if(melPanel.classList.contains('show'))buildMelGrid();toast('Tonalità: '+currentKey);});
-  scaleSel.addEventListener('change',()=>{currentScaleName=scaleSel.value;refreshScale();if(melPanel.classList.contains('show'))buildMelGrid();toast('Scala: '+currentScaleName);});
+  keySel.addEventListener('change',()=>{currentKey=keySel.value;refreshScale();if(melPanel.classList.contains('show'))buildMelGrid();if(document.getElementById('hiPanel').classList.contains('show'))buildHiChord();toast('Tonalità: '+currentKey);});
+  scaleSel.addEventListener('change',()=>{currentScaleName=scaleSel.value;refreshScale();if(melPanel.classList.contains('show'))buildMelGrid();if(document.getElementById('hiPanel').classList.contains('show'))buildHiChord();toast('Scala: '+currentScaleName);});
   refreshScale();
 
   // ---------- Synth panel (persist settings, feature 6) ----------
