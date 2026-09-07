@@ -103,7 +103,7 @@
   /* ---- HiChord panel (device look, centered) ---- */
   #hiPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:13;display:none;flex-direction:column;gap:8px;
     background:linear-gradient(180deg,#efeae2,#ded8cd);border:2px solid #b9b0a0;border-radius:16px;padding:12px;
-    box-shadow:0 6px 24px rgba(60,40,20,.4);width:min(94vw,420px);max-height:calc(100vh - 140px);overflow:auto;}
+    box-shadow:0 6px 24px rgba(60,40,20,.4);width:min(94vw,420px);max-height:calc(100vh - 140px);overflow:visible;}
   #hiPanel.show{display:flex;}
   #hiPanel .hitop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   #hiPanel .hidisplay{flex:1 1 auto;}
@@ -1070,6 +1070,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       joy.style.touchAction='none';}
     drawHiWave();updateHiJoy();
   })();
+
 
   // ---------- Interaction ----------
   const toolsEl=document.getElementById('tools');let tool='live';
