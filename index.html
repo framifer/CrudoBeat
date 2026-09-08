@@ -211,9 +211,8 @@
   #blockTools button:disabled{opacity:.4;cursor:default;}
 
   /* persistent Tracce button bottom-left */
-  #tracceBtn{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:14;
-    border:2px solid #000;background:var(--ink);color:var(--cream);font-weight:900;font-size:12px;
-    padding:9px 12px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;}
+  #tracceBtn{border:2px solid #000;background:var(--ink);color:var(--cream);font-weight:900;font-size:12px;
+    padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;flex:0 0 auto;white-space:nowrap;}
 
   /* load dialog */
   #loadDlg,#askDlg,#randDlg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:30;display:none;align-items:center;justify-content:center;}
@@ -262,6 +261,7 @@
 <div id="topbar">
   <div class="brandwrap">
     <div class="speaker" id="speaker" title="Tieni premuto e scorri con l'altro dito per spostare la vista"><div class="mesh"></div><div class="plate">CrudoBeat<sup>®</sup></div></div>
+    <button id="tracceBtn" title="Apri multitraccia">🎛 Tracce</button>
   </div>
   <div class="tools" id="tools">
     <button data-tool="live" class="live active" title="Live">LIVE</button>
@@ -307,7 +307,6 @@
   <div id="studio"><div id="studioScroll"><div id="studioInner"><div id="studioRuler"></div><div id="studioGrid"></div><div id="studioLanes"></div><div id="playhead"></div><div id="blockTools"></div></div></div></div>
 </div>
 
-<button id="tracceBtn" title="Apri multitraccia">🎛 Tracce</button>
 
 <div id="synthPanel">
   <div class="synthhead"><span class="st">🎛 SYNTH</span><button id="synthMin" title="Minimizza / espandi">–</button></div>
