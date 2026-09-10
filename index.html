@@ -210,6 +210,32 @@
   #blockTools button.act{background:var(--red);color:var(--cream);}
   #blockTools button:disabled{opacity:.4;cursor:default;}
 
+  /* ---- Mixer panel (BandLab-style vertical channel strips) ---- */
+  #mixerPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:22;display:none;flex-direction:column;gap:8px;
+    background:linear-gradient(180deg,#efeae2,#ded8cd);border:2px solid var(--red2);border-radius:14px;padding:10px;
+    box-shadow:0 8px 28px rgba(60,40,20,.45);width:min(96vw,720px);max-height:calc(100vh - 120px);}
+  #mixerPanel.show{display:flex;}
+  #mixerPanel .mixhead{display:flex;align-items:center;gap:8px;}
+  #mixerPanel .mixt{font-size:14px;font-weight:900;color:var(--red2);margin-right:auto;}
+  #mixerPanel .mixhead button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;width:30px;height:28px;font-size:14px;font-weight:800;cursor:pointer;}
+  #mixBody{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px;align-items:stretch;}
+  .mixstrip{flex:0 0 auto;width:74px;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--cream);
+    border:2px solid var(--panel-border);border-radius:10px;padding:8px 5px;box-shadow:0 2px 0 var(--panel-border);}
+  .mixstrip.master{border-color:var(--red2);box-shadow:0 2px 0 var(--red2);background:#fff8ea;}
+  .mixstrip .mixname{font-size:10px;font-weight:900;width:100%;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .mixstrip .mixdot{width:12px;height:12px;border-radius:50%;border:2px solid #0003;flex:0 0 auto;}
+  .mixstrip .fader{-webkit-appearance:slider-vertical;appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;
+    width:26px;height:150px;accent-color:var(--red);}
+  .mixstrip .faderval{font-size:9px;font-weight:800;opacity:.75;}
+  .mixstrip .panrow{display:flex;flex-direction:column;align-items:center;gap:1px;width:100%;}
+  .mixstrip .panrow input{width:100%;accent-color:var(--red);margin:0;}
+  .mixstrip .panrow .panlbl{font-size:8px;font-weight:800;opacity:.6;}
+  .mixstrip .msrow{display:flex;gap:4px;}
+  .mixstrip .msrow button{border:2px solid var(--panel-border);background:var(--cream);color:var(--ink);border-radius:6px;width:26px;height:24px;font-size:11px;font-weight:900;cursor:pointer;padding:0;}
+  .mixstrip .msrow button.m.on{background:var(--ink);color:var(--cream);border-color:#000;}
+  .mixstrip .msrow button.s.on{background:#f2c53d;color:#2b2118;border-color:#b8901f;}
+  @media (max-height:560px){.mixstrip .fader{height:110px;}}
+
   /* persistent Tracce button bottom-left */
   #tracceBtn{border:2px solid #000;background:var(--ink);color:var(--cream);font-weight:900;font-size:12px;
     padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;flex:0 0 auto;white-space:nowrap;}
@@ -297,7 +323,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲 Snap: on</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮ Quant: on</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -338,6 +364,7 @@
     <button id="seqBpmDown" title="BPM −">♩−</button><span id="seqBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="seqBpmUp" title="BPM +">♩+</button>
     <select id="seqKitSel" title="Tipo di batteria"><option value="pop">Pop</option><option value="acoustic">Acustica</option><option value="electro">Elettrica</option></select>
     <button id="seqRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="seqDelayBtn" title="Delay (globale, 0-3)">D</button>
+    <button id="seqSwingBtn" title="Swing/Shuffle: groove più umano (ritarda i controtempi)">🎵 Swing: off</button>
     <button id="seqClose" title="Chiudi">✕</button>
   </div>
   <div id="seqGrid"></div>
@@ -352,6 +379,7 @@
     <button id="melChordBtn" title="Genera seguendo una progressione di accordi (per tracce coerenti)">🎼</button>
     <select id="melProgSel" title="Progressione di accordi" style="display:none"><option value="I-V-vi-IV">I-V-vi-IV</option><option value="vi-IV-I-V">vi-IV-I-V</option><option value="ii-V-I">ii-V-I</option><option value="I-vi-IV-V">I-vi-IV-V</option><option value="last">Ultima usata</option></select>
     <button id="melRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="melDelayBtn" title="Delay (globale, 0-3)">D</button>
+    <button id="melSwingBtn" title="Swing/Shuffle: groove più umano (ritarda i controtempi)">🎵 Swing: off</button>
     <button id="melToClip" title="Registra come traccia audio">⤓ Traccia</button>
     <select id="melBars" title="Battute"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
     <button id="melBpmDown" title="BPM −">♩−</button><span id="melBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="melBpmUp" title="BPM +">♩+</button>
@@ -373,6 +401,11 @@
     <div class="hijoywrap"><div class="hijoy" id="hiJoy"><div class="hijoystick" id="hiStick"></div></div><span class="hiknoblbl">TONO</span></div>
     <div class="hipads" id="hiPads"></div>
   </div>
+</div>
+
+<div id="mixerPanel">
+  <div class="mixhead"><span class="mixt">🎚 MIXER</span><button id="mixClose" title="Chiudi">✕</button></div>
+  <div class="mixbody" id="mixBody"></div>
 </div>
 
 <div id="hint">
@@ -749,6 +782,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   let seqOn=false,seqStep=0,seqLastTime=0;
   const seqPanel=document.getElementById('seqPanel'),seqGrid=document.getElementById('seqGrid');
   function seqStepDur(){return beatInterval()/4;} // 16 steps = 1 bar (4 beats), 1/16 each
+  // ---- Swing / shuffle: delay the odd 16th-steps by (swing * stepDur). 0 = straight, ~0.66 = triplet shuffle ----
+  let swing=0; // 0..0.66
+  function swingOffset(step){return (step%2===1)?swing*seqStepDur():0;} // odd steps pushed late
   function buildSeqGrid(){seqGrid.innerHTML='';
     SEQ_ROWS.forEach((kind,r)=>{const row=document.createElement('div');row.className='seqrow';
       const lbl=document.createElement('div');lbl.className='seqlbl';lbl.textContent=DRUM_LABEL[kind];row.appendChild(lbl);
@@ -766,6 +802,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const seqPlayBtn=document.getElementById('seqPlay');
   seqPlayBtn.addEventListener('click',()=>{resumeAudio();seqOn=!seqOn;seqPlayBtn.classList.toggle('on',seqOn);seqPlayBtn.textContent=seqOn?'❚❚':'▶';if(seqOn){seqStep=0;seqLastTime=audio.currentTime-seqStepDur();}else highlightSeqStep(-1);});
   document.getElementById('seqClear').addEventListener('click',()=>{for(const row of seqPattern)row.fill(false);buildSeqGrid();toast('Pattern svuotato');});
+  // ---- Swing control (shared by drum machine + melody). Cycles preset amounts. ----
+  const SWING_LEVELS=[{n:'off',v:0},{n:'leggero',v:0.12},{n:'medio',v:0.22},{n:'shuffle',v:0.33},{n:'forte',v:0.5}];
+  let swingLevel=0;
+  function syncSwingButtons(){const L=SWING_LEVELS[swingLevel];['seqSwingBtn','melSwingBtn'].forEach(id=>{const b=document.getElementById(id);if(b){b.textContent='🎵 Swing: '+L.n;b.classList.toggle('on',swingLevel>0);}});}
+  function cycleSwing(){swingLevel=(swingLevel+1)%SWING_LEVELS.length;swing=SWING_LEVELS[swingLevel].v;syncSwingButtons();toast('Swing: '+SWING_LEVELS[swingLevel].n+(swingLevel>0?' ('+Math.round(swing*100)+'%)':''));}
+  ['seqSwingBtn','melSwingBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',cycleSwing);});
+  syncSwingButtons();
   // record the pattern as an audio clip, trimmed to an exact number of bars (sample-accurate loop)
   function trimBufferToLength(buf,seconds){const rate=buf.sampleRate;const target=Math.max(1,Math.round(seconds*rate));
     const out=audio.createBuffer(buf.numberOfChannels,target,rate);
@@ -794,7 +837,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // noise buffer must belong to the offline context
     const nlen=Math.floor(rate*1.0),nb=off.createBuffer(1,nlen,rate);{const d=nb.getChannelData(0);for(let i=0;i<nlen;i++)d[i]=Math.random()*2-1;}
     const _kit=(tracks[activeTrack]&&tracks[activeTrack].drumKit)||'pop';
-    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,fxBus,nb,_kit);}}}
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);for(let r=0;r<SEQ_ROWS.length;r++){if(seqPattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,fxBus,nb,_kit);}}}
     const rendered=await off.startRendering();
     const out=audio.createBuffer(2,targetLen,rate);
     for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
@@ -876,7 +919,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const targetLen=Math.round(bars*barDur*rate);const tailLen=Math.round(2.5*rate);
     const off=new OfflineAudioContext(2,targetLen+tailLen,rate);const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.9;mg.connect(fxBus);
     const instr=melInstr();
-    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);
       for(let r=0;r<melRows;r++){if(melPattern[r][s])renderToneOffline(off,mg,instr,midiToFreq(melMidiForRow(r)),when);}}}
     const rendered=await off.startRendering();
     const out=audio.createBuffer(2,targetLen,rate);
@@ -1123,8 +1166,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function loop(){const now=audio?audio.currentTime:0;
     if(playing&&audio&&now-lastPulseTime>=beatInterval()){lastPulseTime=now;firePulsars();}
     beatFlash*=0.85;
-    if(seqOn&&audio&&now-seqLastTime>=seqStepDur()){seqLastTime+=seqStepDur();if(now-seqLastTime>seqStepDur()*2)seqLastTime=now;seqTick();}
-    if(melOn&&audio&&now-melLastTime>=seqStepDur()){melLastTime+=seqStepDur();if(now-melLastTime>seqStepDur()*2)melLastTime=now;melTick();}
+    if(seqOn&&audio&&now-seqLastTime>=seqStepDur()+swingOffset(seqStep)){seqLastTime+=seqStepDur();if(now-seqLastTime>seqStepDur()*2)seqLastTime=now;seqTick();}
+    if(melOn&&audio&&now-melLastTime>=seqStepDur()+swingOffset(melStep)){melLastTime+=seqStepDur();if(now-melLastTime>seqStepDur()*2)melLastTime=now;melTick();}
     const speed=520;for(let i=impulses.length-1;i>=0;i--){const im=impulses[i];im.travelled+=speed/60;const p=clamp(im.travelled/im.dist,0,1);im.x=im.sx+(im.tx-im.sx)*p;im.y=im.sy+(im.ty-im.sy)*p;if(p>=1){playNodeInstrument(im.target);impulses.splice(i,1);}}
     if(W>0)draw();requestAnimationFrame(loop);}
   function drawGrid(){if(!showGrid)return;const tr=tracks[activeTrack],instr=tr.instr;ctx.save();ctx.font='bold 12px -apple-system,sans-serif';ctx.textBaseline='middle';
@@ -1305,12 +1348,12 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   let snapRec=true;
   let qStart=true; // D: quantize first transient to the start
   const qStartBtn=document.getElementById('qStartBtn');qStartBtn.classList.add('on');
-  qStartBtn.addEventListener('click',()=>{qStart=!qStart;qStartBtn.classList.toggle('on',qStart);qStartBtn.textContent='⏮ Quant: '+(qStart?'on':'off');toast(qStart?'Quantizza inizio ON':'Quantizza inizio OFF');});
+  qStartBtn.addEventListener('click',()=>{qStart=!qStart;qStartBtn.classList.toggle('on',qStart);toast(qStart?'Quantizza inizio ON':'Quantizza inizio OFF');});
   // apply quantize-start then snap, per the current toggles
   function processRec(buf){let b=buf;let quantized=false;if(qStart){const q=quantizeStart(b);quantized=(q!==b);b=q;}if(snapRec)b=snapBufferToBeats(b,quantized);return b;}
   const snapBtn=document.getElementById('snapBtn');
   snapBtn.classList.add('on');
-  snapBtn.addEventListener('click',()=>{snapRec=!snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');toast(snapRec?'Snap ON: registrazioni allineate al tempo':'Snap OFF: durata libera');});
+  snapBtn.addEventListener('click',()=>{snapRec=!snapRec;snapBtn.classList.toggle('on',snapRec);toast(snapRec?'Snap ON: registrazioni allineate al tempo':'Snap OFF: durata libera');});
   function loopDur(){return LOOP_BEATS*(60/bpm);} // loop length in seconds at current BPM
   const modeBtn={classList:{toggle:()=>{},add:()=>{},remove:()=>{}},textContent:'Libera'};const latSlider=document.getElementById('latSlider'),latVal=document.getElementById('latVal');
   // Loop/Libera mode removed: always Libera (free recording). Loops are made in grid/sequencer.
@@ -1352,6 +1395,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const clipListEl=document.getElementById('clipList'),studioEl=document.getElementById('studio');
   let TL_PX_PER_SEC=60; // timeline horizontal scale (mutable via zoom)
   function projectDuration(){let m=0;for(const c of clips){const fd=c.buffer?c.buffer.duration:0;const seg=fd*((c.trimEnd==null?1:c.trimEnd)-(c.trimStart||0));const end=(c.t||0)+seg;if(end>m)m=end;}return Math.max(m,8);}
+  // Real end of audible content (no 8s floor). Used to auto-stop the transport when the song ends.
+  // Returns Infinity if any audible clip loops forever (then playback should keep going).
+  function contentEnd(){let m=0;for(const c of clips){if(c.muted||laneEffGain(c.lane||0)<=0)continue;if(c.loop)return Infinity;
+    const fd=c.buffer?c.buffer.duration:0;const seg=fd*((c.trimEnd==null?1:c.trimEnd)-(c.trimStart||0));const end=(c.t||0)+seg;if(end>m)m=end;}return m;}
   function refreshView(){ // Studio-only now
     clipListEl.style.display='none';studioEl.classList.add('show');buildStudio();
   }
@@ -1420,7 +1467,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
    try{
     if(timelineView){
       const dur=projectDuration()||1;const pos=transportOn?(audio.currentTime-transportT0):transportPos;
-      if(transportOn&&pos>=dur){pauseAll();transportPos=0;}
+      // Auto-stop when the last real sound ends (ignores the 8s visual floor; keeps going if a clip loops).
+      const cEnd=contentEnd();
+      if(transportOn&&isFinite(cEnd)&&pos>=cEnd){stopAll();requestAnimationFrame(updatePlaybar);return;}
       playfill.style.width=Math.min(100,(pos/dur)*100)+'%';playlbl.textContent=pos.toFixed(1)+'s / '+dur.toFixed(1)+'s'+(transportOn?'':' ⏸');
       // move studio playhead
       if(studioEl&&studioEl.classList.contains('show')){const pps=TL_PX_PER_SEC*clipZoom;const px=LANE_HEAD+pos*pps;playhead.style.left=px+'px';
@@ -1561,6 +1610,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const selBlock=studioLanes.querySelector('.block.sel');
       if(selBlock)buildBlockTools(clips[selectedClip],selectedClip,selBlock);else hideBlockTools();
     }else hideBlockTools();
+    // keep the mixer in sync with lane changes (new/removed lanes, colors, names)
+    const mp=document.getElementById('mixerPanel');if(mp&&mp.classList.contains('show'))buildMixer();
   }
 
   function hideBlockTools(){if(blockToolsEl){blockToolsEl.classList.remove('show');blockToolsEl.innerHTML='';}}
@@ -1662,14 +1713,77 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     head.connect(dl);dl.connect(dlf);dlf.connect(dl);dl.connect(dlw);dlw.connect(clip.gain);
     return inGain;
   }
-  // per-clip output stage: mute-gain -> volume -> stereo pan -> destination bus
+  // ---- Per-lane mixer (BandLab-style): volume/pan/mute/solo shared by all clips on a lane ----
+  // laneMix[li] = {vol,pan,mute,solo}; laneNodes[li] = {gain,pan} audio bus feeding dryGain.
+  const laneMix={},laneNodes={};
+  function getLaneMix(li){if(!laneMix[li])laneMix[li]={vol:1,pan:0,mute:false,solo:false};return laneMix[li];}
+  function anySolo(){for(const k in laneMix)if(laneMix[k]&&laneMix[k].solo)return true;return false;}
+  // effective gain for a lane: 0 if muted, or if a solo is active elsewhere and this lane isn't soloed
+  function laneEffGain(li){const m=getLaneMix(li);if(m.mute)return 0;if(anySolo()&&!m.solo)return 0;return (m.vol==null?1:m.vol);}
+  // create/reuse the audio bus (gain -> pan -> dryGain) for a lane
+  function getLaneBus(li){if(laneNodes[li])return laneNodes[li];const m=getLaneMix(li);
+    const g=audio.createGain();g.gain.value=laneEffGain(li);
+    let p;if(audio.createStereoPanner){p=audio.createStereoPanner();p.pan.value=(m.pan||0);}else{p=audio.createGain();}
+    g.connect(p);p.connect(dryGain);laneNodes[li]={gain:g,pan:p};return laneNodes[li];}
+  // push current laneMix values onto the live audio nodes (called after any mixer change)
+  function applyLaneGains(){const t=audio?audio.currentTime:0;for(const li in laneNodes){const n=laneNodes[li];if(!n)continue;
+    n.gain.gain.setTargetAtTime(laneEffGain(li),t,0.02);const m=getLaneMix(li);if(n.pan.pan)n.pan.pan.setTargetAtTime(m.pan||0,t,0.02);}}
+  // Build the mixer panel: one channel strip per used lane + a Master strip on the right.
+  function laneList(){let l=[...new Set(clips.map(c=>c.lane||0))].sort((a,b)=>a-b);if(!l.length)l=[0];return l;}
+  function buildMixer(){const body=document.getElementById('mixBody');if(!body)return;body.innerHTML='';
+    const lanes=laneList();
+    lanes.forEach((li,idx)=>{const m=getLaneMix(li);const first=clips.find(c=>(c.lane||0)===li);
+      const strip=document.createElement('div');strip.className='mixstrip';
+      const dot=document.createElement('div');dot.className='mixdot';dot.style.background=first?first.color:'#e33f1a';strip.appendChild(dot);
+      const nm=document.createElement('div');nm.className='mixname';nm.textContent=laneNames[li]||('Corsia '+(idx+1));nm.title=nm.textContent;strip.appendChild(nm);
+      // vertical volume fader (0..150%)
+      const fader=document.createElement('input');fader.type='range';fader.className='fader';fader.min='0';fader.max='150';fader.value=Math.round((m.vol==null?1:m.vol)*100);
+      const fval=document.createElement('div');fval.className='faderval';fval.textContent=fader.value+'%';
+      fader.oninput=()=>{m.vol=(+fader.value)/100;fval.textContent=fader.value+'%';applyLaneGains();};
+      strip.appendChild(fader);strip.appendChild(fval);
+      // pan
+      const panrow=document.createElement('div');panrow.className='panrow';
+      const pan=document.createElement('input');pan.type='range';pan.min='-100';pan.max='100';pan.value=Math.round((m.pan||0)*100);
+      pan.oninput=()=>{m.pan=(+pan.value)/100;applyLaneGains();};pan.ondblclick=()=>{pan.value=0;m.pan=0;applyLaneGains();};
+      const plbl=document.createElement('div');plbl.className='panlbl';plbl.textContent='PAN L·R';
+      panrow.appendChild(pan);panrow.appendChild(plbl);strip.appendChild(panrow);
+      // Mute / Solo
+      const msrow=document.createElement('div');msrow.className='msrow';
+      const mb=document.createElement('button');mb.className='m'+(m.mute?' on':'');mb.textContent='M';mb.title='Mute corsia';
+      mb.onclick=()=>{m.mute=!m.mute;mb.classList.toggle('on',m.mute);applyLaneGains();};
+      const sb=document.createElement('button');sb.className='s'+(m.solo?' on':'');sb.textContent='S';sb.title='Solo corsia';
+      sb.onclick=()=>{m.solo=!m.solo;sb.classList.toggle('on',m.solo);applyLaneGains();};
+      msrow.appendChild(mb);msrow.appendChild(sb);strip.appendChild(msrow);
+      body.appendChild(strip);
+    });
+    // Master strip
+    const ms=document.createElement('div');ms.className='mixstrip master';
+    const dot=document.createElement('div');dot.className='mixdot';dot.style.background='var(--red2)';ms.appendChild(dot);
+    const nm=document.createElement('div');nm.className='mixname';nm.textContent='MASTER';ms.appendChild(nm);
+    const fader=document.createElement('input');fader.type='range';fader.className='fader';fader.min='0';fader.max='130';fader.value=Math.round(masterVol*100);
+    const fval=document.createElement('div');fval.className='faderval';fval.textContent=Math.round(masterVol*100)+'%';
+    fader.oninput=()=>{masterVol=(+fader.value)/100;fval.textContent=fader.value+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);
+      const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=fader.value;if(mvv)mvv.textContent=fader.value+'%';};
+    ms.appendChild(fader);ms.appendChild(fval);
+    const lim=document.createElement('button');lim.className='m'+(limiterOn?' on':'');lim.textContent='LIM';lim.title='Limiter master';lim.style.width='auto';lim.style.padding='0 6px';
+    lim.onclick=()=>{resumeAudio();limiterOn=!limiterOn;lim.classList.toggle('on',limiterOn);const lb=document.getElementById('limiterBtn');if(lb)lb.classList.toggle('on',limiterOn);rewireMaster();};
+    const msrow=document.createElement('div');msrow.className='msrow';msrow.appendChild(lim);ms.appendChild(msrow);
+    body.appendChild(ms);
+  }
+  const mixerPanel=document.getElementById('mixerPanel');
+  document.getElementById('mixerBtn').addEventListener('click',()=>{resumeAudio();const show=!mixerPanel.classList.contains('show');mixerPanel.classList.toggle('show',show);document.getElementById('mixerBtn').classList.toggle('on',show);if(show)buildMixer();});
+  document.getElementById('mixClose').addEventListener('click',()=>{mixerPanel.classList.remove('show');document.getElementById('mixerBtn').classList.remove('on');});
+
+  // per-clip output stage: clip.gain -> volume -> stereo pan -> LANE BUS -> dryGain
   function connectClipOutput(clip,dest){
     const vol=audio.createGain();vol.gain.value=(clip.vol==null?1:clip.vol);clip.volNode=vol;
     let panNode;
     if(audio.createStereoPanner){panNode=audio.createStereoPanner();panNode.pan.value=(clip.pan||0);}
     else{panNode=audio.createGain();} // fallback if StereoPanner unsupported
     clip.panNode=panNode;
-    clip.gain.connect(vol);vol.connect(panNode);panNode.connect(dest);
+    // route through the lane bus so the mixer controls the whole lane (dest kept as fallback)
+    const bus=(dest===dryGain)?getLaneBus(clip.lane||0).gain:dest;
+    clip.gain.connect(vol);vol.connect(panNode);panNode.connect(bus);
   }
   function startClipPlayback(clip){if(clip.paused)return;if(timelineView)return; // timeline uses the scheduler, not looping
     const src=audio.createBufferSource();src.buffer=clip.buffer;const g=audio.createGain();g.gain.value=clip.muted?0:1;clip.gain=g;const inNode=buildClipChain(clip);src.connect(inNode);connectClipOutput(clip,dryGain);
@@ -1758,15 +1872,24 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function renderClipFX(clip){const tail=clip.fxDelay||clip.fxRev?audio.sampleRate*2:0;const seg=clipSeg(clip);const len=Math.ceil(seg.dur*audio.sampleRate)+tail;
     const off=new OfflineAudioContext(2,Math.max(1,len),audio.sampleRate);const s=off.createBufferSource();s.buffer=clip.buffer;connectOfflineFX(off,s,clip,off.destination);s.start(0,seg.ts,seg.dur);return await off.startRendering();}
   async function exportClip(clip){try{if(!clip.buffer||clip.buffer.length<10){toast('Traccia vuota');return;}toast('Esporto '+clip.name+'…');const r=await renderClipFX(clip);const blob=bufferToWav(r);download(blob,fileName(clip.name.replace(/\s+/g,'_')));toast('Esportata '+clip.name);}catch(e){toast('Errore export: '+e.message);}}
-  // ---- Export all (skip muted) — with per-clip FX ----
-  async function exportAll(){const active=clips.filter(c=>!c.muted);if(!active.length){toast('Nessuna traccia da esportare (tutte mute?)');return;}
+  // ---- Export all (skip muted) — with per-clip FX + per-lane mixer ----
+  // Build an offline per-lane bus (gain+pan) that mirrors the live mixer, feeding the master node.
+  function offlineLaneBus(off,li,mgDest){const m=getLaneMix(li);const g=off.createGain();g.gain.value=laneEffGain(li);
+    let p;if(off.createStereoPanner){p=off.createStereoPanner();p.pan.value=(m.pan||0);}else{p=off.createGain();}
+    g.connect(p);p.connect(mgDest);return g;}
+  async function exportAll(){
+    // a lane is audible if its effective gain > 0 (respects mute + solo)
+    const active=clips.filter(c=>laneEffGain(c.lane||0)>0);
+    if(!active.length){toast('Nessuna traccia da esportare (tutte mute/solo?)');return;}
     try{toast('Esporto mix…');
       if(timelineView){ // sequence: each clip plays once at its t
         const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(off.destination);
-        for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,mg);const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
+        const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg));
+        for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
         const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('timeline'));toast('Timeline esportata ('+active.length+' tracce)');return;}
       let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(off.destination);
-      for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,mg);s.start(0,seg.ts);}
+      const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg));
+      for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
       const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('mix'));toast('Mix esportato ('+active.length+' tracce)');}
     catch(e){toast('Errore export: '+e.message);}}
   document.getElementById('exportAllBtn').addEventListener('click',exportAll);
@@ -1969,6 +2092,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         timelineView:timelineView,loopMode:loopMode,snapRec:snapRec,
         masterVol:masterVol,limiterOn:limiterOn,latencyMs:latencyMs,
         laneNames:Object.assign({},laneNames),
+        laneMix:JSON.parse(JSON.stringify(laneMix)),
+        swingLevel:swingLevel,
         synth:{wave:synthWave,cut:synthCutoff,q:synthQ,drive:synthDrive}
       }
     };
@@ -2002,12 +2127,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(st.gridZoom){gridZoom=st.gridZoom;}
     refreshScale();
     if(st.clipZoom)clipZoom=st.clipZoom;
-    if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);snapBtn.textContent='🧲 Snap: '+(snapRec?'on':'off');}
+    if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);}
     loopMode=false; // Loop mode removed: always free
     if(st.masterVol!=null){masterVol=st.masterVol;const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
     if(st.limiterOn!=null){limiterOn=st.limiterOn;limiterBtn.classList.toggle('on',limiterOn);rewireMaster();}
     if(st.latencyMs!=null){latencyMs=st.latencyMs;const ls=document.getElementById('latSlider'),lv=document.getElementById('latVal');if(ls)ls.value=latencyMs;if(lv)lv.textContent=latencyMs+'ms';}
     for(const k in laneNames)delete laneNames[k];Object.assign(laneNames,st.laneNames||{});
+    // reset lane mixer state + buses, then restore saved lane mix values
+    for(const k in laneNodes)delete laneNodes[k];
+    for(const k in laneMix)delete laneMix[k];
+    if(st.laneMix){for(const k in st.laneMix){const s=st.laneMix[k]||{};laneMix[k]={vol:(s.vol==null?1:s.vol),pan:(s.pan||0),mute:!!s.mute,solo:!!s.solo};}}
+    if(st.swingLevel!=null){swingLevel=clamp(st.swingLevel,0,SWING_LEVELS.length-1);swing=SWING_LEVELS[swingLevel].v;syncSwingButtons();}
     if(st.synth){synthWave=st.synth.wave||synthWave;synthCutoff=st.synth.cut||synthCutoff;synthQ=st.synth.q||synthQ;synthDrive=st.synth.drive!=null?st.synth.drive:synthDrive;syncSynthUI&&syncSynthUI();}
     // view: always Studio now
     timelineView=true;
@@ -2028,7 +2158,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function loadProject(name){resumeAudio();let p;try{p=await dbGet(name);}catch(e){}if(!p)return;
     await applyProject(p);
     currentProject.name=name;refreshProjName();closeLoad();toast('Progetto "'+name+'" caricato');}
-  function newProject(){for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;loopStart=null;currentProject.name=null;refreshProjName();refreshView();}
+  function newProject(){for(const c of clips)stopClipPlayback(c);clips.length=0;clipCounter=0;loopStart=null;for(const k in laneNodes)delete laneNodes[k];for(const k in laneMix)delete laneMix[k];currentProject.name=null;refreshProjName();refreshView();}
 
   document.getElementById('saveBtn').addEventListener('click',saveProject);
   // ---- Export / Import full project as a single portable .crudo file (works in browser and APK) ----
