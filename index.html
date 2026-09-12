@@ -2065,7 +2065,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const laneNames={}; // #4 custom lane labels in Studio view (by lane index)
   // ---- #2 Global (arrangement) undo/redo: snapshots clip layout, not audio buffers ----
   const gUndo=[],gRedo=[];const G_MAX=40;
-  function snapClip(c){return {buffer:c.buffer,name:c.name,muted:c.muted,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,t:(c.t||0),lane:(c.lane||0),loop:!!c.loop,empty:!!c.empty,pattern:(c.pattern||null)};}
+  function snapClip(c){return {buffer:c.buffer,name:c.name,muted:c.muted,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,t:(c.t||0),lane:(c.lane||0),loop:!!c.loop,empty:!!c.empty,pattern:(c.pattern||null),musicBars:(c.musicBars||null),bpm:(c.bpm||bpm)};}
   function snapState(){return {clips:clips.map(snapClip),sel:selectedClip,counter:clipCounter,laneNames:Object.assign({},laneNames)};}
   function pushGlobal(){gUndo.push(snapState());if(gUndo.length>G_MAX)gUndo.shift();gRedo.length=0;}
   function restoreState(st){for(const c of clips)stopClipPlayback(c);clips.length=0;
@@ -2172,7 +2172,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     pushGlobal();for(const c of clips)stopClipPlayback(c);clips.length=0;selectedClip=-1;transportOn=false;transportPos=0;lastGen=null;refreshView();toast('Tutte le tracce cancellate');});
   document.getElementById('bpmAllBtn').addEventListener('click',async()=>{if(!clips.length){toast('Nessuna traccia');return;}
     const v=await askText('Nuovo BPM per TUTTE le tracce:',Math.round(bpm));if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<BPM_MIN||nb>BPM_MAX){toast('BPM non valido ('+BPM_MIN+'-'+BPM_MAX+')');return;}
-    pushGlobal();for(const c of clips){const f=nb/(c.bpm||bpm);retimeClip(c,f);}setBpm(nb);refreshClipsView();toast('Tutte le tracce → '+nb+' BPM');});
+    pushGlobal();
+    const oldBarDur=(60/bpm)*4;
+    // remember each clip's start position in BARS (so it lands on the same bar at the new tempo)
+    const startBars=clips.map(c=>(c.t||0)/oldBarDur);
+    for(const c of clips){const f=nb/(c.bpm||bpm);retimeClip(c,f);}
+    setBpm(nb);
+    const newBarDur=(60/nb)*4;
+    // reposition tempo-aware clips exactly on their bar; free audio keeps proportional time
+    clips.forEach((c,i)=>{c.t=startBars[i]*newBarDur;});
+    refreshClipsView();toast('Tutte le tracce → '+nb+' BPM');});
   document.getElementById('gUndoBtn').addEventListener('click',globalUndo);
   document.getElementById('gRedoBtn').addEventListener('click',globalRedo);
   // timeline scheduler: start each clip once at its t (relative to transport)
@@ -2252,9 +2261,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const LANE_HEAD=96;
   // trimmed duration of a clip in seconds
   function clipDurT(c){const fd=c.buffer?c.buffer.duration:0;return fd*((c.trimEnd==null?1:c.trimEnd)-(c.trimStart||0));}
+  // exact bar duration at the CURRENT project BPM
+  function barDurNow(){return (60/bpm)*4;}
+  // musical duration (seconds) of a tempo-aware clip at the current BPM; falls back to real buffer length
+  function clipMusicDur(c){if(c&&c.musicBars)return c.musicBars*barDurNow();return clipDurT(c);}
+  // snap a time to the nearest bar (used for tempo-aware pattern clips)
+  function snapToBar(t){const bd=barDurNow();return Math.round(t/bd)*bd;}
   // #1 magnetic snap: snap a dragged clip's start to nearby edges (0, or other clips' start/end)
   function snapClipTime(self,t,pxPerSec){const SNAP_PX=18;const snapSec=SNAP_PX/pxPerSec;
-    const edges=[0];for(const o of clips){if(o===self)continue;const st=o.t||0;edges.push(st);edges.push(st+clipDurT(o));}
+    // tempo-aware clips (from patterns): snap HARD to the nearest bar so joins are always perfectly in time
+    if(self&&self.musicBars){return Math.max(0,snapToBar(t));}
+    const edges=[0];for(const o of clips){if(o===self)continue;const st=o.t||0;edges.push(st);edges.push(st+clipMusicDur(o));}
     // also snap to the beat grid (helps two same-BPM clips stay rhythmically aligned)
     const spb=60/bpm;const nearBeat=Math.round(t/spb)*spb;edges.push(nearBeat);
     const selEnd=t+clipDurT(self);let best=t,bestD=snapSec;
@@ -2443,7 +2460,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     blockToolsEl.appendChild(mk('📋','Incolla',()=>{if(!clipboard){toast('Niente da incollare');return;}pushGlobal();clipCounter++;const nc={buffer:clipboard,name:'Clip '+clipCounter,muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(c.t||0),_tlScheduled:false,lane:c.lane||0,loop:false};clips.splice(idx+1,0,nc);selectedClip=idx+1;buildStudio();}));
     blockToolsEl.appendChild(mk('⇥|','Attacca dopo la clip precedente (stessa corsia)',()=>{
       const lane=c.lane||0;let prev=null;for(const o of clips){if(o===c||(o.lane||0)!==lane)continue;if((o.t||0)<(c.t||0)&&(prev===null||(o.t||0)>prev.t))prev=o;}
-      pushGlobal();c.t=prev?((prev.t||0)+clipDurT(prev)):0;buildStudio();toast(c.name+' attaccata → '+(c.t).toFixed(3)+'s');}));
+      pushGlobal();c.t=prev?((prev.t||0)+clipMusicDur(prev)):0;buildStudio();toast(c.name+' attaccata → '+(c.t).toFixed(3)+'s');}));
     blockToolsEl.appendChild(mk('🗑','Cancella',()=>{pushGlobal();stopClipPlayback(c);clips.splice(idx,1);if(selectedClip>=clips.length)selectedClip=clips.length-1;buildStudio();}));
     // position the toolbar just below the selected block, clamped inside the studio
     const innerR=studioInner.getBoundingClientRect(),blkR=block.getBoundingClientRect();
@@ -2490,7 +2507,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     let len=0;for(const b of L)len+=b.length;const buf=audio.createBuffer(2,Math.max(1,len),audio.sampleRate);const cl=buf.getChannelData(0),cr=buf.getChannelData(1);let o=0;for(let i=0;i<L.length;i++){cl.set(L[i],o);cr.set(R[i],o);o+=L[i].length;}capture=null;return buf;}
   function addClip(buffer,name,atTime,newLane,pattern){pushGlobal();clipCounter++;
     const lane=newLane?((clips.reduce((m,c)=>Math.max(m,(c.lane||0)),-1))+1):clips.length;
-    const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,bpm:bpm,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(atTime||0),_tlScheduled:false,lane:lane,loop:false,pattern:(pattern||null)};
+    // tempo-aware: if the buffer is (very close to) a whole number of bars at the current BPM, remember the bars.
+    let musicBars=null;const _barDur=(60/bpm)*4;if(buffer&&_barDur>0){const bb=buffer.duration/_barDur;if(Math.abs(bb-Math.round(bb))<0.03&&Math.round(bb)>=1)musicBars=Math.round(bb);}
+    const clip={buffer,name:name||('Clip '+clipCounter),muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,bpm:bpm,musicBars:musicBars,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(atTime||0),_tlScheduled:false,lane:lane,loop:false,pattern:(pattern||null)};
     clips.push(clip);startClipPlayback(clip);if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();toast('Traccia audio aggiunta • '+clip.name);return clip;}
   // Add an empty (silent) track — a real clip with a silent buffer, so all tools (rec-over, paste, trim, drag) work.
   function addEmptyTrack(){resumeAudio();pushGlobal();
@@ -3084,7 +3103,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const clipData=[];
     for(const c of clips){clipData.push({name:c.name,muted:!!c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,
       t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),
-      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),bpm:(c.bpm||bpm),pattern:(c.pattern||null),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
+      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),bpm:(c.bpm||bpm),pattern:(c.pattern||null),musicBars:(c.musicBars||null),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
     // grid tracks with all nodes (note/pulsar/kick/snare)
     const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,drumKit:tr.drumKit||'pop',
       nodes:tr.nodes.map(n=>({x:n.x,y:n.y,type:n.type}))}));
@@ -3116,7 +3135,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const clip={buffer:buf,name:cd.name,muted:!!cd.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,
         vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),bpm:(cd.bpm||bpm),
         color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,
-        fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,fxDrive:cd.fxDrive||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop,pattern:(cd.pattern||null)};
+        fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,fxDrive:cd.fxDrive||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop,pattern:(cd.pattern||null),musicBars:(cd.musicBars||null)};
       clips.push(clip);}catch(e){}}
     // grid
     if(p.grid&&p.grid.tracks){for(let i=0;i<tracks.length&&i<p.grid.tracks.length;i++){const gt=p.grid.tracks[i];
