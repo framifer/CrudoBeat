@@ -199,8 +199,10 @@
   .block .loopbadge{position:absolute;bottom:1px;right:3px;font-size:9px;font-weight:800;color:var(--red2);pointer-events:none;}
   .block .blkbtn{position:absolute;top:1px;border:none;border-radius:4px;width:18px;height:16px;font-size:9px;font-weight:800;cursor:pointer;background:var(--cream);color:var(--ink);opacity:.9;}
   .block .blkbtn.act{background:var(--red);color:var(--cream);}
-  .block .blkbtn:nth-of-type(1){right:20px;}
-  .block .blkbtn.edit{right:39px;}
+  .block .blkbtn.loop{right:20px;}
+  .block .blkbtn.solo{right:39px;}
+  .block .blkbtn.solo.act{background:#f2c53d;color:#2b2118;}
+  .block .blkbtn.edit{right:58px;}
   .block .blkbtn.del{right:1px;}
   #playhead{position:absolute;top:0;bottom:0;width:2px;background:#111;z-index:4;pointer-events:none;left:96px;}
   /* Studio per-block contextual toolbar */
@@ -615,7 +617,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function updateTotalSteps(){const oct=Math.max(1,Math.round(BASE_OCTAVES/gridZoom));TOTAL_STEPS=SCALE_LEN*oct;VIS_OCT=oct;}
 
   const NOTE_IT=['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
-  const INSTR_BASE={node:60,bass:36,bassacoustic:36,ambient:52,pad:52,lead:57,organ:57,piano:57,epiano:57,drums:0,synth:45};
+  const INSTR_BASE={node:60,bass:36,bassacoustic:36,ambient:52,pad:52,lead:57,organ:57,piano:57,epiano:57,drums:0,synth:45,hichord:57};
   function midiForStep(step,instr,oct){const o=Math.floor(step/SCALE_LEN),d=step%SCALE_LEN;return INSTR_BASE[instr]+KEY_OFF+o*12+SCALE[d]+oct*12;}
   function midiToName(m){return NOTE_IT[((m%12)+12)%12]+(Math.floor(m/12)-1);}
   function midiToFreq(m){return 440*Math.pow(2,(m-69)/12);}
@@ -1055,7 +1057,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // offline synth for melody export — compact versions of the live instruments
   function renderToneOffline(ac,dest,instr,freq,now){
     const g=ac.createGain();g.connect(dest);
-    if(instr==='synth'){let oscs;
+    if(instr==='hichord'){ // HiCrudo-style warm chord voice: 2 detuned saws -> resonant lowpass, sustained
+      const o1=ac.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;
+      const o2=ac.createOscillator();o2.type='sawtooth';o2.frequency.value=freq*1.005;const o2g=ac.createGain();o2g.gain.value=.5;
+      const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*3+900;f.Q.value=3;
+      o1.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(g);
+      g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.26,now+.02);g.gain.setValueAtTime(.24,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.4);
+      o1.start(now);o2.start(now);o1.stop(now+1.5);o2.stop(now+1.5);}
+    else if(instr==='synth'){let oscs;
       if(synthMode==='dirty'){const o1=ac.createOscillator();o1.type=synthWave;o1.frequency.value=freq;o1.detune.value=-8;const o2=ac.createOscillator();o2.type=synthWave;o2.frequency.value=freq;o2.detune.value=+8;const mix=ac.createGain();o1.connect(mix);o2.connect(mix);buildDirtyChain(ac,mix,g);oscs=[o1,o2];}
       else{const o=ac.createOscillator();o.type=synthWave;o.frequency.value=freq;o.connect(g);oscs=[o];}
       g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.5,now+.005);g.gain.setValueAtTime(.5,now+.3);g.gain.linearRampToValueAtTime(0,now+.4);oscs.forEach(o=>{o.start(now);o.stop(now+.42);});}
@@ -1196,13 +1205,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'Bon Iver':{genre:'Bedroom',bpm:88,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'epiano',amb:'pad'},prog:'vi-IV-I-V',sc:0,lead:false,ambTrack:true},
     'Mac DeMarco':{genre:'Bedroom',bpm:96,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'epiano',amb:'ambient'},prog:'I-vi-IV-V',sc:0,lead:false,ambTrack:true},
     // French touch
-    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'pad'},prog:'vi-IV-I-V',sc:2,lead:true,synthTrack:true},
-    'Justice':{genre:'French touch',bpm:118,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'pad'},prog:'I-vi-IV-V',sc:2,lead:true,synthTrack:true},
-    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'pad'},prog:'I-V-vi-IV',sc:2,lead:true,synthTrack:true},
+    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'vi-IV-I-V',sc:2,lead:true,synthTrack:true},
+    'Justice':{genre:'French touch',bpm:118,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'I-vi-IV-V',sc:2,lead:true,synthTrack:true},
+    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'I-V-vi-IV',sc:2,lead:true,synthTrack:true},
     // Electro
-    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'lead'},prog:'vi-IV-I-V',sc:2,lead:true,synthTrack:true},
-    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'pad'},prog:'vi-IV-I-V',sc:1,lead:true,synthTrack:true},
-    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'lead'},prog:'I-vi-IV-V',sc:2,lead:true,synthTrack:true},
+    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'vi-IV-I-V',sc:2,lead:true,synthTrack:true},
+    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'vi-IV-I-V',sc:1,lead:true,synthTrack:true},
+    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord',lead:'synth'},prog:'I-vi-IV-V',sc:2,lead:true,synthTrack:true},
     // Ambient (Node instead of chords)
     'Christian Löffler':{genre:'Ambient',bpm:110,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic',chord:'node'},prog:'vi-IV-I-V',sc:1,lead:false,nodeTrack:true},
     'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic',chord:'node'},prog:'I-V-vi-IV',sc:0,lead:false,nodeTrack:true},
@@ -1349,6 +1358,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const kit=P?P.kit:((g==='French touch'||g==='Electro')?'electro':(g==='Rock'||g==='Punk/Grunge'||g==='Indie')?'acoustic':'pop');
       const bassInstr=P&&P.instr&&P.instr.bass?P.instr.bass:'bassacoustic';
       const chordInstr=P&&P.instr&&P.instr.chord?P.instr.chord:'organ';
+      const leadInstr=P&&P.instr&&P.instr.lead?P.instr.lead:null;
       const wantLead=(P?!!P.lead:false)&&PT.lead;
       const label=(band?band:g)+' • '+M.label+' • '+PT.label;
       toast('Genero '+PT.label+' in stile '+(band||g)+'…');
@@ -1362,7 +1372,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       else{
         jobs=[renderDrumsPattern(drumPat,bars,kit,g),renderBassLine(roots,bars,g,bassInstr,capB),renderChordBed(roots,bars,g,chordInstr,capC)];
         order=['drum','bass','chord'];
-        if(wantLead){jobs.push(renderLeadLine(roots,bars,g,null,capL));order.push('lead');}
+        if(wantLead){jobs.push(renderLeadLine(roots,bars,g,leadInstr,capL));order.push('lead');}
       }
       const bufs=await Promise.all(jobs);
       const idx=(k)=>order.indexOf(k);
@@ -1373,7 +1383,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(!PT.drumsOnly){
         const chordName=(chordInstr==='node')?'Node':'Accordi';
         const cc=addClip(bufs[idx('chord')],chordName,at0,true,(chordInstr==='node')?null:mkPat(capC,chordInstr));cc.loop=false;cc.color=TRACK_COLORS[3];cLane=(cc.lane||0);tag(cc);
-        if(wantLead){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,(g==='French touch'||g==='Electro')?'lead':'epiano'));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);}
+        if(wantLead){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,leadInstr||((g==='French touch'||g==='Electro')?'synth':'epiano')));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);}
         const bc=addClip(bufs[idx('bass')],'Basso',at0,true,mkPat(capB,bassInstr));bc.loop=false;bc.color=TRACK_COLORS[1];bLane=(bc.lane||0);tag(bc);
       }
       const dc=addClip(bufs[idx('drum')],(PT.drumsOnly?'Stacco':'Batteria'),at0,true,{kind:'drum',pattern:drumPat.map(r=>r.slice()),bars:1,kit:kit});dc.loop=false;dc.color=TRACK_COLORS[0];tag(dc);
@@ -1692,9 +1702,12 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     bpmValEl.addEventListener('click',askBpm);
   })();
   document.getElementById('clearBtn').addEventListener('click',()=>{tracks[activeTrack].nodes=[];toast('Nodi svuotati');});
-  const octLbl=document.getElementById('octLbl');function refreshOct(){octLbl.textContent='8va '+(tracks[activeTrack].oct>0?'+':'')+tracks[activeTrack].oct;}
-  document.getElementById('octUp').addEventListener('click',()=>{tracks[activeTrack].oct=clamp(tracks[activeTrack].oct+1,-3,3);refreshOct();});
-  document.getElementById('octDown').addEventListener('click',()=>{tracks[activeTrack].oct=clamp(tracks[activeTrack].oct-1,-3,3);refreshOct();});
+  const octLbl=document.getElementById('octLbl');
+  function refreshOct(){const o=tracks[activeTrack].oct;octLbl.textContent='8va '+(o>0?'+':'')+o;}
+  // change octave from the main dashboard; if the melody sequencer is open, rebuild it so notes/labels follow
+  function changeOct(delta){tracks[activeTrack].oct=clamp((tracks[activeTrack].oct||0)+delta,-3,3);refreshOct();if(melPanel&&melPanel.classList.contains('show'))buildMelGrid();}
+  document.getElementById('octUp').addEventListener('click',()=>changeOct(1));
+  document.getElementById('octDown').addEventListener('click',()=>changeOct(-1));
   function doZoom(dir){ // dir +1 in, -1 out; zoom looper if open, else grid
     if(splitMode&&!looperHidden){clipZoom=clamp(clipZoom*(dir>0?1.3:1/1.3),0.3,8);refreshView();toast('Zoom '+clipZoom.toFixed(1)+'x');}
     else if(tracks[activeTrack].instr==='drums'){toast('Batteria: pad a dimensione fissa (nessuno zoom)');}
@@ -2004,7 +2017,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const bc=document.createElement('canvas');bc.width=bw;bc.height=52;block.appendChild(bc);if(c.buffer)drawWaveRange(bc,c.buffer,c.color,ts,te);
       const bn=document.createElement('div');bn.className='bn';bn.textContent=c.name;block.appendChild(bn);
       // per-clip controls on the block
-      const lpB=document.createElement('button');lpB.className='blkbtn'+(c.loop?' act':'');lpB.textContent='⟳';lpB.title='Ripeti in loop';lpB.onclick=(e)=>{e.stopPropagation();c.loop=!c.loop;buildStudio();toast(c.name+(c.loop?' • loop ON':' • loop OFF'));};block.appendChild(lpB);
+      const lpB=document.createElement('button');lpB.className='blkbtn loop'+(c.loop?' act':'');lpB.textContent='⟳';lpB.title='Ripeti in loop';lpB.onclick=(e)=>{e.stopPropagation();c.loop=!c.loop;buildStudio();toast(c.name+(c.loop?' • loop ON':' • loop OFF'));};block.appendChild(lpB);
+      // S (Solo): hear only this lane. Uses the same lane-solo system as the mixer (stays in sync).
+      const liSolo=(c.lane||0);const soloOn=!!getLaneMix(liSolo).solo;
+      const soB=document.createElement('button');soB.className='blkbtn solo'+(soloOn?' act':'');soB.textContent='S';soB.title='Solo: senti solo questa traccia';
+      soB.onclick=(e)=>{e.stopPropagation();const m=getLaneMix(liSolo);m.solo=!m.solo;applyLaneGains();const mp=document.getElementById('mixerPanel');if(mp&&mp.classList.contains('show'))buildMixer();buildStudio();toast(m.solo?('Solo • '+(laneNames[liSolo]||c.name)):'Solo off');};block.appendChild(soB);
       // ✏️ Edit: reopen a pattern-based track (drum machine / melody) to modify & regenerate it
       if(c.pattern&&(c.pattern.kind==='drum'||c.pattern.kind==='mel')){const edB=document.createElement('button');edB.className='blkbtn edit';edB.textContent='✏️';edB.title='Modifica nel '+(c.pattern.kind==='drum'?'drum machine':'melody sequencer');edB.onclick=(e)=>{e.stopPropagation();reopenPattern(c);};block.appendChild(edB);}
       const delB=document.createElement('button');delB.className='blkbtn del';delB.textContent='🗑';delB.title='Elimina';delB.onclick=(e)=>{e.stopPropagation();stopClipPlayback(c);clips.splice(i,1);buildStudio();};block.appendChild(delB);
