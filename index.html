@@ -234,6 +234,13 @@
   .mixstrip .msrow button{border:2px solid var(--panel-border);background:var(--cream);color:var(--ink);border-radius:6px;width:26px;height:24px;font-size:11px;font-weight:900;cursor:pointer;padding:0;}
   .mixstrip .msrow button.m.on{background:var(--ink);color:var(--cream);border-color:#000;}
   .mixstrip .msrow button.s.on{background:#f2c53d;color:#2b2118;border-color:#b8901f;}
+  .mixstrip .eqwrap{display:flex;flex-direction:column;gap:2px;width:100%;padding:3px 0;border-top:1px dashed var(--panel-border);border-bottom:1px dashed var(--panel-border);}
+  .mixstrip .eqrow{display:flex;align-items:center;gap:3px;}
+  .mixstrip .eqrow .eql{font-size:8px;font-weight:900;width:10px;opacity:.7;}
+  .mixstrip .eqrow input{flex:1;min-width:0;accent-color:var(--red);margin:0;height:12px;}
+  .mixstrip .compbtn{border:2px solid var(--panel-border);background:var(--cream);color:var(--ink);border-radius:6px;height:22px;font-size:9px;font-weight:900;cursor:pointer;width:100%;}
+  .mixstrip .compbtn.on{background:var(--red);color:var(--cream);border-color:var(--red2);}
+  .mixstrip .compbtn.sc.on{background:#2b8ccc;color:#fff;border-color:#1c6a9e;}
   @media (max-height:560px){.mixstrip .fader{height:110px;}}
 
   /* persistent Tracce button bottom-left */
@@ -241,11 +248,13 @@
     padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 2px 0 #000;flex:0 0 auto;white-space:nowrap;}
 
   /* load dialog */
-  #loadDlg,#askDlg,#randDlg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:30;display:none;align-items:center;justify-content:center;}
-  #loadDlg.show,#askDlg.show{display:flex;}
+  #loadDlg,#askDlg,#randDlg,#fullBaseDlg,#masterDlg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:30;display:none;align-items:center;justify-content:center;}
+  #loadDlg.show,#askDlg.show,#fullBaseDlg.show,#masterDlg.show{display:flex;}
   #randDlg.show{display:flex;align-items:flex-start;background:transparent;pointer-events:none;}
   #randDlg #loadBox{margin-top:calc(8px + env(safe-area-inset-top,0px));pointer-events:auto;}
   #askDlg,#randDlg{z-index:31;}
+  #fullBaseDlg{z-index:31;}
+  #masterDlg{z-index:31;}
   #loadBox{background:var(--cream);border:3px solid var(--red2);border-radius:14px;padding:14px;width:min(90vw,360px);max-height:80vh;overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.4);}
   #loadBox h3{margin:0 0 10px;color:var(--red2);}
   #loadBox .prj{display:flex;align-items:center;gap:6px;border:2px solid var(--red2);border-radius:9px;padding:7px;margin-bottom:7px;background:#fff8ea;}
@@ -323,7 +332,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -361,7 +370,6 @@
     <button id="seqRandBtn" title="Genera beat casuale">🎲</button>
     <button id="seqToClip" title="Registra il pattern come traccia audio">⤓ Traccia</button>
     <select id="seqBars" title="Battute da registrare"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
-    <button id="seqBpmDown" title="BPM −">♩−</button><span id="seqBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="seqBpmUp" title="BPM +">♩+</button>
     <select id="seqKitSel" title="Tipo di batteria"><option value="pop">Pop</option><option value="acoustic">Acustica</option><option value="electro">Elettrica</option></select>
     <button id="seqRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="seqDelayBtn" title="Delay (globale, 0-3)">D</button>
     <button id="seqSwingBtn" title="Swing/Shuffle: groove più umano (ritarda i controtempi)">🎵 Swing: off</button>
@@ -380,9 +388,12 @@
     <select id="melProgSel" title="Progressione di accordi" style="display:none"><option value="I-V-vi-IV">I-V-vi-IV</option><option value="vi-IV-I-V">vi-IV-I-V</option><option value="ii-V-I">ii-V-I</option><option value="I-vi-IV-V">I-vi-IV-V</option><option value="last">Ultima usata</option></select>
     <button id="melRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="melDelayBtn" title="Delay (globale, 0-3)">D</button>
     <button id="melSwingBtn" title="Swing/Shuffle: groove più umano (ritarda i controtempi)">🎵 Swing: off</button>
+    <button id="melArpBtn" title="Arpeggiatore: spezza gli accordi (più note sullo stesso step) in sequenza ritmica">🕐 Arp: off</button>
+    <select id="melArpDir" title="Direzione arpeggio" style="display:none"><option value="up">↑ Up</option><option value="down">↓ Down</option><option value="updown">↕ Up-Down</option><option value="random">🔀 Random</option></select>
+    <select id="melArpRate" title="Velocità arpeggio" style="display:none"><option value="8">1/8</option><option value="16" selected>1/16</option><option value="16t">1/16T</option><option value="32">1/32</option></select>
+    <button id="melArpOct" title="Estendi l'arpeggio di un'ottava sopra" style="display:none">8va: 1</button>
     <button id="melToClip" title="Registra come traccia audio">⤓ Traccia</button>
     <select id="melBars" title="Battute"><option value="1">1 batt</option><option value="2">2 batt</option><option value="4">4 batt</option></select>
-    <button id="melBpmDown" title="BPM −">♩−</button><span id="melBpmVal" style="font-size:11px;font-weight:900;min-width:34px;text-align:center">100</span><button id="melBpmUp" title="BPM +">♩+</button>
     <button id="melClose" title="Chiudi">✕</button>
   </div>
   <div id="melGrid"></div>
@@ -430,6 +441,34 @@
     <button id="randEdit" style="flex:1 1 45%;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">✏️ Modifica</button>
     <button id="randAgain" style="flex:1 1 45%;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">🎲 Rigenera</button>
     <button id="randExit" style="flex:1 1 45%;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">✕ Esci</button>
+  </div>
+</div></div>
+
+<div id="fullBaseDlg"><div id="loadBox">
+  <h3>🎹 Genera intera base</h3>
+  <div style="font-size:12px;font-weight:700;opacity:.8;margin-bottom:10px">Crea 3 tracce coerenti (batteria + basso + accordi) in <b id="fbKeyLbl">Do Maggiore</b>, sul BPM attuale.</div>
+  <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:800;font-size:12px">
+    <label for="fbGenre">Genere:</label><select id="fbGenre" class="sel" style="flex:1"></select>
+  </div>
+  <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
+    <label for="fbProg">Accordi:</label>
+    <select id="fbProg" class="sel" style="flex:1"><option value="I-V-vi-IV">I-V-vi-IV (pop)</option><option value="vi-IV-I-V">vi-IV-I-V (emotivo)</option><option value="ii-V-I">ii-V-I (jazz)</option><option value="I-vi-IV-V">I-vi-IV-V (classico)</option></select>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button id="fbCancel" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">Annulla</button>
+    <button id="fbGo" style="flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:9px;height:38px;font-weight:800;cursor:pointer">🎹 Genera</button>
+  </div>
+</div></div>
+
+<div id="masterDlg"><div id="loadBox">
+  <h3>🎚 Mastering & Esporta</h3>
+  <div style="font-size:12px;font-weight:700;opacity:.8;margin-bottom:10px">Scegli il carattere sonoro: applica EQ + compressione + saturazione + limiter per un mix forte e bilanciato, pronto per l'ascolto.</div>
+  <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
+    <label for="masterPresetSel">Preset:</label><select id="masterPresetSel" class="sel" style="flex:1"></select>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button id="masterCancel" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">Annulla</button>
+    <button id="masterGo" style="flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:9px;height:38px;font-weight:800;cursor:pointer">⤓ Esporta</button>
   </div>
 </div></div>
 
@@ -866,6 +905,30 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   }
   function melMidiForRow(r){const tr=tracks[activeTrack];const instr=(tr.instr==='drums')?'node':tr.instr;return midiForStep((melRows-1-r),instr,tr.oct);} // top row = highest note
   function melInstr(){const tr=tracks[activeTrack];return (tr.instr==='drums')?'node':tr.instr;}
+  // ---- Arpeggiator (Melody): splits a chord (several notes on one step) into a fast rhythmic sequence ----
+  let melArp=false, melArpDir='up', melArpRate='16', melArpOct=1;
+  const ARP_RATE_SUBDIV={'8':2,'16':4,'16t':6,'32':8}; // note-events per beat
+  // MIDI notes active on a given step, low→high
+  function melStepMidis(step){const out=[];for(let r=melRows-1;r>=0;r--){if(melPattern[r]&&melPattern[r][step])out.push(melMidiForRow(r));}return out;}
+  // Order a chord's notes by the arp direction, optionally extended by octaves
+  function arpSequence(midis){let notes=midis.slice();
+    if(melArpOct>1){const base=notes.slice();for(let o=1;o<melArpOct;o++)for(const m of base)notes.push(m+12*o);}
+    notes.sort((a,b)=>a-b);
+    if(melArpDir==='down')notes.reverse();
+    else if(melArpDir==='updown'){const down=notes.slice().reverse().slice(1,-1);notes=notes.concat(down);}
+    else if(melArpDir==='random'){for(let i=notes.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[notes[i],notes[j]]=[notes[j],notes[i]];}}
+    return notes;}
+  // Duration of one arp sub-step (seconds), based on the selected rate
+  function arpSubDur(){const perBeat=ARP_RATE_SUBDIV[melArpRate]||4;return (60/bpm)/perBeat;}
+  // ---- Arpeggiator controls (Melody) — wired here, after the state is declared (avoids TDZ) ----
+  (function(){const btn=document.getElementById('melArpBtn'),dir=document.getElementById('melArpDir'),rate=document.getElementById('melArpRate'),oct=document.getElementById('melArpOct');
+    function syncArpUI(){if(btn){btn.textContent='🕐 Arp: '+(melArp?'on':'off');btn.classList.toggle('on',melArp);}
+      [dir,rate,oct].forEach(el=>{if(el)el.style.display=melArp?'':'none';});}
+    if(btn)btn.addEventListener('click',()=>{melArp=!melArp;syncArpUI();toast(melArp?('Arpeggiatore ON • '+melArpDir+' '+melArpRate):'Arpeggiatore OFF');});
+    if(dir)dir.addEventListener('change',()=>{melArpDir=dir.value;toast('Arp direzione: '+dir.value);});
+    if(rate)rate.addEventListener('change',()=>{melArpRate=rate.value;toast('Arp velocità: '+rate.value);});
+    if(oct)oct.addEventListener('click',()=>{melArpOct=(melArpOct>=2)?1:2;oct.textContent='8va: '+melArpOct;toast('Arp ottave: '+melArpOct);});
+    syncArpUI();})();
   function buildMelGrid(){melEnsurePattern();melGrid.innerHTML='';
     for(let r=0;r<melRows;r++){const row=document.createElement('div');row.className='seqrow';
       const lbl=document.createElement('div');lbl.className='seqlbl';lbl.textContent=midiToName(melMidiForRow(r));row.appendChild(lbl);
@@ -876,7 +939,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       row.appendChild(cells);melGrid.appendChild(row);}
   }
   function highlightMelStep(st){melGrid.querySelectorAll('.cell').forEach(c=>c.classList.toggle('playing',+c.dataset.s===st));}
-  function melTick(){for(let r=0;r<melRows;r++){if(melPattern[r][melStep])triggerNote(melInstr(),midiToFreq(melMidiForRow(r)));}highlightMelStep(melStep);melStep=(melStep+1)%SEQ_STEPS;}
+  function melTick(){const instr=melInstr();
+    if(melArp){
+      const midis=melStepMidis(melStep);
+      if(midis.length){const seq=arpSequence(midis);const sub=arpSubDur();const stepDur=seqStepDur();
+        // spread the arp notes across this step's duration, capped to the step length
+        const n=Math.max(1,Math.min(seq.length,Math.max(1,Math.round(stepDur/sub))));
+        for(let i=0;i<n;i++){const note=seq[i%seq.length];setTimeout(()=>{triggerNote(instr,midiToFreq(note));},Math.round(i*sub*1000));}
+      }
+    } else {
+      for(let r=0;r<melRows;r++){if(melPattern[r][melStep])triggerNote(instr,midiToFreq(melMidiForRow(r)));}
+    }
+    highlightMelStep(melStep);melStep=(melStep+1)%SEQ_STEPS;}
   const melPlayBtn=document.getElementById('melPlay');
   function openMel(){resumeAudio();melPanel.classList.add('show');buildMelGrid();}
   document.getElementById('melClose').addEventListener('click',()=>{melPanel.classList.remove('show');melOn=false;melPlayBtn.textContent='▶';melPlayBtn.classList.remove('on');highlightMelStep(-1);});
@@ -920,7 +994,15 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const off=new OfflineAudioContext(2,targetLen+tailLen,rate);const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.9;mg.connect(fxBus);
     const instr=melInstr();
     for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);
-      for(let r=0;r<melRows;r++){if(melPattern[r][s])renderToneOffline(off,mg,instr,midiToFreq(melMidiForRow(r)),when);}}}
+      if(melArp){
+        const midis=melStepMidis(s);
+        if(midis.length){const seq=arpSequence(midis);const sub=arpSubDur();
+          const n=Math.max(1,Math.min(seq.length,Math.max(1,Math.round(stepDur/sub))));
+          for(let i=0;i<n;i++){renderToneOffline(off,mg,instr,midiToFreq(seq[i%seq.length]),when+i*sub);}}
+      } else {
+        for(let r=0;r<melRows;r++){if(melPattern[r][s])renderToneOffline(off,mg,instr,midiToFreq(melMidiForRow(r)),when);}
+      }
+    }}
     const rendered=await off.startRendering();
     const out=audio.createBuffer(2,targetLen,rate);
     for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
@@ -975,6 +1057,61 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const PROGRESSIONS={'I-V-vi-IV':[0,4,5,3],'vi-IV-I-V':[5,3,0,4],'ii-V-I':[1,4,0,0],'I-vi-IV-V':[0,5,3,4]};
   let chordMode=false, chordProg='I-V-vi-IV', lastUsedProg=null;
   function currentProgRoots(){if(chordProg==='last'&&lastUsedProg)return PROGRESSIONS[lastUsedProg]||PROGRESSIONS['I-V-vi-IV'];return PROGRESSIONS[chordProg]||PROGRESSIONS['I-V-vi-IV'];}
+  // ============================================================
+  // "Genera intera base": drums + bass + chords, all coherent on the current key/scale/BPM.
+  // Renders 3 exact-length loops (sample-accurate, tails wrapped) and drops them on separate lanes.
+  // ============================================================
+  // scale-degree -> MIDI for a given instrument/octave (mirrors midiForStep, but degree can exceed the scale)
+  function degToMidi(instr,deg,oct){const o=Math.floor(deg/SCALE_LEN),dd=((deg%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;return INSTR_BASE[instr]+KEY_OFF+o*12+SCALE[dd]+(oct||0)*12;}
+  // finalize an offline render into an exact-length buffer with tail wrapped to the start (seamless loop)
+  async function renderExactLoop(off,targetLen){const rendered=await off.startRendering();const out=audio.createBuffer(2,targetLen,off.sampleRate);
+    for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);
+      for(let i=0;i<targetLen;i++)dst[i]=src[i]||0;for(let i=targetLen;i<src.length;i++)dst[i-targetLen]+=src[i]||0;}
+    return out;}
+  // Render an explicit drum pattern (independent of the live seqPattern) to an exact loop.
+  async function renderDrumsPattern(pattern,bars,kit){const rate=audio.sampleRate,barDur=beatInterval()*4,stepDur=seqStepDur();
+    const targetLen=Math.round(bars*barDur*rate),off=new OfflineAudioContext(2,targetLen+Math.round(2.5*rate),rate);
+    const fxBus=offlineGlobalFxBus(off);const nlen=Math.floor(rate*1.0),nb=off.createBuffer(1,nlen,rate);{const d=nb.getChannelData(0);for(let i=0;i<nlen;i++)d[i]=Math.random()*2-1;}
+    for(let b=0;b<bars;b++)for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);for(let r=0;r<SEQ_ROWS.length;r++){if(pattern[r]&&pattern[r][s])playDrumKind(SEQ_ROWS[r],when,off,fxBus,nb,kit);}}
+    return renderExactLoop(off,targetLen);}
+  // Render a bass line following the progression roots (one chord per bar), with a genre-flavored rhythm.
+  async function renderBassLine(roots,bars,genre){const rate=audio.sampleRate,barDur=beatInterval()*4,stepDur=seqStepDur();
+    const targetLen=Math.round(bars*barDur*rate),off=new OfflineAudioContext(2,targetLen+Math.round(2.5*rate),rate);
+    const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.95;mg.connect(fxBus);
+    // rhythmic step pattern for the bass (which 16th-steps play), per genre
+    const patByGenre={House:[0,4,8,12],Electro:[0,3,6,10,12,14],Trap:[0,6,10],'Hip-Hop':[0,7,10],Funk:[0,3,6,10,11],Pop:[0,8],Rock:[0,8],Ambient:[0]};
+    const steps=patByGenre[genre]||[0,8];
+    for(let b=0;b<bars;b++){const root=roots[b%roots.length];
+      for(const s of steps){const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);
+        // root note, low octave; occasional fifth for movement on later steps
+        const useFifth=(s>=10&&Math.random()<0.4);const deg=root+(useFifth?4:0);
+        renderToneOffline(off,mg,'bass',midiToFreq(degToMidi('bass',deg,0)),when);}}
+    return renderExactLoop(off,targetLen);}
+  // Render chords following the progression (one triad per bar), sustained.
+  async function renderChordBed(roots,bars){const rate=audio.sampleRate,barDur=beatInterval()*4;
+    const targetLen=Math.round(bars*barDur*rate),off=new OfflineAudioContext(2,targetLen+Math.round(2.5*rate),rate);
+    const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.7;mg.connect(fxBus);
+    for(let b=0;b<bars;b++){const root=roots[b%roots.length];const when=b*barDur;
+      for(const d of [root,root+2,root+4]){renderToneOffline(off,mg,'organ',midiToFreq(degToMidi('organ',d,0)),when);}}
+    return renderExactLoop(off,targetLen);}
+  // Orchestrate: build coherent drums+bass+chords for the chosen genre and add them as 3 lanes.
+  async function generateFullBase(genre){resumeAudio();
+    const bars=4; // one full progression
+    const roots=currentProgRoots();
+    const kit=(genre==='Electro'||genre==='House'||genre==='Trap')?'electro':(genre==='Rock'||genre==='Funk')?'acoustic':'pop';
+    try{
+      toast('Genero la base '+genre+'… (batteria, basso, accordi)');
+      const drumPat=randomBeat(genre);
+      const [dBuf,bBuf,cBuf]=await Promise.all([renderDrumsPattern(drumPat,bars,kit),renderBassLine(roots,bars,genre),renderChordBed(roots,bars)]);
+      // add on separate lanes, all looping, aligned at the current transport position
+      const at=transportPos;
+      addClip(cBuf,'Accordi',at,true);const cClip=clips[clips.length-1];cClip.loop=true;cClip.color=TRACK_COLORS[3];
+      addClip(bBuf,'Basso',at,true);const bClip=clips[clips.length-1];bClip.loop=true;bClip.color=TRACK_COLORS[1];
+      addClip(dBuf,'Batteria',at,true);const dClip=clips[clips.length-1];dClip.loop=true;dClip.color=TRACK_COLORS[0];
+      buildStudio();
+      toast('Base '+genre+' pronta • '+bars+' battute in '+currentKey+' '+currentScaleName);
+    }catch(e){toast('Errore generazione base: '+(e&&e.message||e));}
+  }
   // Riff: array of {step,degree} within the scale, motif-based for musicality.
   function randomRiff(genre){
     const notes=[];
@@ -1059,6 +1196,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('randRiffBtn').addEventListener('click',()=>openRandomizer('riff'));
   document.getElementById('seqRandBtn').addEventListener('click',()=>openRandomizer('beat'));
   document.getElementById('melRand').addEventListener('click',()=>openRandomizer('riff'));
+  // ---- Full-base generator dialog wiring ----
+  (function(){const dlg=document.getElementById('fullBaseDlg'),gsel=document.getElementById('fbGenre'),psel=document.getElementById('fbProg'),keyLbl=document.getElementById('fbKeyLbl');
+    if(gsel&&!gsel.options.length)GENRES.forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;gsel.appendChild(o);});
+    if(gsel)gsel.value='Electro';
+    const open=()=>{resumeAudio();if(keyLbl)keyLbl.textContent=currentKey+' '+currentScaleName;dlg.classList.add('show');};
+    const close=()=>dlg.classList.remove('show');
+    const btn=document.getElementById('fullBaseBtn');if(btn)btn.addEventListener('click',open);
+    const cancel=document.getElementById('fbCancel');if(cancel)cancel.addEventListener('click',close);
+    if(dlg)dlg.addEventListener('click',(e)=>{if(e.target===dlg)close();});
+    const go=document.getElementById('fbGo');if(go)go.addEventListener('click',async()=>{const genre=gsel?gsel.value:'Electro';if(psel){chordProg=psel.value;}close();await generateFullBase(genre);});
+  })();
   (function(){const cb=document.getElementById('melChordBtn'),ps=document.getElementById('melProgSel');
     if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
     if(ps)ps.addEventListener('change',()=>{chordProg=ps.value;toast('Progressione: '+(chordProg==='last'?(lastUsedProg||'nessuna ancora'):chordProg));});})();
@@ -1239,14 +1387,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const bpmValEl=document.getElementById('bpmVal'),bpmDownEl=document.getElementById('bpmDown'),bpmUpEl=document.getElementById('bpmUp');
   const BPM_MIN=20,BPM_MAX=400; // wide range: ambient (slow) → DnB/footwork (fast)
   function setBpm(v){bpm=clamp(Math.round(v),BPM_MIN,BPM_MAX);bpmValEl.textContent='♩'+bpm;
-    const sv=document.getElementById('seqBpmVal'),mv=document.getElementById('melBpmVal');if(sv)sv.textContent=bpm;if(mv)mv.textContent=bpm;
     updateDelayTime();}
-  ['seqBpmDown','melBpmDown'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>setBpm(bpm-1));});
-  ['seqBpmUp','melBpmUp'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>setBpm(bpm+1));});
-  // shared: prompt for an exact BPM (used by grid, drum machine, melody)
+  // shared: prompt for an exact BPM (used by grid; drum machine/melody follow the global BPM)
   async function askBpm(){const v=await askText('BPM ('+BPM_MIN+'–'+BPM_MAX+'):',bpm);if(v===null)return;const n=parseInt(v,10);if(isNaN(n)){toast('BPM non valido');return;}setBpm(n);}
-  // click the drum-machine / melody BPM number to type an exact value
-  ['seqBpmVal','melBpmVal'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.cursor='pointer';el.title='Tocca per digitare il BPM';el.addEventListener('click',askBpm);}});
   setBpm(100);
   bpmDownEl.addEventListener('click',()=>setBpm(bpm-1));
   bpmUpEl.addEventListener('click',()=>setBpm(bpm+1));
@@ -1730,20 +1873,57 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     return inGain;
   }
   // ---- Per-lane mixer (BandLab-style): volume/pan/mute/solo shared by all clips on a lane ----
-  // laneMix[li] = {vol,pan,mute,solo}; laneNodes[li] = {gain,pan} audio bus feeding dryGain.
+  // laneMix[li] = {vol,pan,mute,solo,eqLo,eqMid,eqHi,comp}; laneNodes[li] = audio bus feeding dryGain.
   const laneMix={},laneNodes={};
-  function getLaneMix(li){if(!laneMix[li])laneMix[li]={vol:1,pan:0,mute:false,solo:false};return laneMix[li];}
+  function getLaneMix(li){if(!laneMix[li])laneMix[li]={vol:1,pan:0,mute:false,solo:false,eqLo:0,eqMid:0,eqHi:0,comp:0,sc:0};
+    const m=laneMix[li];if(m.eqLo==null)m.eqLo=0;if(m.eqMid==null)m.eqMid=0;if(m.eqHi==null)m.eqHi=0;if(m.comp==null)m.comp=0;if(m.sc==null)m.sc=0;return m;}
   function anySolo(){for(const k in laneMix)if(laneMix[k]&&laneMix[k].solo)return true;return false;}
   // effective gain for a lane: 0 if muted, or if a solo is active elsewhere and this lane isn't soloed
   function laneEffGain(li){const m=getLaneMix(li);if(m.mute)return 0;if(anySolo()&&!m.solo)return 0;return (m.vol==null?1:m.vol);}
-  // create/reuse the audio bus (gain -> pan -> dryGain) for a lane
+  // create/reuse the audio bus for a lane: gain -> EQ(lo/mid/hi) -> compressor -> pan -> dryGain
   function getLaneBus(li){if(laneNodes[li])return laneNodes[li];const m=getLaneMix(li);
     const g=audio.createGain();g.gain.value=laneEffGain(li);
+    const lo=audio.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=220;lo.gain.value=m.eqLo||0;
+    const mid=audio.createBiquadFilter();mid.type='peaking';mid.frequency.value=1000;mid.Q.value=0.9;mid.gain.value=m.eqMid||0;
+    const hi=audio.createBiquadFilter();hi.type='highshelf';hi.frequency.value=4000;hi.gain.value=m.eqHi||0;
+    const comp=audio.createDynamicsCompressor();applyCompSettings(comp,m.comp||0);
+    const sc=audio.createGain();sc.gain.value=1; // sidechain "pumping" gain (automated by the scheduler)
     let p;if(audio.createStereoPanner){p=audio.createStereoPanner();p.pan.value=(m.pan||0);}else{p=audio.createGain();}
-    g.connect(p);p.connect(dryGain);laneNodes[li]={gain:g,pan:p};return laneNodes[li];}
+    g.connect(lo);lo.connect(mid);mid.connect(hi);hi.connect(comp);comp.connect(sc);sc.connect(p);p.connect(dryGain);
+    laneNodes[li]={gain:g,eqLo:lo,eqMid:mid,eqHi:hi,comp,sc,pan:p};return laneNodes[li];}
+  // map a 0..3 compressor "amount" to real compressor settings (0 = transparent)
+  function applyCompSettings(comp,amount){const a=clamp(amount,0,3);
+    const thr=[0,-12,-20,-28][a], ratio=[1,3,6,12][a];
+    comp.threshold.value=thr;comp.knee.value=6;comp.ratio.value=ratio;comp.attack.value=0.005;comp.release.value=0.2;}
   // push current laneMix values onto the live audio nodes (called after any mixer change)
-  function applyLaneGains(){const t=audio?audio.currentTime:0;for(const li in laneNodes){const n=laneNodes[li];if(!n)continue;
-    n.gain.gain.setTargetAtTime(laneEffGain(li),t,0.02);const m=getLaneMix(li);if(n.pan.pan)n.pan.pan.setTargetAtTime(m.pan||0,t,0.02);}}
+  function applyLaneGains(){const t=audio?audio.currentTime:0;for(const li in laneNodes){const n=laneNodes[li];if(!n)continue;const m=getLaneMix(li);
+    n.gain.gain.setTargetAtTime(laneEffGain(li),t,0.02);if(n.pan.pan)n.pan.pan.setTargetAtTime(m.pan||0,t,0.02);
+    if(n.eqLo)n.eqLo.gain.setTargetAtTime(m.eqLo||0,t,0.02);if(n.eqMid)n.eqMid.gain.setTargetAtTime(m.eqMid||0,t,0.02);if(n.eqHi)n.eqHi.gain.setTargetAtTime(m.eqHi||0,t,0.02);
+    if(n.comp)applyCompSettings(n.comp,m.comp||0);}}
+  // ---- Sidechain "pumping" (ducking) — tempo-synced gain automation on each lane's sc node ----
+  // depth per level: how far the gain drops on each beat (0 = none). Rise time = most of the beat.
+  const SC_DEPTH=[0,0.35,0.6,0.85];
+  let scTimer=null, scNextBeat=0;
+  function anySidechain(){for(const k in laneMix)if(laneMix[k]&&laneMix[k].sc>0)return true;return false;}
+  // schedule one ducking envelope on a lane's sc gain at time t: drop instantly, ramp back up over the beat
+  function scDuckLane(li,t,spb){const n=laneNodes[li];if(!n||!n.sc)return;const m=getLaneMix(li);const depth=SC_DEPTH[clamp(m.sc||0,0,3)];if(depth<=0)return;
+    const g=n.sc.gain;const lo=1-depth;g.cancelScheduledValues(t);g.setValueAtTime(lo,t);g.linearRampToValueAtTime(1,t+spb*0.9);}
+  function scScheduler(){if(!audio)return;const spb=beatInterval();
+    if(!anySidechain()){ // make sure no residual ducking is left applied
+      for(const li in laneNodes){const n=laneNodes[li];if(n&&n.sc)n.sc.gain.setTargetAtTime(1,audio.currentTime,0.02);}
+      return;}
+    // align the "beat grid" to the transport when playing, else free-run on the audio clock
+    if(scNextBeat<audio.currentTime+0.02){
+      if(transportOn){const pos=audio.currentTime-transportT0;const nextBeatIdx=Math.floor(pos/spb)+1;scNextBeat=transportT0+nextBeatIdx*spb;}
+      else scNextBeat=audio.currentTime+0.06;
+    }
+    while(scNextBeat < audio.currentTime + 0.12){
+      for(const li in laneNodes){if((getLaneMix(li).sc||0)>0)scDuckLane(li,scNextBeat,spb);}
+      scNextBeat+=spb;
+    }
+  }
+  function ensureScClock(){if(scTimer)return;scTimer=setInterval(scScheduler,25);}
+  ensureScClock();
   // Build the mixer panel: one channel strip per used lane + a Master strip on the right.
   function laneList(){let l=[...new Set(clips.map(c=>c.lane||0))].sort((a,b)=>a-b);if(!l.length)l=[0];return l;}
   function buildMixer(){const body=document.getElementById('mixBody');if(!body)return;body.innerHTML='';
@@ -1763,6 +1943,25 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       pan.oninput=()=>{m.pan=(+pan.value)/100;applyLaneGains();};pan.ondblclick=()=>{pan.value=0;m.pan=0;applyLaneGains();};
       const plbl=document.createElement('div');plbl.className='panlbl';plbl.textContent='PAN L·R';
       panrow.appendChild(pan);panrow.appendChild(plbl);strip.appendChild(panrow);
+      // EQ: 3 mini sliders (low / mid / high), -15..+15 dB
+      const eqWrap=document.createElement('div');eqWrap.className='eqwrap';
+      const mkEq=(key,label)=>{const row=document.createElement('div');row.className='eqrow';
+        const l=document.createElement('span');l.className='eql';l.textContent=label;
+        const s=document.createElement('input');s.type='range';s.min='-15';s.max='15';s.step='1';s.value=Math.round(m[key]||0);s.title=label+' '+s.value+' dB';
+        s.oninput=()=>{m[key]=+s.value;s.title=label+' '+s.value+' dB';applyLaneGains();};s.ondblclick=()=>{s.value=0;m[key]=0;applyLaneGains();};
+        row.appendChild(l);row.appendChild(s);return row;};
+      eqWrap.appendChild(mkEq('eqHi','A'));  // Alti
+      eqWrap.appendChild(mkEq('eqMid','M')); // Medi
+      eqWrap.appendChild(mkEq('eqLo','B'));  // Bassi
+      strip.appendChild(eqWrap);
+      // Compressor: cycles 0(off)/1/2/3
+      const compBtn=document.createElement('button');compBtn.className='compbtn'+((m.comp||0)>0?' on':'');compBtn.textContent='CMP '+(m.comp||0);compBtn.title='Compressore (0=off, 1-3 = più punch)';
+      compBtn.onclick=()=>{m.comp=((m.comp||0)+1)%4;compBtn.textContent='CMP '+m.comp;compBtn.classList.toggle('on',m.comp>0);applyLaneGains();};
+      strip.appendChild(compBtn);
+      // Sidechain "pumping" (ducking on each beat): 0=off / 1-3 depth
+      const scBtn=document.createElement('button');scBtn.className='compbtn sc'+((m.sc||0)>0?' on':'');scBtn.textContent='SC '+(m.sc||0);scBtn.title='Sidechain pumping (0=off, 1-3): la traccia "respira" a tempo con la cassa';
+      scBtn.onclick=()=>{m.sc=((m.sc||0)+1)%4;scBtn.textContent='SC '+m.sc;scBtn.classList.toggle('on',m.sc>0);scNextBeat=0;ensureScClock();toast(m.sc>0?('Sidechain '+m.sc+' • '+(laneNames[li]||('Corsia '+(idx+1)))):'Sidechain off');};
+      strip.appendChild(scBtn);
       // Mute / Solo
       const msrow=document.createElement('div');msrow.className='msrow';
       const mb=document.createElement('button');mb.className='m'+(m.mute?' on':'');mb.textContent='M';mb.title='Mute corsia';
@@ -1890,25 +2089,86 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function exportClip(clip){try{if(!clip.buffer||clip.buffer.length<10){toast('Traccia vuota');return;}toast('Esporto '+clip.name+'…');const r=await renderClipFX(clip);const blob=bufferToWav(r);download(blob,fileName(clip.name.replace(/\s+/g,'_')));toast('Esportata '+clip.name);}catch(e){toast('Errore export: '+e.message);}}
   // ---- Export all (skip muted) — with per-clip FX + per-lane mixer ----
   // Build an offline per-lane bus (gain+pan) that mirrors the live mixer, feeding the master node.
-  function offlineLaneBus(off,li,mgDest){const m=getLaneMix(li);const g=off.createGain();g.gain.value=laneEffGain(li);
+  function offlineLaneBus(off,li,mgDest,dur){const m=getLaneMix(li);const g=off.createGain();g.gain.value=laneEffGain(li);
+    const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=220;lo.gain.value=m.eqLo||0;
+    const mid=off.createBiquadFilter();mid.type='peaking';mid.frequency.value=1000;mid.Q.value=0.9;mid.gain.value=m.eqMid||0;
+    const hi=off.createBiquadFilter();hi.type='highshelf';hi.frequency.value=4000;hi.gain.value=m.eqHi||0;
+    const comp=off.createDynamicsCompressor();applyCompSettings(comp,m.comp||0);
+    const sc=off.createGain();sc.gain.value=1;
+    // offline sidechain: schedule the ducking envelope for every beat across the render
+    const depth=SC_DEPTH[clamp(m.sc||0,0,3)];
+    if(depth>0){const spb=beatInterval();const total=(dur||8);const lov=1-depth;
+      for(let t=0;t<total+spb;t+=spb){sc.gain.setValueAtTime(lov,t);sc.gain.linearRampToValueAtTime(1,t+spb*0.9);}}
     let p;if(off.createStereoPanner){p=off.createStereoPanner();p.pan.value=(m.pan||0);}else{p=off.createGain();}
-    g.connect(p);p.connect(mgDest);return g;}
-  async function exportAll(){
+    g.connect(lo);lo.connect(mid);mid.connect(hi);hi.connect(comp);comp.connect(sc);sc.connect(p);p.connect(mgDest);return g;}
+
+  // ============================================================
+  // Mastering presets (applied in the offline export render). Studio-style "glue" chain:
+  //   input -> tone EQ (4 bands) -> glue compressor -> saturation -> makeup -> brickwall limiter -> out
+  // Each preset shapes tone, dynamics, warmth and target loudness for a genre. Values are tuned to
+  // give a loud, balanced, "release-ready" master (approaching commercial loudness, no harsh clipping).
+  // ============================================================
+  const MASTER_PRESETS={
+    'off':      {label:'Nessuno (grezzo)',eq:{lo:0,lomid:0,pres:0,air:0},comp:0,sat:0,makeup:1.0,ceiling:0.99},
+    'universal':{label:'Universale (bilanciato)',eq:{lo:1.5,lomid:-1,pres:1.5,air:2},comp:2,sat:0.12,makeup:1.5,ceiling:0.98},
+    'folkrock': {label:'Folk / Rock (naturale, caldo)',eq:{lo:1,lomid:0,pres:2,air:1.5},comp:1.5,sat:0.18,makeup:1.35,ceiling:0.98},
+    'indierock':{label:'Indie Rock (grintoso)',eq:{lo:2,lomid:-1.5,pres:3,air:2},comp:2.5,sat:0.28,makeup:1.7,ceiling:0.985},
+    'electro':  {label:'Electro / French Touch (potente)',eq:{lo:3.5,lomid:-2,pres:2,air:3.5},comp:3,sat:0.35,makeup:2.0,ceiling:0.99},
+    'hiphop':   {label:'Hip-Hop / Trap (bassi forti)',eq:{lo:4,lomid:-1,pres:1.5,air:2.5},comp:2.5,sat:0.22,makeup:1.9,ceiling:0.99},
+    'pop':      {label:'Pop (brillante, radio)',eq:{lo:2,lomid:-1,pres:2.5,air:4},comp:2.5,sat:0.15,makeup:1.8,ceiling:0.99},
+    'ambient':  {label:'Ambient (morbido, ampio)',eq:{lo:1,lomid:0,pres:0.5,air:2},comp:1,sat:0.08,makeup:1.2,ceiling:0.96}
+  };
+  let masterPreset='universal'; // remembered choice
+  // soft saturation curve (adds harmonics/warmth); amount 0..1
+  function saturationCurve(amount){const n=1024,c=new Float32Array(n),k=amount*8;for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=amount<=0?x:Math.tanh(x*(1+k))/Math.tanh(1+k);}return c;}
+  // Build the mastering chain in an offline ctx; returns the INPUT node (feed the mix into it). Connects to off.destination.
+  function buildMastering(off,presetKey){const P=MASTER_PRESETS[presetKey]||MASTER_PRESETS.off;
+    const input=off.createGain();input.gain.value=1;
+    if(presetKey==='off'){input.connect(off.destination);return input;}
+    // 4-band tone EQ
+    const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=110;lo.gain.value=P.eq.lo;
+    const lomid=off.createBiquadFilter();lomid.type='peaking';lomid.frequency.value=350;lomid.Q.value=1;lomid.gain.value=P.eq.lomid;
+    const pres=off.createBiquadFilter();pres.type='peaking';pres.frequency.value=3000;pres.Q.value=0.8;pres.gain.value=P.eq.pres;
+    const air=off.createBiquadFilter();air.type='highshelf';air.frequency.value=9000;air.gain.value=P.eq.air;
+    // glue compressor (gentle bus compression)
+    const glue=off.createDynamicsCompressor();const ga=clamp(P.comp,0,3);
+    glue.threshold.value=[-6,-14,-20,-26][ga];glue.knee.value=8;glue.ratio.value=[1.5,2,3,4][ga];glue.attack.value=0.02;glue.release.value=0.25;
+    // saturation for warmth/loudness
+    const sat=off.createWaveShaper();sat.curve=saturationCurve(P.sat);sat.oversample='4x';
+    // makeup gain then brickwall limiter (fast compressor acting as a limiter at the ceiling)
+    const makeup=off.createGain();makeup.gain.value=P.makeup;
+    const limiter=off.createDynamicsCompressor();limiter.threshold.value=-1.0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.001;limiter.release.value=0.12;
+    const ceil=off.createGain();ceil.gain.value=P.ceiling; // final safety trim to the target ceiling
+    input.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);air.connect(glue);glue.connect(sat);sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
+    return input;}
+
+  async function exportAll(presetKey){
+    const preset=presetKey||masterPreset||'universal';
     // a lane is audible if its effective gain > 0 (respects mute + solo)
     const active=clips.filter(c=>laneEffGain(c.lane||0)>0);
     if(!active.length){toast('Nessuna traccia da esportare (tutte mute/solo?)');return;}
     try{toast('Esporto mix…');
       if(timelineView){ // sequence: each clip plays once at its t
-        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(off.destination);
-        const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg));
+        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(buildMastering(off,preset));
+        const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
         for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
-        const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('timeline'));toast('Timeline esportata ('+active.length+' tracce)');return;}
-      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(off.destination);
-      const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg));
+        const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('timeline'+(preset!=='off'?'-'+preset:'')));toast('Timeline esportata • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));return;}
+      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(buildMastering(off,preset));
+      const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
-      const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('mix'));toast('Mix esportato ('+active.length+' tracce)');}
+      const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('mix'+(preset!=='off'?'-'+preset:'')));toast('Mix esportato • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));}
     catch(e){toast('Errore export: '+e.message);}}
-  document.getElementById('exportAllBtn').addEventListener('click',exportAll);
+  // ---- Mastering dialog: choose a genre preset, then export the mix ----
+  (function(){const dlg=document.getElementById('masterDlg'),sel=document.getElementById('masterPresetSel');
+    if(sel&&!sel.options.length){for(const k in MASTER_PRESETS){const o=document.createElement('option');o.value=k;o.textContent=MASTER_PRESETS[k].label;sel.appendChild(o);}}
+    if(sel)sel.value=masterPreset;
+    const open=()=>{if(!clips.length){toast('Nessuna traccia da esportare');return;}resumeAudio();dlg.classList.add('show');};
+    const close=()=>dlg.classList.remove('show');
+    document.getElementById('exportAllBtn').addEventListener('click',open);
+    document.getElementById('masterCancel').addEventListener('click',close);
+    if(dlg)dlg.addEventListener('click',(e)=>{if(e.target===dlg)close();});
+    document.getElementById('masterGo').addEventListener('click',async()=>{masterPreset=sel?sel.value:'universal';close();await exportAll(masterPreset);});
+  })();
 
   function buildClipList(){clipList.innerHTML='';const baseW=(looperFull?window.innerWidth:Math.round(window.innerWidth*0.5))-40;const wavW=Math.max(60,Math.round(baseW*clipZoom));
     clips.forEach((c,idx)=>{const el=document.createElement('div');el.className='clip'+(c.muted?' muted':'')+(idx===selectedClip?' sel':'')+((c._cutArmed||c._trimArmed)?' cutting':'');
@@ -2109,10 +2369,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       settings:{
         bpm:bpm,key:currentKey,scale:currentScaleName,gridZoom:gridZoom,clipZoom:clipZoom,
         timelineView:timelineView,loopMode:loopMode,snapRec:snapRec,
-        masterVol:masterVol,limiterOn:limiterOn,latencyMs:latencyMs,
+        masterVol:masterVol,limiterOn:limiterOn,latencyMs:latencyMs,masterPreset:masterPreset,
         laneNames:Object.assign({},laneNames),
         laneMix:JSON.parse(JSON.stringify(laneMix)),
         swingLevel:swingLevel,
+        arp:{on:melArp,dir:melArpDir,rate:melArpRate,oct:melArpOct},
         synth:{wave:synthWave,cut:synthCutoff,q:synthQ,drive:synthDrive}
       }
     };
@@ -2149,14 +2410,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);}
     loopMode=false; // Loop mode removed: always free
     if(st.masterVol!=null){masterVol=st.masterVol;const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
+    if(st.masterPreset){masterPreset=st.masterPreset;const ps=document.getElementById('masterPresetSel');if(ps)ps.value=masterPreset;}
     if(st.limiterOn!=null){limiterOn=st.limiterOn;limiterBtn.classList.toggle('on',limiterOn);rewireMaster();}
     if(st.latencyMs!=null){latencyMs=st.latencyMs;const ls=document.getElementById('latSlider'),lv=document.getElementById('latVal');if(ls)ls.value=latencyMs;if(lv)lv.textContent=latencyMs+'ms';}
     for(const k in laneNames)delete laneNames[k];Object.assign(laneNames,st.laneNames||{});
     // reset lane mixer state + buses, then restore saved lane mix values
     for(const k in laneNodes)delete laneNodes[k];
     for(const k in laneMix)delete laneMix[k];
-    if(st.laneMix){for(const k in st.laneMix){const s=st.laneMix[k]||{};laneMix[k]={vol:(s.vol==null?1:s.vol),pan:(s.pan||0),mute:!!s.mute,solo:!!s.solo};}}
+    if(st.laneMix){for(const k in st.laneMix){const s=st.laneMix[k]||{};laneMix[k]={vol:(s.vol==null?1:s.vol),pan:(s.pan||0),mute:!!s.mute,solo:!!s.solo,eqLo:(s.eqLo||0),eqMid:(s.eqMid||0),eqHi:(s.eqHi||0),comp:(s.comp||0),sc:(s.sc||0)};}}
     if(st.swingLevel!=null){swingLevel=clamp(st.swingLevel,0,SWING_LEVELS.length-1);swing=SWING_LEVELS[swingLevel].v;syncSwingButtons();}
+    if(st.arp){melArp=!!st.arp.on;melArpDir=st.arp.dir||melArpDir;melArpRate=st.arp.rate||melArpRate;melArpOct=st.arp.oct||1;
+      const ab=document.getElementById('melArpBtn'),ad=document.getElementById('melArpDir'),ar=document.getElementById('melArpRate'),ao=document.getElementById('melArpOct');
+      if(ab){ab.textContent='🕐 Arp: '+(melArp?'on':'off');ab.classList.toggle('on',melArp);}
+      if(ad)ad.value=melArpDir;if(ar)ar.value=melArpRate;if(ao)ao.textContent='8va: '+melArpOct;
+      [ad,ar,ao].forEach(el=>{if(el)el.style.display=melArp?'':'none';});}
     if(st.synth){synthWave=st.synth.wave||synthWave;synthCutoff=st.synth.cut||synthCutoff;synthQ=st.synth.q||synthQ;synthDrive=st.synth.drive!=null?st.synth.drive:synthDrive;syncSynthUI&&syncSynthUI();}
     // view: always Studio now
     timelineView=true;
