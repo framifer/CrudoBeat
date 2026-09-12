@@ -441,7 +441,7 @@
   <button class="btn icon" id="seqBtn" title="Drum machine (step sequencer)">🥁</button>
   <button class="btn" id="delayBtn" title="Delay">Delay: off</button>
   <button class="btn" id="reverbBtn" title="Riverbero">Riv: off</button>
-  <div id="bpmWidget" title="BPM: trascina il numero o usa − / +. Tocca per digitare"><button id="bpmDown">−</button><span id="bpmVal">♩100</span><button id="bpmUp">+</button></div>
+  <div id="bpmWidget" title="BPM (20–400): trascina il numero, usa − / +, oppure toccalo per digitare"><button id="bpmDown">−</button><span id="bpmVal">♩100</span><button id="bpmUp">+</button></div>
   <button class="btn icon" id="clearBtn" title="Svuota nodi">🗑</button>
   <button class="btn rec" id="recBtn" title="Registra">● REC</button>
   <button class="btn icon" id="micBtn" title="Microfono">🎤</button>
@@ -760,7 +760,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function metroScheduler(){if(!audio)return;const spb=beatInterval();
     while(nextNoteTime < audio.currentTime + LOOKAHEAD){
       const isDownbeat=(metroBeat%4===0);
-      const playClick = metroOn || countingIn;
+      const playClick = metroOn || countingIn || recording; // click as a guide during count-in AND recording (never recorded)
       if(playClick) metroClickAt(nextNoteTime, isDownbeat);
       // schedule the visual beat flash to fire around the click time
       const dt=(nextNoteTime-audio.currentTime)*1000; const bn=(metroBeat%4)+1;
@@ -771,7 +771,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     }
   }
   function startMetroClock(){if(metroTimer)return;nextNoteTime=audio.currentTime+0.06;metroBeat=0;metroScheduler();metroTimer=setInterval(metroScheduler,SCHED_INTERVAL);}
-  function stopMetroClock(){if(!metroOn&&!countingIn){clearInterval(metroTimer);metroTimer=null;}}
+  function stopMetroClock(){if(!metroOn&&!countingIn&&!recording){clearInterval(metroTimer);metroTimer=null;}}
   // Precise count-in: N beats of clicks, then cb() fires exactly on the next downbeat (audio clock)
   function doPrerollPrecise(beats,cb){resumeAudio();countingIn=true;countInLeft=beats;onDownbeat=cb;
     metroBtn.classList.add('on');nextNoteTime=audio.currentTime+0.12;metroBeat=0;startMetroClock();toast('Conteggio '+beats+' battute…');}
@@ -1194,9 +1194,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(let i=livePulses.length-1;i>=0;i--){const lp=livePulses[i];lp.r+=2.2;lp.a*=.93;if(lp.a<.04){livePulses.splice(i,1);continue;}ctx.strokeStyle=hexA(lp.color,lp.a);ctx.lineWidth=3;ctx.beginPath();ctx.arc(lp.x,lp.y,lp.r,0,Math.PI*2);ctx.stroke();}
     for(const[,lv]of liveVoices){ctx.fillStyle=TRACK_COLORS[activeTrack];ctx.beginPath();ctx.arc(lv.x,lv.y,16,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2b2118';ctx.lineWidth=2;ctx.stroke();}
     // C: visual beat indicator (pulses on each click during metronome / count-in / recording)
-    if((metroOn||countingIn||recording)&&beatIndicator){const cx=W/2,cy=GRID_TOP+30,base=16,r=base+beatFlash*14;const strong=(beatIndicator===1);
-      ctx.globalAlpha=0.35+beatFlash*0.6;ctx.fillStyle=strong?'#e33f1a':'#2b2118';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-      ctx.fillStyle='#f7efdd';ctx.font='bold 18px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(countingIn?'●':String(beatIndicator),cx,cy);ctx.textAlign='start';}}
+    if((metroOn||countingIn||recording)&&beatIndicator){const cx=W/2,cy=GRID_TOP+38;
+      const countIn=countingIn; const big=countIn||recording;
+      const base=big?26:16, r=base+beatFlash*(big?20:14); const strong=(beatIndicator===1);
+      // ring
+      ctx.globalAlpha=0.30+beatFlash*0.55;ctx.fillStyle=countIn?'#b62c10':(recording?'#e33f1a':(strong?'#e33f1a':'#2b2118'));
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+      // center text: count-in shows 4..3..2..1, otherwise the beat number
+      ctx.fillStyle='#f7efdd';ctx.font='bold '+(big?30:18)+'px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      const txt=countIn?String(Math.max(1,countInLeft+1)):String(beatIndicator);
+      ctx.fillText(txt,cx,cy);
+      // label under the indicator
+      ctx.font='bold 11px -apple-system,sans-serif';ctx.fillStyle=countIn?'#b62c10':(recording?'#e33f1a':'#2b2118');
+      ctx.fillText(countIn?'CONTEGGIO':(recording?'● REC':''),cx,cy+r+12);
+      ctx.textAlign='start';}}
   function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.substr(0,2),16)},${parseInt(h.substr(2,2),16)},${parseInt(h.substr(4,2),16)},${a})`;}
   function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
   // normalize a color to #rrggbb for <input type=color> (accepts hex or rgb())
@@ -1226,11 +1237,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   ['seqDelayBtn','melDelayBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',cycleDelay);});
   syncFxButtons();
   const bpmValEl=document.getElementById('bpmVal'),bpmDownEl=document.getElementById('bpmDown'),bpmUpEl=document.getElementById('bpmUp');
-  function setBpm(v){bpm=clamp(Math.round(v),60,180);bpmValEl.textContent='♩'+bpm;
+  const BPM_MIN=20,BPM_MAX=400; // wide range: ambient (slow) → DnB/footwork (fast)
+  function setBpm(v){bpm=clamp(Math.round(v),BPM_MIN,BPM_MAX);bpmValEl.textContent='♩'+bpm;
     const sv=document.getElementById('seqBpmVal'),mv=document.getElementById('melBpmVal');if(sv)sv.textContent=bpm;if(mv)mv.textContent=bpm;
     updateDelayTime();}
   ['seqBpmDown','melBpmDown'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>setBpm(bpm-1));});
   ['seqBpmUp','melBpmUp'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>setBpm(bpm+1));});
+  // shared: prompt for an exact BPM (used by grid, drum machine, melody)
+  async function askBpm(){const v=await askText('BPM ('+BPM_MIN+'–'+BPM_MAX+'):',bpm);if(v===null)return;const n=parseInt(v,10);if(isNaN(n)){toast('BPM non valido');return;}setBpm(n);}
+  // click the drum-machine / melody BPM number to type an exact value
+  ['seqBpmVal','melBpmVal'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.cursor='pointer';el.title='Tocca per digitare il BPM';el.addEventListener('click',askBpm);}});
   setBpm(100);
   bpmDownEl.addEventListener('click',()=>setBpm(bpm-1));
   bpmUpEl.addEventListener('click',()=>setBpm(bpm+1));
@@ -1245,7 +1261,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     bpmValEl.addEventListener('touchmove',(e)=>{e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
     bpmValEl.addEventListener('touchend',up);
     // tap to type an exact value
-    let moved=false;bpmValEl.addEventListener('click',async()=>{const v=await askText('BPM (60–180):',bpm);if(v===null)return;const n=parseInt(v,10);if(!isNaN(n))setBpm(n);});
+    bpmValEl.addEventListener('click',askBpm);
   })();
   document.getElementById('clearBtn').addEventListener('click',()=>{tracks[activeTrack].nodes=[];toast('Nodi svuotati');});
   const octLbl=document.getElementById('octLbl');function refreshOct(){octLbl.textContent='8va '+(tracks[activeTrack].oct>0?'+':'')+tracks[activeTrack].oct;}
@@ -1431,7 +1447,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const ok=await askConfirm('Cancellare TUTTE le '+clips.length+' tracce? (non annullabile facilmente)');if(!ok)return;
     pushGlobal();for(const c of clips)stopClipPlayback(c);clips.length=0;selectedClip=-1;transportOn=false;transportPos=0;refreshView();toast('Tutte le tracce cancellate');});
   document.getElementById('bpmAllBtn').addEventListener('click',async()=>{if(!clips.length){toast('Nessuna traccia');return;}
-    const v=await askText('Nuovo BPM per TUTTE le tracce:',Math.round(bpm));if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<40||nb>240){toast('BPM non valido (40-240)');return;}
+    const v=await askText('Nuovo BPM per TUTTE le tracce:',Math.round(bpm));if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<BPM_MIN||nb>BPM_MAX){toast('BPM non valido ('+BPM_MIN+'-'+BPM_MAX+')');return;}
     pushGlobal();for(const c of clips){const f=nb/(c.bpm||bpm);retimeClip(c,f);}setBpm(nb);refreshClipsView();toast('Tutte le tracce → '+nb+' BPM');});
   document.getElementById('gUndoBtn').addEventListener('click',globalUndo);
   document.getElementById('gRedoBtn').addEventListener('click',globalRedo);
@@ -1639,7 +1655,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     blockToolsEl.appendChild(mk('✁','Trim non distruttivo (inizio/fine %)',async()=>{const s=await askText('Trim inizio %:',Math.round((c.trimStart||0)*100));if(s===null)return;const e=await askText('Trim fine %:',Math.round((c.trimEnd==null?1:c.trimEnd)*100));if(e===null)return;let sf=clamp((parseFloat(s)||0)/100,0,0.98),ef=clamp((parseFloat(e)||100)/100,sf+0.02,1);c.trimStart=sf;c.trimEnd=ef;restartClip(c);buildStudio();toast(c.name+' trim '+(sf*100|0)+'–'+(ef*100|0)+'%');},((c.trimStart||0)>0||(c.trimEnd==null?1:c.trimEnd)<1)));
     blockToolsEl.appendChild(mk('📊','Normalizza volume',()=>{normalizeClip(c);buildStudio();}));
     blockToolsEl.appendChild(mk('◀◁','Inverti (reverse)',()=>{reverseClip(c);buildStudio();}));
-    blockToolsEl.appendChild(mk('♩bpm','Cambia tempo di questa traccia (resampling)',async()=>{const cur=Math.round(c.bpm||bpm);const v=await askText('Nuovo BPM per '+c.name+' (attuale ~'+cur+'):',cur);if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<40||nb>240){toast('BPM non valido (40-240)');return;}retimeClipToBpm(c,nb);buildStudio();toast(c.name+' → '+nb+' BPM');}));
+    blockToolsEl.appendChild(mk('♩bpm','Cambia tempo di questa traccia (resampling)',async()=>{const cur=Math.round(c.bpm||bpm);const v=await askText('Nuovo BPM per '+c.name+' (attuale ~'+cur+'):',cur);if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<BPM_MIN||nb>BPM_MAX){toast('BPM non valido ('+BPM_MIN+'-'+BPM_MAX+')');return;}retimeClipToBpm(c,nb);buildStudio();toast(c.name+' → '+nb+' BPM');}));
     blockToolsEl.appendChild(mk('⧉','Copia',()=>{clipboard=c.buffer;toast('Copiato');}));
     blockToolsEl.appendChild(mk('📋','Incolla',()=>{if(!clipboard){toast('Niente da incollare');return;}pushGlobal();clipCounter++;const nc={buffer:clipboard,name:'Clip '+clipCounter,muted:false,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,vol:1,pan:0,trimStart:0,trimEnd:1,color:TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,fxRev:0,fxDelay:0,t:(c.t||0),_tlScheduled:false,lane:c.lane||0,loop:false};clips.splice(idx+1,0,nc);selectedClip=idx+1;buildStudio();}));
     blockToolsEl.appendChild(mk('⇥|','Attacca dopo la clip precedente (stessa corsia)',()=>{
@@ -2000,7 +2016,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   looperEl.addEventListener('wheel',(e)=>{if(e.ctrlKey){e.preventDefault();clipZoom=clamp(clipZoom*(e.deltaY<0?1.12:0.9),1,8);buildStudio();}},{passive:false});
 
   let loopStopTimer=null,recStart=0,recClipPos=0;
+  // After recording stops: turn off the guide click (unless the metronome was manually ON) and restore its button.
+  function endRecMetro(){stopMetroClock();metroBtn.classList.toggle('on',metroOn);}
   function finishLoopRec(){const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(loopStopTimer){clearTimeout(loopStopTimer);loopStopTimer=null;}
+    endRecMetro();
     if(buf&&buf.length>1000){const fitted=fitToLoop(buf);addClip(fitted);}else toast('Clip troppo breve');}
   recBtn.addEventListener('click',()=>{resumeAudio();
     if(!recording){
@@ -2008,11 +2027,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         recClipPos=transportPos; // remember where recording started, to place the clip there
         if(!transportOn)playAll(); // overdub: hear existing tracks from the playhead while recording
         if(loopMode){if(loopStart===null)loopStart=audio.currentTime;recStart=audio.currentTime;toast('Loop… '+loopDur().toFixed(2)+'s');loopStopTimer=setTimeout(finishLoopRec,loopDur()*1000);}
-        else{toast('Registrazione… (senti le tracce sotto)');}
+        else{toast('Registrazione… • click a tempo (non registrato)');}
       });
     }else{
       if(loopMode){finishLoopRec();}
-      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';if(transportOn)pauseAll();if(buf&&buf.length>1000)addClip(processRec(buf),null,recClipPos,true);else toast('Clip troppo breve');}
+      else{const buf=stopCapture();recording=false;recBtn.classList.remove('armed');recBtn.textContent='● REC';endRecMetro();if(transportOn)pauseAll();if(buf&&buf.length>1000)addClip(processRec(buf),null,recClipPos,true);else toast('Clip troppo breve');}
     }});
 
   // ---------- Microphone ----------
