@@ -1291,33 +1291,33 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'Led Zeppelin':{genre:'Rock',bpm:120,key:'Mi',scale:'Blues',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'organ'},prog:'I-V-vi-IV',sc:0,lead:false,style:'zeppelin'},
     'The National':{genre:'Rock',bpm:110,key:'La',scale:'Minore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'piano',lead:'pad'},prog:'vi-IV-I-V',sc:0,lead:true,style:'national'},
     // Punk/Grunge
-    'Nirvana':{genre:'Punk/Grunge',bpm:120,key:'Fa',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:0,lead:true,style:'nirvana',randInstr:['organ','guitar','synth'],chordFx:{drive:2}},
-    'Joy Division':{genre:'Punk/Grunge',bpm:140,key:'Re',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'joydivision',randInstr:['organ','synth']},
+    'Nirvana':{genre:'Punk/Grunge',bpm:120,key:'Fa',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:0,lead:true,style:'nirvana',randInstr:['organ','guitar'],chordFx:{drive:2}},
+    'Joy Division':{genre:'Punk/Grunge',bpm:140,key:'Re',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'joydivision',randInstr:['organ','guitar']},
     'Verdena':{genre:'Punk/Grunge',bpm:128,key:'Mi',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'I-V-vi-IV',sc:0,lead:true,style:'verdena',randInstr:['ambient','organ','piano'],chordFx:{drive:3}},
     // Indie
     'Modest Mouse':{genre:'Indie',bpm:115,key:'La',scale:'Minore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'modest',randInstr:['accordion','banjo','guitar','trumpet']},
-    'Built to Spill':{genre:'Indie',bpm:125,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'builttospill',randInstr:['organ','synth']},
-    'Sonic Youth':{genre:'Indie',bpm:130,key:'Mi',scale:'Frigia',kit:'acoustic',arch:'Rock',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'sonicyouth',randInstr:['synth','piano']},
+    'Built to Spill':{genre:'Indie',bpm:125,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'builttospill',randInstr:['organ','guitar']},
+    'Sonic Youth':{genre:'Indie',bpm:130,key:'Mi',scale:'Frigia',kit:'acoustic',arch:'Rock',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'sonicyouth',randInstr:['guitar','piano']},
     // Bedroom
     'Sufjan Stevens':{genre:'Bedroom',bpm:92,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'sufjan',randInstr:['banjo','piano','node','ambient']},
     'Bon Iver':{genre:'Bedroom',bpm:88,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'boniver',randInstr:['piano','trumpet','pad','epiano'],chordFx:{rev:2,delay:2}},
     'Mac DeMarco':{genre:'Bedroom',bpm:90,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'macdemarco',randInstr:['guitar','ambient','piano']},
     // French touch
-    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'daftpunk',randInstr:['synth','hichord']},
-    'Justice':{genre:'French touch',bpm:126,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:3,lead:true,style:'justice',randInstr:['synth','hichord']},
-    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-V-vi-IV',sc:2,lead:true,style:'cassius',randInstr:['synth','hichord']},
+    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'daftpunk',randInstr:['guitar','hichord']},
+    'Justice':{genre:'French touch',bpm:126,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:3,lead:true,style:'justice',randInstr:['guitar','hichord']},
+    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-V-vi-IV',sc:2,lead:true,style:'cassius',randInstr:['guitar','hichord']},
     // Electro
-    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'crystalcastles',randInstr:['synth','hichord','ambient'],chordFx:{rev:2,delay:2,drive:3}},
-    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:1,lead:true,style:'apparat',randInstr:['piano','pad','synth'],chordFx:{rev:3,delay:2}},
-    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:2,lead:true,style:'theknife',randInstr:['synth','hichord','ambient'],chordFx:{rev:2,delay:2,drive:2}},
+    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'crystalcastles',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:3}},
+    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:1,lead:true,style:'apparat',randInstr:['piano','pad','guitar'],chordFx:{rev:3,delay:2}},
+    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:2,lead:true,style:'theknife',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:2}},
     // Ambient (Node instead of chords)
     'Christian Löffler':{genre:'Ambient',bpm:121,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:2,lead:true,style:'loffler',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2}},
     'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'air',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2}},
     'Populous':{genre:'Ambient',bpm:95,key:'Do',scale:'Dorica',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:1,lead:true,style:'populous',randInstr:['piano','synth','node','ambient','pad'],chordFx:{rev:3,delay:2}},
     // Pop (Strfkr/MGMT/Wixel)
-    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','synth']},
-    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','synth']},
-    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','synth'],chordFx:{rev:2,delay:1}}
+    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','guitar']},
+    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','guitar']},
+    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','guitar'],chordFx:{rev:2,delay:1}}
   };
   function bandsForGenre(g){return Object.keys(BANDS).filter(b=>BANDS[b].genre===g);}
   let chordMode=false, chordProg='I-V-vi-IV', lastUsedProg=null;
