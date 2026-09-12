@@ -198,6 +198,12 @@
   .block .fadetri.l{left:0;}
   .block .cutmask{position:absolute;top:0;bottom:0;background:rgba(20,14,8,.55);pointer-events:none;z-index:4;}
   .block.sel{outline:2px solid var(--ink);z-index:2;}
+  .block.multisel{outline:3px solid #2b8ccc;box-shadow:0 0 0 2px rgba(43,140,204,.4);z-index:3;}
+  #groupBar{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:24;display:flex;gap:5px;align-items:center;
+    background:var(--ink);border:2px solid #000;border-radius:11px;padding:5px 8px;box-shadow:0 4px 14px rgba(0,0,0,.45);}
+  #groupBar .gblbl{color:var(--cream);font-size:11px;font-weight:800;margin-right:4px;}
+  #groupBar button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;width:32px;height:30px;font-size:13px;font-weight:800;cursor:pointer;padding:0;}
+  #looperHead .titrow button#multiSelBtn.on,#looperHead .titrow button#mixerBtn.on{background:var(--red);color:var(--cream);}
   .block canvas{display:block;width:100%;height:100%;}
   .block .bn{position:absolute;top:1px;left:3px;font-size:9px;font-weight:800;color:var(--ink);pointer-events:none;}
   .block .loopbadge{position:absolute;bottom:1px;right:3px;font-size:9px;font-weight:800;color:var(--red2);pointer-events:none;}
@@ -338,7 +344,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="multiSelBtn" title="Selezione multipla: tocca più tracce, poi copia/elimina/muta di gruppo">☑ Multi</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -749,37 +755,43 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     o1.connect(f);o2.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(sh);sh.connect(g);
     g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.008);g.gain.setValueAtTime(.42,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.6);
     g.connect(master);if(roomSend)g.connect(roomSend);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+1.65);o2.stop(now+1.65);o3.stop(now+1.65);}
-  // Accordion: stacked reed-like sawtooth/triangle partials with a slow tremolo (musette detune).
+  // Accordion (per spec): two saw detuned +10c (beating), attack 40ms, full sustain, lowpass (bellows).
   function playAccordion(freq){const now=audio.currentTime,g=audio.createGain();
-    // Calda e corposa: add a low reed (octave below) + triangle warmth under the saw reeds, softer filter.
-    const parts=[[0.5,.28,0,'triangle'],[1,.5,0,'sawtooth'],[1,.42,11,'sawtooth'],[2,.2,0,'triangle'],[3,.09,0,'sawtooth']];const oscs=[];
-    parts.forEach(([m,a,det,ty])=>{const o=audio.createOscillator();o.type=ty;o.frequency.value=freq*m;o.detune.value=det;const og=audio.createGain();og.gain.value=a;o.connect(og);og.connect(g);oscs.push(o);});
-    const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*4+800;f.Q.value=.6;
-    const lfo=audio.createOscillator();lfo.type='sine';lfo.frequency.value=4.5;const lg=audio.createGain();lg.gain.value=.05;lfo.connect(lg);lg.connect(g.gain);
-    g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.36,now+.06);g.gain.setValueAtTime(.36,now+.7);g.gain.exponentialRampToValueAtTime(.0006,now+1.3);
-    g.connect(master);if(roomSend)g.connect(roomSend);lfo.start(now);oscs.forEach(o=>{o.start(now);o.stop(now+1.35);});lfo.stop(now+1.35);}
-  // Banjo: bright plucked string — quick attack, fast decay, metallic overtones.
+    // Per spec: two saw/pulse detuned by +10 cents (beating), attack 40ms, 100% sustain, lowpass = bellows pressure.
+    const o1=audio.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;o1.detune.value=-5;
+    const o2=audio.createOscillator();o2.type='sawtooth';o2.frequency.value=freq;o2.detune.value=+10;   // +10c beating
+    const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*4+1400;f.Q.value=.7;     // fixed-ish for tap; velocity opens it in the live voice
+    o1.connect(f);o2.connect(f);f.connect(g);
+    // attack 40ms, hold (100% sustain) then a short release when the note ends
+    g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.34,now+.04);g.gain.setValueAtTime(.34,now+.7);g.gain.exponentialRampToValueAtTime(.0006,now+1.0);
+    const oscs=[o1,o2];
+    g.connect(master);if(roomSend)g.connect(roomSend);oscs.forEach(o=>{o.start(now);o.stop(now+1.05);});}
+  // Banjo (per spec): 2 saw/pulse, attack 0ms, decay ~200ms, no sustain; white-noise pluck peak + fixed 500Hz head resonance.
   function playBanjo(freq){const now=audio.currentTime,g=audio.createGain();
-    // Più acustico: triangle body + softer harmonic partials (no harsh square), string-pluck noise transient.
-    const o1=audio.createOscillator();o1.type='triangle';o1.frequency.value=freq;
-    const o2=audio.createOscillator();o2.type='triangle';o2.frequency.value=freq*2.001;const o2g=audio.createGain();o2g.gain.value=.22;
-    const o3=audio.createOscillator();o3.type='sine';o3.frequency.value=freq*3.001;const o3g=audio.createGain();o3g.gain.value=.12;
-    const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(freq*6+1800,now);f.frequency.exponentialRampToValueAtTime(freq*3+500,now+.3);f.Q.value=1;
-    const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='bandpass';nf.frequency.value=freq*2.5;nf.Q.value=1.2;const ng=audio.createGain();ng.gain.setValueAtTime(.22,now);ng.gain.exponentialRampToValueAtTime(.001,now+.02);n.connect(nf);nf.connect(g);
-    o1.connect(f);o2.connect(o2g);o2g.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(g);
-    g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.55,now+.004);g.gain.exponentialRampToValueAtTime(.0006,now+.95);
-    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.3;g.connect(rs);rs.connect(roomSend);}o1.start(now);o2.start(now);o3.start(now);n.start(now);o1.stop(now+1.0);o2.stop(now+1.0);o3.stop(now+1.0);n.stop(now+.03);}
-  // Trumpet: bright brass — sawtooth with a formant-ish bandpass, slight attack swell + vibrato.
+    const o1=audio.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;
+    const o2=audio.createOscillator();o2.type='square';o2.frequency.value=freq*2;const o2g=audio.createGain();o2g.gain.value=.35;
+    // fixed 500Hz body resonance (drum head)
+    const head=audio.createBiquadFilter();head.type='peaking';head.frequency.value=500;head.Q.value=6;head.gain.value=9;
+    o1.connect(head);o2.connect(o2g);o2g.connect(head);head.connect(g);
+    // metallic pluck: white-noise spike at the attack
+    const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='highpass';nf.frequency.value=2000;const ng=audio.createGain();ng.gain.setValueAtTime(.5,now);ng.gain.exponentialRampToValueAtTime(.001,now+.008);n.connect(nf);nf.connect(g);
+    // envelope: 0ms attack, 200ms decay, no sustain
+    g.gain.setValueAtTime(.6,now);g.gain.exponentialRampToValueAtTime(.0006,now+.2);
+    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
+    o1.start(now);o2.start(now);n.start(now);o1.stop(now+.25);o2.stop(now+.25);n.stop(now+.02);}
+  // Trumpet (per spec): saw + lowpass (24dB) driven by envelope (dark→bright), 15ms pitch-scoop, vibrato delayed 400ms.
   function playTrumpet(freq){const now=audio.currentTime,g=audio.createGain();
-    // Corposa, bassosa, acustica: main saw + sine body + gentler formant, softer highpass, more room.
-    const o=audio.createOscillator();o.type='sawtooth';o.frequency.value=freq;
-    const ob=audio.createOscillator();ob.type='sine';ob.frequency.value=freq;const obg=audio.createGain();obg.gain.value=.35; // warm body fundamental
-    const vib=audio.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=audio.createGain();vg.gain.value=freq*0.006;vib.connect(vg);vg.connect(o.frequency);
-    const f=audio.createBiquadFilter();f.type='bandpass';f.frequency.setValueAtTime(freq*1.4,now);f.frequency.linearRampToValueAtTime(freq*2+400,now+.18);f.Q.value=.9;
-    const f2=audio.createBiquadFilter();f2.type='lowpass';f2.frequency.value=freq*4+900; // tame the brightness → more acoustic
-    o.connect(f);f.connect(f2);f2.connect(g);ob.connect(obg);obg.connect(g);
-    g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.06);g.gain.setValueAtTime(.45,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.2);
-    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.3;g.connect(rs);rs.connect(roomSend);}vib.start(now);o.start(now);ob.start(now);o.stop(now+1.25);ob.stop(now+1.25);vib.stop(now+1.25);}
+    const o=audio.createOscillator();o.type='sawtooth';
+    o.frequency.setValueAtTime(freq*0.94,now);o.frequency.linearRampToValueAtTime(freq,now+.015); // 15ms pitch-scoop into the note
+    // vibrato that fades in after 400ms
+    const vib=audio.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=audio.createGain();vg.gain.setValueAtTime(0,now);vg.gain.setValueAtTime(0,now+.4);vg.gain.linearRampToValueAtTime(freq*0.007,now+.6);vib.connect(vg);vg.connect(o.frequency);
+    // two cascaded lowpass = ~24dB/oct, opened by the amplitude envelope (dark soft → bright loud)
+    const f1=audio.createBiquadFilter();f1.type='lowpass';f1.Q.value=.7;const f2=audio.createBiquadFilter();f2.type='lowpass';f2.Q.value=.7;
+    [f1,f2].forEach(f=>{f.frequency.setValueAtTime(freq*1.5,now);f.frequency.linearRampToValueAtTime(freq*5+1200,now+.12);f.frequency.setValueAtTime(freq*5+1200,now+.5);f.frequency.linearRampToValueAtTime(freq*2+400,now+1.0);});
+    o.connect(f1);f1.connect(f2);f2.connect(g);
+    g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.05);g.gain.setValueAtTime(.45,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.1);
+    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
+    vib.start(now);o.start(now);o.stop(now+1.15);vib.stop(now+1.15);}
   // ---------- HiChord: chord synth (organ-like, warm) ----------
   let hiWave='sawtooth';                         // HiChord waveform (〰 button)
   let hiTone=0.5;                                // brightness (from joystick Y), 0..1
@@ -907,12 +919,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     else if(instr==='epiano'){const carrier=audio.createOscillator();carrier.type='sine';carrier.frequency.value=freq;const mod=audio.createOscillator();mod.type='sine';mod.frequency.value=freq*2;const modg=audio.createGain();modg.gain.value=freq*1.2;mod.connect(modg);modg.connect(carrier.frequency);carrier.connect(g);oscs=[carrier,mod];extra={fm:true};}
     else if(instr==='guitar'){const o1=audio.createOscillator(),o2=audio.createOscillator(),o3=audio.createOscillator();o1.type='sawtooth';o2.type='sawtooth';o3.type='square';o1.frequency.value=freq;o2.frequency.value=freq*1.008;o3.frequency.value=freq*0.5;const o3g=audio.createGain();o3g.gain.value=.3;
       const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*3+600;f.Q.value=6;const sh=audio.createWaveShaper();sh.curve=makeDistortion(45);sh.oversample='4x';o1.connect(f);o2.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(sh);sh.connect(g);oscs=[o1,o2,o3];extra={f,o2,o3,mul:1.008};}
-    else if(instr==='accordion'){const parts=[[0.5,.28,0,'triangle'],[1,.5,0,'sawtooth'],[1,.42,11,'sawtooth'],[2,.2,0,'triangle'],[3,.09,0,'sawtooth']];const mults=[];parts.forEach(([m,a,det,ty])=>{const o=audio.createOscillator();o.type=ty;o.frequency.value=freq*m;o.detune.value=det;const og=audio.createGain();og.gain.value=a;o.connect(og);og.connect(g);oscs.push(o);mults.push(m);});
-      const lfo=audio.createOscillator();lfo.type='sine';lfo.frequency.value=4.5;const lg=audio.createGain();lg.gain.value=.05;lfo.connect(lg);lg.connect(g.gain);lfo.start(now);oscs._lfo=lfo;extra={accordion:true,mults:mults};}
-    else if(instr==='banjo'){const o1=audio.createOscillator(),o2=audio.createOscillator(),o3=audio.createOscillator();o1.type='triangle';o2.type='triangle';o3.type='sine';o1.frequency.value=freq;o2.frequency.value=freq*2.001;o3.frequency.value=freq*3.001;const o2g=audio.createGain();o2g.gain.value=.22;const o3g=audio.createGain();o3g.gain.value=.12;
-      const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*5+1200;f.Q.value=1;o1.connect(f);o2.connect(o2g);o2g.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(g);oscs=[o1,o2,o3];extra={f,o2,o3,mul:2.001};}
-    else if(instr==='trumpet'){const o=audio.createOscillator();o.type='sawtooth';o.frequency.value=freq;const ob=audio.createOscillator();ob.type='sine';ob.frequency.value=freq;const obg=audio.createGain();obg.gain.value=.35;const vib=audio.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=audio.createGain();vg.gain.value=freq*0.006;vib.connect(vg);vg.connect(o.frequency);vib.start(now);
-      const f=audio.createBiquadFilter();f.type='bandpass';f.frequency.value=freq*1.7;f.Q.value=.9;const f2=audio.createBiquadFilter();f2.type='lowpass';f2.frequency.value=freq*4+900;o.connect(f);f.connect(f2);f2.connect(g);ob.connect(obg);obg.connect(g);oscs=[o,ob];oscs._vib=vib;extra={f,trumpet:true};}
+    else if(instr==='accordion'){const o1=audio.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;o1.detune.value=-5;const o2=audio.createOscillator();o2.type='sawtooth';o2.frequency.value=freq;o2.detune.value=+10;
+      const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*4+1400;f.Q.value=.7;o1.connect(f);o2.connect(f);f.connect(g);oscs=[o1,o2];extra={f,o2,mul:1,accordion:true};}
+    else if(instr==='banjo'){const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='sawtooth';o2.type='square';o1.frequency.value=freq;o2.frequency.value=freq*2;const o2g=audio.createGain();o2g.gain.value=.35;
+      const head=audio.createBiquadFilter();head.type='peaking';head.frequency.value=500;head.Q.value=6;head.gain.value=9;o1.connect(head);o2.connect(o2g);o2g.connect(head);head.connect(g);oscs=[o1,o2];extra={o2,mul:2};}
+    else if(instr==='trumpet'){const o=audio.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(freq*0.94,now);o.frequency.linearRampToValueAtTime(freq,now+.015);
+      const vib=audio.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=audio.createGain();vg.gain.setValueAtTime(0,now);vg.gain.setValueAtTime(0,now+.4);vg.gain.linearRampToValueAtTime(freq*0.007,now+.6);vib.connect(vg);vg.connect(o.frequency);vib.start(now);
+      const f1=audio.createBiquadFilter();f1.type='lowpass';f1.Q.value=.7;f1.frequency.value=freq*4+1000;const f2=audio.createBiquadFilter();f2.type='lowpass';f2.Q.value=.7;f2.frequency.value=freq*4+1000;o.connect(f1);f1.connect(f2);f2.connect(g);oscs=[o];oscs._vib=vib;extra={f:f1,f2:f2,trumpet:true};}
     else{const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='sine';o2.type=(instr==='piano')?'sine':'triangle';o1.frequency.value=freq;o2.frequency.value=freq*2.001;const o2g=audio.createGain();o2g.gain.value=.22;o1.connect(g);o2.connect(o2g);o2g.connect(g);oscs=[o1,o2];extra={o2};}
     g.connect(master);oscs.forEach(o=>o.start(now));return{g,oscs,extra,instr};}
   function setVoiceFreq(v,freq){const t=audio.currentTime;
@@ -1151,13 +1164,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     else if(instr==='guitar'){const o1=ac.createOscillator(),o2=ac.createOscillator(),o3=ac.createOscillator();o1.type='sawtooth';o2.type='sawtooth';o3.type='square';o1.frequency.value=freq;o2.frequency.value=freq*1.008;o3.frequency.value=freq*0.5;const o3g=ac.createGain();o3g.gain.value=.3;
       const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(freq*4+800,now);f.frequency.exponentialRampToValueAtTime(freq*2+300,now+.6);f.Q.value=6;const sh=ac.createWaveShaper();sh.curve=makeDistortion(45);sh.oversample='4x';o1.connect(f);o2.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(sh);sh.connect(g);
       g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.008);g.gain.exponentialRampToValueAtTime(.0006,now+1.5);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+1.55);o2.stop(now+1.55);o3.stop(now+1.55);}
-    else if(instr==='accordion'){const parts=[[0.5,.28,0,'triangle'],[1,.5,0,'sawtooth'],[1,.42,11,'sawtooth'],[2,.2,0,'triangle'],[3,.09,0,'sawtooth']];const oscs=[];parts.forEach(([m,a,det,ty])=>{const o=ac.createOscillator();o.type=ty;o.frequency.value=freq*m;o.detune.value=det;const og=ac.createGain();og.gain.value=a;o.connect(og);og.connect(g);oscs.push(o);});
-      g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.36,now+.06);g.gain.setValueAtTime(.36,now+.7);g.gain.exponentialRampToValueAtTime(.0006,now+1.2);oscs.forEach(o=>{o.start(now);o.stop(now+1.25);});}
-    else if(instr==='banjo'){const o1=ac.createOscillator(),o2=ac.createOscillator(),o3=ac.createOscillator();o1.type='triangle';o2.type='triangle';o3.type='sine';o1.frequency.value=freq;o2.frequency.value=freq*2.001;o3.frequency.value=freq*3.001;const o2g=ac.createGain();o2g.gain.value=.22;const o3g=ac.createGain();o3g.gain.value=.12;
-      const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(freq*6+1800,now);f.frequency.exponentialRampToValueAtTime(freq*3+500,now+.3);f.Q.value=1;o1.connect(f);o2.connect(o2g);o2g.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(g);
-      g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.55,now+.004);g.gain.exponentialRampToValueAtTime(.0006,now+.9);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+.95);o2.stop(now+.95);o3.stop(now+.95);}
-    else if(instr==='trumpet'){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=freq;const ob=ac.createOscillator();ob.type='sine';ob.frequency.value=freq;const obg=ac.createGain();obg.gain.value=.35;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.setValueAtTime(freq*1.4,now);f.frequency.linearRampToValueAtTime(freq*2+400,now+.18);f.Q.value=.9;const f2=ac.createBiquadFilter();f2.type='lowpass';f2.frequency.value=freq*4+900;o.connect(f);f.connect(f2);f2.connect(g);ob.connect(obg);obg.connect(g);
-      g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.06);g.gain.setValueAtTime(.45,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.15);o.start(now);ob.start(now);o.stop(now+1.2);ob.stop(now+1.2);}
+    else if(instr==='accordion'){const o1=ac.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;o1.detune.value=-5;const o2=ac.createOscillator();o2.type='sawtooth';o2.frequency.value=freq;o2.detune.value=+10;
+      const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=freq*4+1400;f.Q.value=.7;o1.connect(f);o2.connect(f);f.connect(g);
+      g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.34,now+.04);g.gain.setValueAtTime(.34,now+.7);g.gain.exponentialRampToValueAtTime(.0006,now+1.0);o1.start(now);o2.start(now);o1.stop(now+1.05);o2.stop(now+1.05);}
+    else if(instr==='banjo'){const o1=ac.createOscillator(),o2=ac.createOscillator();o1.type='sawtooth';o2.type='square';o1.frequency.value=freq;o2.frequency.value=freq*2;const o2g=ac.createGain();o2g.gain.value=.35;
+      const head=ac.createBiquadFilter();head.type='peaking';head.frequency.value=500;head.Q.value=6;head.gain.value=9;o1.connect(head);o2.connect(o2g);o2g.connect(head);head.connect(g);
+      const n=ac.createBufferSource();{const nl=Math.floor(ac.sampleRate*0.05),bb=ac.createBuffer(1,nl,ac.sampleRate),dd=bb.getChannelData(0);for(let i=0;i<nl;i++)dd[i]=Math.random()*2-1;n.buffer=bb;}const nf=ac.createBiquadFilter();nf.type='highpass';nf.frequency.value=2000;const ng=ac.createGain();ng.gain.setValueAtTime(.5,now);ng.gain.exponentialRampToValueAtTime(.001,now+.008);n.connect(nf);nf.connect(g);
+      g.gain.setValueAtTime(.6,now);g.gain.exponentialRampToValueAtTime(.0006,now+.2);o1.start(now);o2.start(now);n.start(now);o1.stop(now+.25);o2.stop(now+.25);n.stop(now+.02);}
+    else if(instr==='trumpet'){const o=ac.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(freq*0.94,now);o.frequency.linearRampToValueAtTime(freq,now+.015);
+      const vib=ac.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=ac.createGain();vg.gain.setValueAtTime(0,now);vg.gain.setValueAtTime(0,now+.4);vg.gain.linearRampToValueAtTime(freq*0.007,now+.6);vib.connect(vg);vg.connect(o.frequency);
+      const f1=ac.createBiquadFilter();f1.type='lowpass';f1.Q.value=.7;const f2=ac.createBiquadFilter();f2.type='lowpass';f2.Q.value=.7;[f1,f2].forEach(f=>{f.frequency.setValueAtTime(freq*1.5,now);f.frequency.linearRampToValueAtTime(freq*5+1200,now+.12);f.frequency.setValueAtTime(freq*5+1200,now+.5);f.frequency.linearRampToValueAtTime(freq*2+400,now+1.0);});o.connect(f1);f1.connect(f2);f2.connect(g);
+      g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.05);g.gain.setValueAtTime(.45,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.1);vib.start(now);o.start(now);o.stop(now+1.15);vib.stop(now+1.15);}
     else{const o1=ac.createOscillator(),o2=ac.createOscillator();o1.type='sine';o2.type='triangle';o1.frequency.value=freq;o2.frequency.value=freq*2.001;
       const o2g=ac.createGain();o2g.gain.value=.22;o1.connect(g);o2.connect(o2g);o2g.connect(g);
       g.gain.setValueAtTime(.5,now);g.gain.exponentialRampToValueAtTime(.0008,now+1.8);o1.start(now);o2.start(now);o1.stop(now+1.9);o2.stop(now+1.9);}
@@ -2044,6 +2061,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
   // ---------- Looper ----------
   const clips=[];let recording=false,capture=null,clipCounter=0,clipboard=null,selectedClip=-1;let clipZoom=1;
+  let multiSelMode=false; const selectedClips=new Set(); // multi-selection of block indices (Blocco B)
   const laneNames={}; // #4 custom lane labels in Studio view (by lane index)
   // ---- #2 Global (arrangement) undo/redo: snapshots clip layout, not audio buffers ----
   const gUndo=[],gRedo=[];const G_MAX=40;
@@ -2282,7 +2300,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     clips.forEach((c,i)=>{
       const li=c.lane||0;const lane=laneEls[laneIdxs.indexOf(li)]||laneEls[0];
       const fullDur=c.buffer?c.buffer.duration:0;const ts=(c.trimStart||0),te=(c.trimEnd==null?1:c.trimEnd);const dur=Math.max(0.01,fullDur*(te-ts));const bw=Math.max(20,Math.round(dur*pxPerSec));
-      const block=document.createElement('div');block.className='block'+(i===selectedClip?' sel':'');block.style.left=(LANE_HEAD+Math.round((c.t||0)*pxPerSec))+'px';block.style.width=bw+'px';
+      const block=document.createElement('div');block.className='block'+(i===selectedClip?' sel':'')+(selectedClips.has(i)?' multisel':'');block.style.left=(LANE_HEAD+Math.round((c.t||0)*pxPerSec))+'px';block.style.width=bw+'px';
       const bc=document.createElement('canvas');bc.width=bw;bc.height=52;block.appendChild(bc);if(c.buffer)drawWaveRange(bc,c.buffer,c.color,ts,te);
       const bn=document.createElement('div');bn.className='bn';bn.textContent=c.name;block.appendChild(bn);
       // per-clip controls on the block
@@ -2291,21 +2309,26 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(c.pattern&&(c.pattern.kind==='drum'||c.pattern.kind==='mel')){const edB=document.createElement('button');edB.className='blkbtn edit';edB.textContent='✏️';edB.title='Modifica nel '+(c.pattern.kind==='drum'?'drum machine':'melody sequencer');edB.onclick=(e)=>{e.stopPropagation();reopenPattern(c);};block.appendChild(edB);}
       const delB=document.createElement('button');delB.className='blkbtn del';delB.textContent='🗑';delB.title='Elimina';delB.onclick=(e)=>{e.stopPropagation();stopClipPlayback(c);clips.splice(i,1);buildStudio();};block.appendChild(delB);
       if(c.loop){const lb2=document.createElement('div');lb2.className='loopbadge';lb2.textContent='⟳';block.appendChild(lb2);}
-      // drag: horizontal = time (t), vertical = move to another lane
+      // drag: horizontal = time (t), vertical = move to another lane. Moves the whole multi-selection together.
       const startDrag=(clientX,clientY)=>{selectedClip=i;const r=block.getBoundingClientRect();const grab=clientX-r.left;
+        const group=(selectedClips.has(i)&&selectedClips.size>1)?[...selectedClips]:null; // move group if this block is part of a multi-sel
+        const origT={};if(group)group.forEach(gi=>{origT[gi]=clips[gi]?(clips[gi].t||0):0;});const baseT=(c.t||0);
         const move=(cx,cy)=>{const laneR=lane.getBoundingClientRect();let nx=cx-laneR.left-LANE_HEAD-grab;let nt=Math.max(0,nx/pxPerSec);
-          nt=snapClipTime(c,nt,pxPerSec);   // #1 magnetic snap to neighbouring clip edges
-          c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';
-          let overLane=null;for(const le of laneEls){const rr=le.getBoundingClientRect();if(cy>=rr.top&&cy<=rr.bottom){overLane=le;break;}}
-          if(overLane&&+overLane.dataset.lane!==(c.lane||0)){c.lane=+overLane.dataset.lane;}
+          nt=snapClipTime(c,nt,pxPerSec);
+          if(group){const d=nt-baseT;group.forEach(gi=>{if(clips[gi])clips[gi].t=Math.max(0,origT[gi]+d);});} // keep relative distances
+          else{c.t=nt;block.style.left=(LANE_HEAD+Math.round(nt*pxPerSec))+'px';
+            let overLane=null;for(const le of laneEls){const rr=le.getBoundingClientRect();if(cy>=rr.top&&cy<=rr.bottom){overLane=le;break;}}
+            if(overLane&&+overLane.dataset.lane!==(c.lane||0)){c.lane=+overLane.dataset.lane;}}
         };
         const mm=(ev)=>{ev.preventDefault();const p=ev.touches?ev.touches[0]:ev;move(p.clientX,p.clientY);};
-        const up=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);buildStudio();toast(c.name+' → '+(c.t||0).toFixed(2)+'s');};
+        const up=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);buildStudio();toast(group?('Gruppo spostato ('+group.length+' tracce)'):(c.name+' → '+(c.t||0).toFixed(2)+'s'));};
         window.addEventListener('mousemove',mm);window.addEventListener('mouseup',up);window.addEventListener('touchmove',mm,{passive:false});window.addEventListener('touchend',up);};
-      block.addEventListener('mousedown',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.preventDefault();startDrag(ev.clientX,ev.clientY);});
-      block.addEventListener('touchstart',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.preventDefault();startDrag(ev.touches[0].clientX,ev.touches[0].clientY);},{passive:false});
-      // tap selects the block and opens the contextual toolbar with all edit options (#4)
-      block.addEventListener('click',(ev)=>{if(ev.target.tagName==='BUTTON')return;selectedClip=i;buildStudio();});
+      block.addEventListener('mousedown',(ev)=>{if(ev.target.tagName==='BUTTON')return;if(multiSelMode||ev.shiftKey||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();startDrag(ev.clientX,ev.clientY);});
+      block.addEventListener('touchstart',(ev)=>{if(ev.target.tagName==='BUTTON')return;if(multiSelMode)return;ev.preventDefault();startDrag(ev.touches[0].clientX,ev.touches[0].clientY);},{passive:false});
+      // click: multi-select toggle (in Multi mode or with Shift/Ctrl), else single select + toolbar
+      block.addEventListener('click',(ev)=>{if(ev.target.tagName==='BUTTON')return;
+        if(multiSelMode||ev.shiftKey||ev.ctrlKey||ev.metaKey){if(selectedClips.has(i))selectedClips.delete(i);else selectedClips.add(i);selectedClip=i;buildStudio();}
+        else{selectedClips.clear();selectedClip=i;buildStudio();}});
       if(c._cutArmed){
         const cs=(c._cs==null?0:c._cs), ce=(c._ce==null?1:c._ce);
         const maskL=document.createElement('div');maskL.className='cutmask';maskL.style.left='0';maskL.style.width=(cs*100)+'%';
@@ -2358,8 +2381,31 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const selBlock=studioLanes.querySelector('.block.sel');
       if(selBlock)buildBlockTools(clips[selectedClip],selectedClip,selBlock);else hideBlockTools();
     }else hideBlockTools();
+    // ---- Group action bar for multi-selected blocks (Blocco B) ----
+    renderGroupBar();
     // keep the mixer in sync with lane changes (new/removed lanes, colors, names)
     const mp=document.getElementById('mixerPanel');if(mp&&mp.classList.contains('show'))buildMixer();
+  }
+  // Build/refresh the floating group toolbar shown when 2+ blocks are selected.
+  function renderGroupBar(){let bar=document.getElementById('groupBar');
+    // prune stale indices (deleted clips)
+    for(const gi of [...selectedClips])if(gi>=clips.length)selectedClips.delete(gi);
+    if(selectedClips.size<1){if(bar)bar.remove();return;}
+    if(!bar){bar=document.createElement('div');bar.id='groupBar';document.body.appendChild(bar);}
+    bar.innerHTML='';
+    const lbl=document.createElement('span');lbl.className='gblbl';lbl.textContent=selectedClips.size+' sel.';bar.appendChild(lbl);
+    const mk=(txt,title,fn)=>{const b=document.createElement('button');b.textContent=txt;b.title=title;b.onclick=(e)=>{e.stopPropagation();fn();};bar.appendChild(b);};
+    // Copia: duplicate all selected clips (placed right after each, same lane)
+    mk('⧉','Copia le tracce selezionate',()=>{pushGlobal();const idxs=[...selectedClips].sort((a,b)=>a-b);const news=[];
+      idxs.forEach(gi=>{const c=clips[gi];if(!c)return;clipCounter++;const nc=Object.assign({},c,{name:c.name+' copia',source:null,gain:null,volNode:null,panNode:null,history:[],redo:[],_tlScheduled:false,t:(c.t||0)+clipDurT(c)});news.push(nc);});
+      news.forEach(nc=>clips.push(nc));selectedClips.clear();buildStudio();toast(news.length+' tracce copiate');});
+    // Muta / Smuta gruppo
+    mk('🔇','Muta/Smuta le tracce selezionate',()=>{const anyOn=[...selectedClips].some(gi=>clips[gi]&&!clips[gi].muted);[...selectedClips].forEach(gi=>{const c=clips[gi];if(!c)return;c.muted=anyOn;if(c.gain)c.gain.gain.value=anyOn?0:1;});buildStudio();toast(anyOn?'Gruppo mutato':'Gruppo riattivato');});
+    // Elimina gruppo
+    mk('🗑','Elimina le tracce selezionate',async()=>{const ok=await askConfirm('Eliminare le '+selectedClips.size+' tracce selezionate?');if(!ok)return;pushGlobal();
+      const idxs=[...selectedClips].sort((a,b)=>b-a);idxs.forEach(gi=>{if(clips[gi]){stopClipPlayback(clips[gi]);clips.splice(gi,1);}});selectedClips.clear();selectedClip=-1;buildStudio();toast('Tracce eliminate');});
+    // Deseleziona
+    mk('✕','Deseleziona',()=>{selectedClips.clear();buildStudio();});
   }
 
   function hideBlockTools(){if(blockToolsEl){blockToolsEl.classList.remove('show');blockToolsEl.innerHTML='';}}
@@ -2581,6 +2627,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   }
   const mixerPanel=document.getElementById('mixerPanel');
   document.getElementById('mixerBtn').addEventListener('click',()=>{resumeAudio();const show=!mixerPanel.classList.contains('show');mixerPanel.classList.toggle('show',show);document.getElementById('mixerBtn').classList.toggle('on',show);if(show)buildMixer();});
+  (function(){const mb=document.getElementById('multiSelBtn');if(mb)mb.addEventListener('click',()=>{multiSelMode=!multiSelMode;mb.classList.toggle('on',multiSelMode);if(!multiSelMode)selectedClips.clear();buildStudio();toast(multiSelMode?'Selezione multipla ON: tocca le tracce da selezionare':'Selezione multipla OFF');});})();
   document.getElementById('mixClose').addEventListener('click',()=>{mixerPanel.classList.remove('show');document.getElementById('mixerBtn').classList.remove('on');});
 
   // per-clip output stage: clip.gain -> volume -> stereo pan -> LANE BUS -> dryGain
