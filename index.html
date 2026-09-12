@@ -473,6 +473,11 @@
     <label for="fbPart">Parte:</label>
     <select id="fbPart" class="sel" style="flex:1"><option value="strofa">Strofa (8 batt)</option><option value="intro">Intro (4 batt)</option><option value="ritornello">Ritornello (4 batt)</option><option value="stacco">Stacco (1 batt)</option><option value="chiusura">Chiusura (4 batt)</option></select>
   </div>
+  <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
+    <label>BPM:</label>
+    <label style="display:flex;align-items:center;gap:4px;font-weight:800"><input type="checkbox" id="fbBpmAuto" checked> Auto</label>
+    <input id="fbBpmVal" type="number" min="20" max="400" value="120" class="sel" style="width:70px" disabled>
+  </div>
   <div style="display:flex;gap:8px">
     <button id="fbCancel" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">Annulla</button>
     <button id="fbGo" style="flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:9px;height:38px;font-weight:800;cursor:pointer">🎹 Genera</button>
@@ -1594,7 +1599,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     return renderExactLoop(off,targetLen);}
   // Orchestrate a full base "in the style of" a band. Applies the band's BPM/key/scale GLOBALLY
   // (so the grid/sequencer/drum machine are in tune with the base), then renders its instruments.
-  async function generateFullBase(genre,bandName,mood,part){resumeAudio();
+  async function generateFullBase(genre,bandName,mood,part,customBpm){resumeAudio();
     mood=mood||'mid'; part=part||'strofa';
     // ---- Modifica 1: consecutive bases inherit genre/band/mood/BPM from the last generated one ----
     // (unless the arrangement was cleared). The Part is always chosen fresh.
@@ -1620,11 +1625,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       // apply band tempo/key/scale globally (point 3), then the mood on top.
       // If inheriting from a previous base, keep that BPM so consecutive parts line up.
       if(P){
-        let useBpm=(lastGen&&clips.some(c=>c._gen))?lastGen.bpm:(P.bpm||100);
+        const inh=(lastGen&&clips.some(c=>c._gen));
+        // Auto BPM: in coda usa il BPM ATTUALE del progetto (non quello vecchio memorizzato); nuova base = band×mood
+        let useBpm=inh?bpm:clamp(Math.round((P.bpm||100)*M.bpmMul),BPM_MIN,BPM_MAX);
         let useScale=P.scale||'Minore', useProg=P.prog||'vi-IV-I-V';
         if(M.scale)useScale=M.scale;
         if(M.progs)useProg=M.progs[Math.floor(Math.random()*M.progs.length)];
-        if(!(lastGen&&clips.some(c=>c._gen)))useBpm=clamp(Math.round((P.bpm||100)*M.bpmMul),BPM_MIN,BPM_MAX);
+        // custom BPM chosen in the dialog ALWAYS overrides (also for tracks added in coda)
+        if(customBpm)useBpm=clamp(customBpm,BPM_MIN,BPM_MAX);
         setBpm(useBpm);
         if(P.key){currentKey=P.key;const ks=document.getElementById('keySel');if(ks)ks.value=currentKey;}
         currentScaleName=useScale;const ss=document.getElementById('scaleSel');if(ss)ss.value=currentScaleName;
@@ -1763,6 +1771,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.getElementById('melRand').addEventListener('click',()=>openRandomizer('riff'));
   // ---- Full-base generator dialog wiring ----
   (function(){const dlg=document.getElementById('fullBaseDlg'),gsel=document.getElementById('fbGenre'),bsel=document.getElementById('fbBand'),msel=document.getElementById('fbMood'),ptsel=document.getElementById('fbPart'),keyLbl=document.getElementById('fbKeyLbl');
+    const bpmAuto=document.getElementById('fbBpmAuto'),bpmVal=document.getElementById('fbBpmVal');
+    if(bpmAuto&&bpmVal)bpmAuto.addEventListener('change',()=>{bpmVal.disabled=bpmAuto.checked;});
     if(gsel&&!gsel.options.length)GENRES.forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;gsel.appendChild(o);});
     if(gsel)gsel.value='French touch';
     function fillBands(){if(!bsel)return;bsel.innerHTML='';const rnd=document.createElement('option');rnd.value='';rnd.textContent='🎲 Casuale (una del genere)';bsel.appendChild(rnd);
@@ -1771,17 +1781,19 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const inheriting=()=>lastGen&&clips.some(c=>c._gen);
     const open=()=>{resumeAudio();
       const inh=inheriting();
-      // when adding a part next to an existing base, genre/stile/mood are inherited & locked; only the Part is chosen
+      // when adding a part next to an existing base, genre/stile/mood are inherited & locked; Parte and BPM stay free
       [gsel,bsel,msel].forEach(el=>{if(el)el.disabled=inh;});
-      if(inh&&keyLbl)keyLbl.textContent='eredita da "'+(lastGen.band||lastGen.genre)+'" • '+lastGen.bpm+' BPM • scegli solo la Parte';
-      else if(keyLbl)keyLbl.textContent='la band + il mood impostano tono e BPM';
+      if(bpmVal)bpmVal.disabled=bpmAuto?bpmAuto.checked:false; // BPM always choosable
+      if(inh&&keyLbl)keyLbl.textContent='eredita stile da "'+(lastGen.band||lastGen.genre)+'" • Parte e BPM liberi (Auto = BPM attuale '+bpm+')';
+      else if(keyLbl)keyLbl.textContent='la band + il mood impostano tono e BPM (o scegli il BPM)';
       dlg.classList.add('show');};
     const close=()=>dlg.classList.remove('show');
     const btn=document.getElementById('fullBaseBtn');if(btn)btn.addEventListener('click',open);
     const cancel=document.getElementById('fbCancel');if(cancel)cancel.addEventListener('click',close);
     if(dlg)dlg.addEventListener('click',(e)=>{if(e.target===dlg)close();});
     const go=document.getElementById('fbGo');if(go)go.addEventListener('click',async()=>{const genre=gsel?gsel.value:'French touch';const band=bsel?bsel.value:'';const mood=msel?msel.value:'mid';const part=ptsel?ptsel.value:'strofa';
-      close();await generateFullBase(genre,band||null,mood,part);});
+      let customBpm=null;if(bpmAuto&&!bpmAuto.checked&&bpmVal){const n=parseInt(bpmVal.value,10);if(n>=20&&n<=400)customBpm=n;}
+      close();await generateFullBase(genre,band||null,mood,part,customBpm);});
   })();
   (function(){const cb=document.getElementById('melChordBtn'),ps=document.getElementById('melProgSel');
     if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
