@@ -466,6 +466,10 @@
   <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
     <label for="masterPresetSel">Preset:</label><select id="masterPresetSel" class="sel" style="flex:1"></select>
   </div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="masterPreview" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">▶ Ascolta anteprima</button>
+    <button id="masterPreviewStop" style="flex:0 0 auto;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;padding:0 12px;font-weight:800;cursor:pointer">⏹</button>
+  </div>
   <div style="display:flex;gap:8px">
     <button id="masterCancel" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">Annulla</button>
     <button id="masterGo" style="flex:1;border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:9px;height:38px;font-weight:800;cursor:pointer">⤓ Esporta</button>
@@ -486,6 +490,7 @@
   <button class="btn icon" id="micBtn" title="Microfono">🎤</button>
   <select class="sel" id="micSel" title="Microfono di ingresso"><option value="">Mic: predefinito</option></select>
   <button class="btn" id="micEchoBtn" title="Anti-rientro (cancella l'eco degli altoparlanti): attiva se registri senza cuffie">🎧 Anti-rientro: off</button>
+  <button class="btn icon" id="midiBtn" title="Tastiera MIDI: collega un tastierino (USB/Bluetooth). Suona lo strumento della traccia attiva">🎹</button>
 </div>
 
 <script>
@@ -1105,11 +1110,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const [dBuf,bBuf,cBuf]=await Promise.all([renderDrumsPattern(drumPat,bars,kit),renderBassLine(roots,bars,genre),renderChordBed(roots,bars)]);
       // add on separate lanes, all looping, aligned at the current transport position
       const at=transportPos;
-      addClip(cBuf,'Accordi',at,true);const cClip=clips[clips.length-1];cClip.loop=true;cClip.color=TRACK_COLORS[3];
-      addClip(bBuf,'Basso',at,true);const bClip=clips[clips.length-1];bClip.loop=true;bClip.color=TRACK_COLORS[1];
-      addClip(dBuf,'Batteria',at,true);const dClip=clips[clips.length-1];dClip.loop=true;dClip.color=TRACK_COLORS[0];
+      addClip(cBuf,'Accordi',at,true);const cClip=clips[clips.length-1];cClip.loop=false;cClip.color=TRACK_COLORS[3];
+      addClip(bBuf,'Basso',at,true);const bClip=clips[clips.length-1];bClip.loop=false;bClip.color=TRACK_COLORS[1];
+      addClip(dBuf,'Batteria',at,true);const dClip=clips[clips.length-1];dClip.loop=false;dClip.color=TRACK_COLORS[0];
       buildStudio();
-      toast('Base '+genre+' pronta • '+bars+' battute in '+currentKey+' '+currentScaleName);
+      toast('Base '+genre+' pronta • '+bars+' battute in '+currentKey+' '+currentScaleName+' • ⟳ sul blocco per il loop');
     }catch(e){toast('Errore generazione base: '+(e&&e.message||e));}
   }
   // Riff: array of {step,degree} within the scale, motif-based for musicality.
@@ -1892,7 +1897,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     g.connect(lo);lo.connect(mid);mid.connect(hi);hi.connect(comp);comp.connect(sc);sc.connect(p);p.connect(dryGain);
     laneNodes[li]={gain:g,eqLo:lo,eqMid:mid,eqHi:hi,comp,sc,pan:p};return laneNodes[li];}
   // map a 0..3 compressor "amount" to real compressor settings (0 = transparent)
-  function applyCompSettings(comp,amount){const a=clamp(amount,0,3);
+  function applyCompSettings(comp,amount){const a=clamp(Math.round(amount||0),0,3);
     const thr=[0,-12,-20,-28][a], ratio=[1,3,6,12][a];
     comp.threshold.value=thr;comp.knee.value=6;comp.ratio.value=ratio;comp.attack.value=0.005;comp.release.value=0.2;}
   // push current laneMix values onto the live audio nodes (called after any mixer change)
@@ -2073,12 +2078,12 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- Export single clip (feature 4) ----
   // render a single clip (1 loop) through its FX chain, offline
   function connectOfflineFX(off,src,clip,dest){const inGain=off.createGain();const dry=off.createGain();dry.gain.value=1;
-    const rev=off.createConvolver();rev.buffer=reverb.buffer;const revG=off.createGain();revG.gain.value=[0,.3,.55,.8][clip.fxRev||0];
-    const dl=off.createDelay(2.0);dl.delayTime.value=(60/bpm)*0.5;const dlf=off.createGain();dlf.gain.value=[0,.28,.45,.62][clip.fxDelay||0];const dlw=off.createGain();dlw.gain.value=[0,.3,.5,.7][clip.fxDelay||0];
+    const rev=off.createConvolver();rev.buffer=reverb.buffer;const revG=off.createGain();revG.gain.value=[0,.3,.55,.8][clamp(clip.fxRev|0,0,3)];
+    const dl=off.createDelay(2.0);dl.delayTime.value=(60/bpm)*0.5;const dlf=off.createGain();dlf.gain.value=[0,.28,.45,.62][clamp(clip.fxDelay|0,0,3)];const dlw=off.createGain();dlw.gain.value=[0,.3,.5,.7][clamp(clip.fxDelay|0,0,3)];
     // per-clip volume + pan stage, so exports match what you hear
-    const vol=off.createGain();vol.gain.value=(clip.vol==null?1:clip.vol);
-    let pan;if(off.createStereoPanner){pan=off.createStereoPanner();pan.pan.value=(clip.pan||0);}else{pan=off.createGain();}
-    let head=inGain;const dv=clip.fxDrive||0;
+    const cv=+clip.vol;const vol=off.createGain();vol.gain.value=isFinite(cv)?cv:1;
+    let pan;const cp=+clip.pan;if(off.createStereoPanner){pan=off.createStereoPanner();pan.pan.value=isFinite(cp)?clamp(cp,-1,1):0;}else{pan=off.createGain();}
+    let head=inGain;const dv=clamp(clip.fxDrive|0,0,3);
     if(dv>0){const sh=off.createWaveShaper();sh.curve=makeDistortion([0,8,24,60][dv]);sh.oversample='2x';const post=off.createGain();post.gain.value=[1,.8,.6,.45][dv];inGain.connect(sh);sh.connect(post);head=post;}
     src.connect(inGain);head.connect(dry);dry.connect(vol);head.connect(rev);rev.connect(revG);revG.connect(vol);head.connect(dl);dl.connect(dlf);dlf.connect(dl);dl.connect(dlw);dlw.connect(vol);
     vol.connect(pan);pan.connect(dest);}
@@ -2089,17 +2094,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   async function exportClip(clip){try{if(!clip.buffer||clip.buffer.length<10){toast('Traccia vuota');return;}toast('Esporto '+clip.name+'…');const r=await renderClipFX(clip);const blob=bufferToWav(r);download(blob,fileName(clip.name.replace(/\s+/g,'_')));toast('Esportata '+clip.name);}catch(e){toast('Errore export: '+e.message);}}
   // ---- Export all (skip muted) — with per-clip FX + per-lane mixer ----
   // Build an offline per-lane bus (gain+pan) that mirrors the live mixer, feeding the master node.
-  function offlineLaneBus(off,li,mgDest,dur){const m=getLaneMix(li);const g=off.createGain();g.gain.value=laneEffGain(li);
-    const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=220;lo.gain.value=m.eqLo||0;
-    const mid=off.createBiquadFilter();mid.type='peaking';mid.frequency.value=1000;mid.Q.value=0.9;mid.gain.value=m.eqMid||0;
-    const hi=off.createBiquadFilter();hi.type='highshelf';hi.frequency.value=4000;hi.gain.value=m.eqHi||0;
+  function offlineLaneBus(off,li,mgDest,dur){const m=getLaneMix(li);const g=off.createGain();const eg=laneEffGain(li);g.gain.value=isFinite(eg)?eg:1;
+    const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=220;lo.gain.value=isFinite(+m.eqLo)?+m.eqLo:0;
+    const mid=off.createBiquadFilter();mid.type='peaking';mid.frequency.value=1000;mid.Q.value=0.9;mid.gain.value=isFinite(+m.eqMid)?+m.eqMid:0;
+    const hi=off.createBiquadFilter();hi.type='highshelf';hi.frequency.value=4000;hi.gain.value=isFinite(+m.eqHi)?+m.eqHi:0;
     const comp=off.createDynamicsCompressor();applyCompSettings(comp,m.comp||0);
     const sc=off.createGain();sc.gain.value=1;
     // offline sidechain: schedule the ducking envelope for every beat across the render
-    const depth=SC_DEPTH[clamp(m.sc||0,0,3)];
-    if(depth>0){const spb=beatInterval();const total=(dur||8);const lov=1-depth;
+    const depth=SC_DEPTH[clamp(m.sc|0,0,3)]||0;
+    const spb=beatInterval();const total=(isFinite(dur)&&dur>0)?dur:8;
+    if(depth>0&&isFinite(spb)&&spb>0){const lov=1-depth;
       for(let t=0;t<total+spb;t+=spb){sc.gain.setValueAtTime(lov,t);sc.gain.linearRampToValueAtTime(1,t+spb*0.9);}}
-    let p;if(off.createStereoPanner){p=off.createStereoPanner();p.pan.value=(m.pan||0);}else{p=off.createGain();}
+    let p;const mp=+m.pan;if(off.createStereoPanner){p=off.createStereoPanner();p.pan.value=isFinite(mp)?clamp(mp,-1,1):0;}else{p=off.createGain();}
     g.connect(lo);lo.connect(mid);mid.connect(hi);hi.connect(comp);comp.connect(sc);sc.connect(p);p.connect(mgDest);return g;}
 
   // ============================================================
@@ -2142,6 +2148,35 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     input.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);air.connect(glue);glue.connect(sat);sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
     return input;}
 
+  // Render the full mix through a mastering preset and return the buffer (optionally capped for preview).
+  async function renderMasteredMix(preset,maxDur){
+    const active=clips.filter(c=>laneEffGain(c.lane||0)>0);
+    if(!active.length)return null;
+    if(timelineView){
+      let dur=projectDuration()+2;if(maxDur)dur=Math.min(dur,maxDur);
+      const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(buildMastering(off,preset));
+      const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
+      for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
+      return await off.startRendering();
+    }
+    let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));
+    if(maxDur)maxLen=Math.min(maxLen,Math.ceil(maxDur*audio.sampleRate));
+    const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(buildMastering(off,preset));
+    const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
+    for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
+    return await off.startRendering();
+  }
+  // Preview playback of a mastered buffer (through the live output), with the ability to stop.
+  let masterPreviewSrc=null;
+  function stopMasterPreview(){if(masterPreviewSrc){try{masterPreviewSrc.stop();}catch(e){}masterPreviewSrc=null;}}
+  async function previewMaster(preset){resumeAudio();stopMasterPreview();
+    try{const buf=await renderMasteredMix(preset,10); // up to 10s preview
+      if(!buf){toast('Niente da ascoltare');return;}
+      const src=audio.createBufferSource();src.buffer=buf;src.connect(masterBus||audio.destination);src.onended=()=>{if(masterPreviewSrc===src)masterPreviewSrc=null;};
+      masterPreviewSrc=src;src.start();toast('Anteprima master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));
+    }catch(e){toast('Errore anteprima: '+(e&&e.message||e));}
+  }
+
   async function exportAll(presetKey){
     const preset=presetKey||masterPreset||'universal';
     // a lane is audible if its effective gain > 0 (respects mute + solo)
@@ -2163,11 +2198,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(sel&&!sel.options.length){for(const k in MASTER_PRESETS){const o=document.createElement('option');o.value=k;o.textContent=MASTER_PRESETS[k].label;sel.appendChild(o);}}
     if(sel)sel.value=masterPreset;
     const open=()=>{if(!clips.length){toast('Nessuna traccia da esportare');return;}resumeAudio();dlg.classList.add('show');};
-    const close=()=>dlg.classList.remove('show');
+    const close=()=>{stopMasterPreview();dlg.classList.remove('show');};
     document.getElementById('exportAllBtn').addEventListener('click',open);
     document.getElementById('masterCancel').addEventListener('click',close);
     if(dlg)dlg.addEventListener('click',(e)=>{if(e.target===dlg)close();});
-    document.getElementById('masterGo').addEventListener('click',async()=>{masterPreset=sel?sel.value:'universal';close();await exportAll(masterPreset);});
+    const pv=document.getElementById('masterPreview');if(pv)pv.addEventListener('click',()=>{masterPreset=sel?sel.value:'universal';previewMaster(masterPreset);});
+    const pvStop=document.getElementById('masterPreviewStop');if(pvStop)pvStop.addEventListener('click',stopMasterPreview);
+    if(sel)sel.addEventListener('change',()=>{masterPreset=sel.value;});
+    document.getElementById('masterGo').addEventListener('click',async()=>{masterPreset=sel?sel.value:'universal';stopMasterPreview();close();await exportAll(masterPreset);});
   })();
 
   function buildClipList(){clipList.innerHTML='';const baseW=(looperFull?window.innerWidth:Math.round(window.innerWidth*0.5))-40;const wavW=Math.max(60,Math.round(baseW*clipZoom));
@@ -2338,8 +2376,51 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // populate mic list on load + when devices change (USB-C hub plugged/unplugged)
   if(navigator.mediaDevices){refreshMicList();navigator.mediaDevices.addEventListener&&navigator.mediaDevices.addEventListener('devicechange',refreshMicList);}
 
-  // ---------- Projects: Save / Load (features 8,9,10) ----------
-  // ---------- Projects: IndexedDB (large capacity, stores Blob WAV directly) ----------
+  // ---------- MIDI keyboard input (Web MIDI API) ----------
+  // Plays the ACTIVE track's instrument with true chromatic notes (Do stays Do), respecting the octave shift.
+  // Note-on -> held voice; note-off -> release. Goes through the instrument bus, so it's recordable with REC.
+  let midiAccess=null, midiEnabled=false;
+  const midiVoices=new Map(); // note number -> held voice
+  const midiBtn=document.getElementById('midiBtn');
+  function midiSupported(){return typeof navigator!=='undefined'&&!!navigator.requestMIDIAccess;}
+  function midiInstr(){const tr=tracks[activeTrack];return (tr.instr==='drums'||tr.instr==='hichord')?'node':tr.instr;} // drums/hichord aren't melodic → fall back to node
+  function midiNoteOn(note,velocity){resumeAudio();const instr=midiInstr();
+    if(midiVoices.has(note))midiNoteOff(note); // retrigger safety
+    const oct=(tracks[activeTrack].oct||0);
+    const freq=midiToFreq(note+oct*12);          // true chromatic pitch + current octave shift
+    const v=makeHeldVoice(instr,freq);
+    // apply velocity to the voice level (0..1)
+    const vol=clamp((velocity||100)/127,0.05,1);try{v.g.gain.setValueAtTime(vol*0.6,audio.currentTime);}catch(e){}
+    midiVoices.set(note,v);}
+  function midiNoteOff(note){const v=midiVoices.get(note);if(!v)return;releaseVoice(v);midiVoices.delete(note);}
+  function handleMidiMessage(ev){const [status,d1,d2]=ev.data;const cmd=status&0xf0;
+    if(cmd===0x90&&d2>0){midiNoteOn(d1,d2);}                 // note on
+    else if(cmd===0x80||(cmd===0x90&&d2===0)){midiNoteOff(d1);} // note off (or note-on velocity 0)
+    // (pitch bend / CC could be added later)
+  }
+  function attachMidiInputs(){if(!midiAccess)return;let count=0;
+    midiAccess.inputs.forEach(inp=>{inp.onmidimessage=handleMidiMessage;count++;});
+    return count;}
+  function updateMidiBtn(){if(!midiBtn)return;midiBtn.classList.toggle('on',midiEnabled);}
+  async function enableMidi(){
+    if(!midiSupported()){toast('MIDI non supportato da questo browser (iPhone/Safari non lo supportano). Usa Chrome su Android o PC.');return;}
+    try{midiAccess=await navigator.requestMIDIAccess({sysex:false});
+      const n=attachMidiInputs();midiEnabled=true;updateMidiBtn();
+      // keep the "door open": auto-attach any device plugged in later
+      midiAccess.onstatechange=(e)=>{attachMidiInputs();if(e.port&&e.port.type==='input'){toast('MIDI '+(e.port.state==='connected'?'collegato':'scollegato')+': '+(e.port.name||''));}};
+      toast(n>0?('MIDI attivo • '+n+' dispositiv'+(n>1?'i':'o')+' • suona lo strumento della traccia'):'MIDI attivo • collega un tastierino (verrà rilevato da solo)');
+    }catch(e){toast('Accesso MIDI negato o non disponibile: '+(e&&e.message||e));}
+  }
+  if(midiBtn){
+    if(!midiSupported()){midiBtn.style.opacity='0.5';midiBtn.title='MIDI non supportato da questo browser (iPhone/Safari non lo supportano)';}
+    midiBtn.addEventListener('click',()=>{if(!midiEnabled)enableMidi();else{
+      // toggle off: release notes and detach
+      for(const k of[...midiVoices.keys()])midiNoteOff(k);
+      if(midiAccess)midiAccess.inputs.forEach(inp=>{inp.onmidimessage=null;});
+      midiEnabled=false;updateMidiBtn();toast('MIDI in pausa (ritocca 🎹 per riattivare)');
+    }});
+  }
+
   const DB_NAME='crudobeat',DB_STORE='projects';let _db=null;
   function openDB(){return new Promise((res,rej)=>{if(_db)return res(_db);const rq=indexedDB.open(DB_NAME,1);
     rq.onupgradeneeded=()=>{const db=rq.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:'name'});};
