@@ -318,6 +318,7 @@
   <div class="tools" id="tools">
     <button data-tool="live" class="live active" title="Live">LIVE</button>
     <button data-tool="note" class="iconbtn" title="Nota">●</button>
+    <button id="gridChordBtn" class="iconbtn" title="Modalità accordi: tocca la griglia per suonare/inserire accordi diatonici in tonalità con la base">🎹Acc</button>
     <button data-tool="pulsar" class="iconbtn" title="Pulsar">◎</button>
     <button data-tool="kick" class="iconbtn" title="Cassa (drum)">🥁K</button>
     <button data-tool="snare" class="iconbtn" title="Rullante (drum)">🥁S</button>
@@ -402,6 +403,8 @@
     <button id="melPlay" title="Play/Stop melodia">▶</button>
     <button id="melClear" title="Svuota">🗑</button>
     <button id="melRand" title="Genera riff casuale">🎲</button>
+    <button id="melGridChordBtn" title="Modalità accordi: clicca una cella per inserire un accordo diatonico (in tonalità con la base)">🎹 Accordi: off</button>
+    <button id="melFollowProgBtn" title="Vincola gli accordi alla progressione della base generata (massima armonia)">🎯 Segui base: off</button>
     <button id="melChordBtn" title="Genera seguendo una progressione di accordi (per tracce coerenti)">🎼</button>
     <select id="melProgSel" title="Progressione di accordi" style="display:none"><option value="I-V-vi-IV">I-V-vi-IV</option><option value="vi-IV-I-V">vi-IV-I-V</option><option value="ii-V-I">ii-V-I</option><option value="I-vi-IV-V">I-vi-IV-V</option><option value="last">Ultima usata</option></select>
     <button id="melRevBtn" title="Riverbero (globale, 0-3)">R</button><button id="melDelayBtn" title="Delay (globale, 0-3)">D</button>
@@ -978,13 +981,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   let GRID_TOP=150,GRID_BOTTOM=0;function computeGridBounds(){const tb=document.getElementById('topbar');const topH=(document.body.classList.contains('looperFull')?0:((tb&&tb.offsetHeight)||60));GRID_TOP=topH+12;
     const cb=document.getElementById('controls');const botH=(document.body.classList.contains('looperFull')?0:((cb&&cb.offsetHeight)||76));GRID_BOTTOM=H-botH-8;}
   function addNode(x,y,type){const n={x:x-panX,y:y-panY,type,flash:0,track:activeTrack};tracks[activeTrack].nodes.push(n);return n;}
-  function playNodeInstrument(node){if(node.type==='kick'){playDrumKind('kick');node.flash=1;return;}if(node.type==='snare'){playDrumKind('snare');node.flash=1;return;}const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
+  function playNodeInstrument(node){if(node.type==='kick'){playDrumKind('kick');node.flash=1;return;}if(node.type==='snare'){playDrumKind('snare');node.flash=1;return;}const tr=tracks[node.track];if(tr.instr==='drums')return playDrum(node);
+    if(node.type==='chord'){ // play a full diatonic chord (in key) rooted at the tapped degree
+      let deg=stepForY(node.y+panY);if(node.follow)deg=snapDegreeToProg(deg);
+      for(const d of gridChordDegrees(deg))triggerNote(tr.instr,midiToFreq(degToMidi(tr.instr,d,tr.oct)));
+      node.flash=1;return;}
+    const midi=midiForStep(stepForY(node.y+panY),tr.instr,tr.oct);triggerNote(tr.instr,midiToFreq(midi));node.flash=1;}
 
   // ---------- Engine ----------
   let playing=false,bpm=100,lastPulseTime=0,showGrid=true;
   const impulses=[];function beatInterval(){return 60/bpm;}
   function firePulsars(){for(let ti=0;ti<NUM_TRACKS;ti++){if(tracks[ti].muted)continue;for(const p of tracks[ti].nodes){if(p.type!=='pulsar')continue;p.flash=1;
-    for(const n of tracks[ti].nodes){if(n===p||(n.type!=='note'&&n.type!=='kick'&&n.type!=='snare'))continue;const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<=CONNECT_DIST)impulses.push({sx:p.x,sy:p.y,x:p.x,y:p.y,tx:n.x,ty:n.y,target:n,dist:d,travelled:0,color:TRACK_COLORS[ti]});}}}}
+    for(const n of tracks[ti].nodes){if(n===p||(n.type!=='note'&&n.type!=='kick'&&n.type!=='snare'&&n.type!=='chord'))continue;const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<=CONNECT_DIST)impulses.push({sx:p.x,sy:p.y,x:p.x,y:p.y,tx:n.x,ty:n.y,target:n,dist:d,travelled:0,color:TRACK_COLORS[ti]});}}}}
   let metroOn=false,countingIn=false;
   // Look-ahead metronome (Chris Wilson "two clocks"): schedule clicks on the audio clock, jitter-free.
   let nextNoteTime=0, metroBeat=0, metroTimer=null, countInLeft=0, onDownbeat=null;
@@ -1130,7 +1138,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const lbl=document.createElement('div');lbl.className='seqlbl';lbl.textContent=midiToName(melMidiForRow(r));row.appendChild(lbl);
       const cells=document.createElement('div');cells.className='cells';
       for(let s=0;s<SEQ_STEPS;s++){const cell=document.createElement('div');cell.className='cell'+(s%4===0?' beat':'')+(melPattern[r][s]?' on':'');cell.dataset.r=r;cell.dataset.s=s;
-        cell.onclick=()=>{melPattern[r][s]=!melPattern[r][s];cell.classList.toggle('on',melPattern[r][s]);if(melPattern[r][s]){resumeAudio();triggerNote(melInstr(),midiToFreq(melMidiForRow(r)));}};
+        cell.onclick=()=>{
+          if(gridChordMode){ // insert a full diatonic chord on this step (rows for degree, degree+2, degree+4)
+            resumeAudio();
+            let rootDeg=(melRows-1-r); // scale-degree of the clicked row
+            if(gridChordFollow){const snapped=snapDegreeToProg(rootDeg);rootDeg=((snapped%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;}
+            const degs=[rootDeg,rootDeg+2,rootDeg+4];
+            const on=!melPattern[r][s]; // toggle based on the clicked cell's current state
+            for(const dg of degs){const rr=(melRows-1-dg);if(rr<0||rr>=melRows)continue;melPattern[rr][s]=on;if(on)triggerNote(melInstr(),midiToFreq(melMidiForRow(rr)));}
+            buildMelGrid();return;
+          }
+          melPattern[r][s]=!melPattern[r][s];cell.classList.toggle('on',melPattern[r][s]);if(melPattern[r][s]){resumeAudio();triggerNote(melInstr(),midiToFreq(melMidiForRow(r)));}};
         cells.appendChild(cell);}
       row.appendChild(cells);melGrid.appendChild(row);}
   }
@@ -1330,36 +1348,48 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'Led Zeppelin':{genre:'Rock',bpm:120,key:'Mi',scale:'Blues',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'organ'},prog:'I-V-vi-IV',sc:0,lead:false,style:'zeppelin'},
     'The National':{genre:'Rock',bpm:110,key:'La',scale:'Minore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'piano',lead:'pad'},prog:'vi-IV-I-V',sc:0,lead:true,style:'national'},
     // Punk/Grunge
-    'Nirvana':{genre:'Punk/Grunge',bpm:120,key:'Fa',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:0,lead:true,style:'nirvana',randInstr:['organ','guitar'],chordFx:{drive:2}},
-    'Joy Division':{genre:'Punk/Grunge',bpm:140,key:'Re',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'joydivision',randInstr:['organ','guitar']},
-    'Verdena':{genre:'Punk/Grunge',bpm:128,key:'Mi',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass'},prog:'I-V-vi-IV',sc:0,lead:true,style:'verdena',randInstr:['ambient','organ','piano'],chordFx:{drive:3}},
+    'Nirvana':{genre:'Punk/Grunge',bpm:120,key:'Fa',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass',chord:'guitar'},prog:'I-vi-IV-V',sc:0,lead:true,style:'nirvana',randInstr:['organ','guitar'],chordFx:{drive:2}},
+    'Joy Division':{genre:'Punk/Grunge',bpm:140,key:'Re',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass',chord:'organ'},prog:'vi-IV-I-V',sc:0,lead:true,style:'joydivision',randInstr:['organ','guitar']},
+    'Verdena':{genre:'Punk/Grunge',bpm:128,key:'Mi',scale:'Minore',kit:'acoustic',arch:'Punk',instr:{bass:'bass',chord:'organ'},prog:'I-V-vi-IV',sc:0,lead:true,style:'verdena',randInstr:['ambient','organ','piano'],chordFx:{drive:3}},
     // Indie
-    'Modest Mouse':{genre:'Indie',bpm:115,key:'La',scale:'Minore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'modest',randInstr:['accordion','banjo','guitar','trumpet']},
-    'Built to Spill':{genre:'Indie',bpm:125,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'builttospill',randInstr:['organ','guitar']},
-    'Sonic Youth':{genre:'Indie',bpm:130,key:'Mi',scale:'Frigia',kit:'acoustic',arch:'Rock',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'sonicyouth',randInstr:['guitar','piano']},
+    'Modest Mouse':{genre:'Indie',bpm:115,key:'La',scale:'Minore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'guitar'},prog:'vi-IV-I-V',sc:0,lead:true,style:'modest',randInstr:['accordion','banjo','guitar','trumpet']},
+    'Built to Spill':{genre:'Indie',bpm:125,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic',chord:'organ'},prog:'I-vi-IV-V',sc:0,lead:true,style:'builttospill',randInstr:['organ','guitar']},
+    'Sonic Youth':{genre:'Indie',bpm:130,key:'Mi',scale:'Frigia',kit:'acoustic',arch:'Rock',instr:{bass:'bass',chord:'guitar'},prog:'vi-IV-I-V',sc:0,lead:true,style:'sonicyouth',randInstr:['guitar','piano']},
     // Bedroom
-    'Sufjan Stevens':{genre:'Bedroom',bpm:82,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'sufjan',randInstr:['banjo','piano','node','ambient']},
-    'Bon Iver':{genre:'Bedroom',bpm:76,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'boniver',randInstr:['piano','trumpet','pad','epiano'],chordFx:{rev:2,delay:2}},
-    'Mac DeMarco':{genre:'Bedroom',bpm:80,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'macdemarco',randInstr:['guitar','ambient','piano']},
+    'Sufjan Stevens':{genre:'Bedroom',bpm:82,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'piano'},prog:'I-V-vi-IV',sc:0,lead:true,style:'sufjan',randInstr:['banjo','piano','node','ambient']},
+    'Bon Iver':{genre:'Bedroom',bpm:76,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'epiano'},prog:'vi-IV-I-V',sc:0,lead:true,style:'boniver',randInstr:['piano','trumpet','pad','epiano'],chordFx:{rev:2,delay:2}},
+    'Mac DeMarco':{genre:'Bedroom',bpm:80,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'guitar'},prog:'I-vi-IV-V',sc:0,lead:true,style:'macdemarco',randInstr:['guitar','ambient','piano']},
     // French touch
-    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'daftpunk',randInstr:['guitar','hichord']},
-    'Justice':{genre:'French touch',bpm:126,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:3,lead:true,style:'justice',randInstr:['guitar','hichord']},
-    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-V-vi-IV',sc:2,lead:true,style:'cassius',randInstr:['guitar','hichord']},
+    'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord'},prog:'vi-IV-I-V',sc:2,lead:true,style:'daftpunk',randInstr:['guitar','hichord']},
+    'Justice':{genre:'French touch',bpm:126,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'hichord'},prog:'I-vi-IV-V',sc:3,lead:true,style:'justice',randInstr:['guitar','hichord']},
+    'Cassius':{genre:'French touch',bpm:124,key:'Do',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'guitar'},prog:'I-V-vi-IV',sc:2,lead:true,style:'cassius',randInstr:['guitar','hichord']},
     // Electro
-    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'crystalcastles',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:3}},
-    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:1,lead:true,style:'apparat',randInstr:['piano','pad','guitar'],chordFx:{rev:3,delay:2}},
-    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:2,lead:true,style:'theknife',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:2}},
+    'Crystal Castles':{genre:'Electro',bpm:128,key:'Re',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'guitar'},prog:'vi-IV-I-V',sc:2,lead:true,style:'crystalcastles',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:3}},
+    'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'ambient'},prog:'vi-IV-I-V',sc:1,lead:true,style:'apparat',randInstr:['piano','pad','guitar'],chordFx:{rev:3,delay:2}},
+    'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass',chord:'guitar'},prog:'I-vi-IV-V',sc:2,lead:true,style:'theknife',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:2}},
     // Ambient (Node instead of chords)
-    'Christian Löffler':{genre:'Ambient',bpm:121,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:2,lead:true,style:'loffler',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
-    'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'air',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
-    'Populous':{genre:'Ambient',bpm:95,key:'Do',scale:'Dorica',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:1,lead:true,style:'populous',leadForce:'ambient',randInstr:['piano','synth','node','ambient','pad'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
+    'Christian Löffler':{genre:'Ambient',bpm:121,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic',chord:'ambient'},prog:'vi-IV-I-V',sc:2,lead:true,style:'loffler',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
+    'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic',chord:'ambient'},prog:'I-V-vi-IV',sc:0,lead:true,style:'air',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
+    'Populous':{genre:'Ambient',bpm:95,key:'Do',scale:'Dorica',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic',chord:'ambient'},prog:'vi-IV-I-V',sc:1,lead:true,style:'populous',leadForce:'ambient',randInstr:['piano','synth','node','ambient','pad'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
     // Pop (Strfkr/MGMT/Wixel)
-    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','guitar']},
-    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','guitar']},
-    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','guitar'],chordFx:{rev:2,delay:1}}
+    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'hichord'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','guitar']},
+    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'ambient'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','guitar']},
+    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic',chord:'ambient'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','guitar'],chordFx:{rev:2,delay:1}}
   };
   function bandsForGenre(g){return Object.keys(BANDS).filter(b=>BANDS[b].genre===g);}
   let chordMode=false, chordProg='I-V-vi-IV', lastUsedProg=null;
+  // ---- Grid chords: play/insert full diatonic chords (in key) from the canvas grid & melody sequencer ----
+  // gridChordMode: tapping the grid inserts a chord instead of a single note.
+  // gridChordFollow: snap the tapped degree to the nearest root of the CURRENT base progression,
+  //                  so inserted chords resonate/harmonize with the generated base.
+  let gridChordMode=false, gridChordFollow=false;
+  // Snap a scale-degree to the nearest degree of the current progression (within an octave).
+  function snapDegreeToProg(deg){const roots=currentProgRoots();if(!roots||!roots.length)return deg;
+    const oct=Math.floor(deg/SCALE_LEN), d=((deg%SCALE_LEN)+SCALE_LEN)%SCALE_LEN;
+    let best=roots[0],bestDist=99;for(const r of roots){const dist=Math.min(((d-r)%SCALE_LEN+SCALE_LEN)%SCALE_LEN,((r-d)%SCALE_LEN+SCALE_LEN)%SCALE_LEN);if(dist<bestDist){bestDist=dist;best=r;}}
+    return oct*SCALE_LEN+best;}
+  // The diatonic triad (scale-degree offsets) for a chord rooted at scale-degree `deg`.
+  function gridChordDegrees(deg){return [deg,deg+2,deg+4];}
   function currentProgRoots(){if(chordProg==='last'&&lastUsedProg)return PROGRESSIONS[lastUsedProg]||PROGRESSIONS['I-V-vi-IV'];return PROGRESSIONS[chordProg]||PROGRESSIONS['I-V-vi-IV'];}
   // ============================================================
   // "Genera intera base": drums + bass + chords, all coherent on the current key/scale/BPM.
@@ -1386,9 +1416,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // Pink Floyd: minimal, spacious kit — rebuild a sparse pattern (deep kick pulse + rare tom punctuation)
     if(style==='floyd'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false));
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][8]=true;} }
-    // Sonic Youth: motorik — driving 8th kick, snare backbeat, tribal tom pulses, steady hats
+    // Sonic Youth: motorik & intense — driving kick, snare backbeat, tribal tom pulses, steady hats
     if(style==='sonicyouth'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false));
-      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+      if(iK>=0)[0,4,8,10,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
       if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iT>=0){pattern[iT][6]=true;pattern[iT][14]=true;} }
     // Modest Mouse: limping/syncopated with metallic accents
     if(style==='modest'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false));
@@ -1396,7 +1426,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iC>=0){pattern[iC][6]=true;} if(iT>=0)pattern[iT][14]=true; }
     // Built to Spill: straight & bright rock with cymbal openings
     if(style==='builttospill'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false));
-      if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;pattern[iK][10]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+      if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;pattern[iK][10]=true;pattern[iK][14]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
       if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iHo>=0)pattern[iHo][8]=true; }
     // The National: kinetic — tom + snare focus, double snare hits, syncopated 16th hats, felted dynamics
     if(style==='national'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false));
@@ -1407,9 +1437,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(style==='daftpunk'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // disco/funk, hi-hat in levare
       if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
       if(iHc>=0)for(let s=2;s<16;s+=4)pattern[iHc][s]=true; if(iHo>=0)for(let s=2;s<16;s+=4)if(chance(.4))pattern[iHo][s]=true; }
-    if(style==='justice'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // hammering electro-disco
-      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;if(chance(.5))pattern[iS][14]=true;}
-      if(iC>=0){pattern[iC][4]=true;pattern[iC][12]=true;} if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; }
+    if(style==='justice'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // electro-disco, minimal & punchy
+      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+      if(iHc>=0)for(let s=2;s<16;s+=4)pattern[iHc][s]=true; /* offbeat hats only */ }
     if(style==='cassius'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // classic house/disco, round kick
       if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
       if(iHo>=0)for(let s=2;s<16;s+=4)pattern[iHo][s]=true; if(iHc>=0)for(let s=0;s<16;s+=2)if(chance(.6))pattern[iHc][s]=true; }
@@ -1420,31 +1450,30 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(style==='boniver'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // destructured, heavy sub-kick, lo-fi snare
       if(iK>=0){pattern[iK][0]=true;pattern[iK][7]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][8]=true;if(chance(.5))pattern[iS][3]=true;}
       if(iHc>=0)for(let s=0;s<16;s+=4)if(chance(.5))pattern[iHc][s]=true; }
-    if(style==='macdemarco'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // relaxed dry 70s, muffled snare
+    if(style==='macdemarco'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // relaxed dry 70s, background accompaniment
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
-      if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; }
+      if(iHc>=0)for(let s=0;s<16;s+=4)pattern[iHc][s]=true; /* soft quarter-note hats */ }
     // ---- Pop ----
-    if(style==='strfkr'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // synth-pop/indie-dance, driving, soft kick
+    if(style==='strfkr'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // synth-pop, driving but light: background groove
       if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
-      if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iHo>=0)pattern[iHo][14]=true; }
-    if(style==='mgmt'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // 80s drum-pop, gated snare (reverb)
+      if(iHc>=0)for(let s=2;s<16;s+=4)pattern[iHc][s]=true; /* offbeat hats */ }
+    if(style==='mgmt'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // 80s drum-pop, gated snare, steady & light
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
-      if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iT>=0&&chance(.4))pattern[iT][14]=true; }
+      if(iHc>=0)for(let s=0;s<16;s+=4)pattern[iHc][s]=true; }
     if(style==='wixel'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // minimal, fragmented, almost absent
       if(iK>=0)pattern[iK][0]=true; if(iHc>=0){pattern[iHc][4]=true;pattern[iHc][12]=true;} if(chance(.4)&&iS>=0)pattern[iS][8]=true; }
     // ---- Ambient ----
-    if(style==='loffler'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // deep house, soft deep kick, organic hats
-      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iHo>=0)for(let s=2;s<16;s+=4)pattern[iHo][s]=true;
-      if(iHc>=0)for(let s=0;s<16;s+=2)if(chance(.5))pattern[iHc][s]=true; }
+    if(style==='loffler'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // deep house, minimal background: soft kick + sparse hat
+      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iHo>=0){pattern[iHo][2]=true;pattern[iHo][10]=true;} }
     if(style==='air'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // slow, elegant, felted, brushed cymbals
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0)pattern[iS][8]=true;
       if(iHc>=0)for(let s=0;s<16;s+=4)pattern[iHc][s]=true; }
-    if(style==='populous'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // folktronica/global-bass, syncopated lo-fi
-      if(iK>=0){pattern[iK][0]=true;pattern[iK][6]=true;pattern[iK][10]=true;} if(iS>=0)pattern[iS][8]=true;
-      if(iHc>=0){pattern[iHc][3]=true;pattern[iHc][7]=true;pattern[iHc][11]=true;pattern[iHc][14]=true;} }
+    if(style==='populous'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // folktronica, minimal background: sparse organic accents
+      if(iK>=0){pattern[iK][0]=true;pattern[iK][10]=true;} if(iS>=0)pattern[iS][8]=true;
+      if(iHc>=0){pattern[iHc][3]=true;pattern[iHc][11]=true;} }
     // ---- Punk/Grunge ----
-    if(style==='nirvana'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // explosive: strong backbeat + tom rolls + crash
-      if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;pattern[iK][10]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+    if(style==='nirvana'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // explosive: strong backbeat + ghost snare + tom rolls + crash
+      if(iK>=0){pattern[iK][0]=true;pattern[iK][3]=true;pattern[iK][8]=true;pattern[iK][10]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][7]=true;pattern[iS][12]=true;} /* ghost on 7 */
       if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iHo>=0)pattern[iHo][0]=true; /* crash on the 1 */ if(iT>=0){pattern[iT][14]=true;pattern[iT][15]=true;} }
     if(style==='joydivision'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // tribal, dry, robotic: tom-heavy + continuous hats
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
@@ -1453,15 +1482,15 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(iK>=0)[0,3,6,8,11,14].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
       if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; if(iHo>=0){pattern[iHo][0]=true;pattern[iHo][8]=true;} }
     // ---- Electro ----
-    if(style==='crystalcastles'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // hard chiptune/punk: frantic, distorted 4/4
-      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;if(chance(.5))pattern[iS][14]=true;}
-      if(iHc>=0)for(let s=0;s<16;s++)if(chance(.7))pattern[iHc][s]=true; /* frantic 16th hats */ if(chance(.4)&&iK>=0)pattern[iK][10]=true; }
-    if(style==='apparat'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // IDM/glitch: broken, micro-percussion
-      if(iK>=0){pattern[iK][0]=true;pattern[iK][7]=true;pattern[iK][10]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
-      if(iHc>=0){pattern[iHc][2]=true;pattern[iHc][3]=true;pattern[iHc][6]=true;pattern[iHc][11]=true;pattern[iHc][13]=true;pattern[iHc][15]=true;} /* glitchy 16ths */ }
-    if(style==='theknife'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // industrial/tribal, rigid 808/909
+    if(style==='crystalcastles'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // minimal driving 4/4, room for the synths
+      if(iK>=0)[0,4,8,12].forEach(s=>pattern[iK][s]=true); if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+      if(iHc>=0)for(let s=2;s<16;s+=4)pattern[iHc][s]=true; /* sparse offbeat hats */ }
+    if(style==='apparat'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // IDM/glitch but minimal: leave space
+      if(iK>=0){pattern[iK][0]=true;pattern[iK][10]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
+      if(iHc>=0){pattern[iHc][6]=true;pattern[iHc][11]=true;pattern[iHc][14]=true;} /* a few glitchy accents */ }
+    if(style==='theknife'){pattern=SEQ_ROWS.map(()=>new Array(SEQ_STEPS).fill(false)); // industrial minimal, rigid 808/909
       if(iK>=0){pattern[iK][0]=true;pattern[iK][8]=true;} if(iS>=0){pattern[iS][4]=true;pattern[iS][12]=true;}
-      if(iT>=0){pattern[iT][2]=true;pattern[iT][6]=true;pattern[iT][10]=true;pattern[iT][14]=true;} /* tribal toms */ if(iHc>=0)for(let s=0;s<16;s+=2)pattern[iHc][s]=true; }
+      if(iT>=0){pattern[iT][6]=true;pattern[iT][14]=true;} /* just two tribal toms */ if(iHc>=0)for(let s=2;s<16;s+=4)pattern[iHc][s]=true; }
     // styles that stay steady/atmospheric (no loud generic fills)
     const steadyStyles=['daftpunk','justice','cassius','sufjan','boniver','macdemarco','strfkr','mgmt','wixel','loffler','air','populous','joydivision','crystalcastles','apparat','theknife'];
     for(let b=0;b<bars;b++){
@@ -1521,33 +1550,33 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const isPunk=(A==='Punk'), isFloyd=(style==='floyd'), isZep=(style==='zeppelin');
     const isModest=(style==='modest'), isSonic=(style==='sonicyouth'), isBTS=(style==='builttospill'), isNat=(style==='national');
     if(isFloyd)steps=[0,2,4,6,8,10,12,14];   // hypnotic constant 8ths
-    if(isZep)steps=[0,3,4,6,8,11,12,14];     // syncopated, R&B-flavored
+    if(isZep)steps=[0,3,6,8,10,14];          // John Paul Jones: syncopated, riff-driven, in the pocket
     if(isModest)steps=[0,3,4,6,8,11,12,14]; // hypnotic & groovy: steady driving pulse with a recurring syncope
     if(isSonic)steps=[0,2,4,6,8,10,12,14];   // minimal, saturated, insistent 8ths
     if(isBTS)steps=[0,4,6,8,12,14];          // melodic, walking
-    if(isNat)steps=[0,10];                   // deep long tonics following the kick
+    if(isNat)steps=[0,6,8,14];               // deep but moving: tonic pulse with a fluid mid-bar lift
     // French touch / Bedroom / Pop / Ambient band bass grooves
     const BASS_STYLE={
-      daftpunk:{steps:[0,2,3,6,8,10,11,14],mode:'funk'},        // funky auto-wah, syncopated
-      justice:{steps:[0,2,4,6,8,10,12,14],mode:'fuzz'},         // saturated aggressive 8ths
-      cassius:{steps:[0,4,7,8,12,15],mode:'round'},             // round pumping, disco
-      sufjan:{steps:[0,8],mode:'tonic'},                        // minimal upright on tonics
-      boniver:{steps:[0,8],mode:'sub'},                         // deep 808 sub
+      daftpunk:{steps:[0,2,3,6,8,10,11,14],mode:'ftfunk'},     // Daft Punk: fixed funky syncopated riff
+      justice:{steps:[0,2,4,6,8,10,12,14],mode:'ftfuzz'},      // Justice: saturated moving 8ths with octave hooks
+      cassius:{steps:[0,4,7,8,12,15],mode:'ftdisco'},          // Cassius: round pumping disco bass
+      sufjan:{steps:[0,6,8,14],mode:'folk'},                    // gentle fingerpicked upright: warm melodic motion
+      boniver:{steps:[0,8,11],mode:'subwarm'},                  // deep 808 sub with a soft melodic tail
       macdemarco:{steps:[0,6,8,14],mode:'lazy'},                // lazy melodic floating
-      strfkr:{steps:[0,2,4,6,8,10,12,14],mode:'pulse'},         // pulsing 8ths
-      mgmt:{steps:[0,2,4,6,8,10,12,14],mode:'fuzz'},            // aggressive pumping
-      wixel:{steps:[0],mode:'drone'},                          // ambient drone
-      loffler:{steps:[0,4,8,12],mode:'sub'},                    // warm sub pulse (sidechain)
+      strfkr:{steps:[0,2,4,6,8,10,12,14],mode:'poppulse'},      // STRFKR: bright pulsing indie-dance groove
+      mgmt:{steps:[0,2,4,6,8,10,12,14],mode:'popbounce'},       // MGMT: bouncy synth-pop octave hook
+      wixel:{steps:[0,8,12],mode:'popmin'},                     // Wixel: minimal but moving — sparse catchy motif
+      loffler:{steps:[0,4,8,12,14],mode:'deephouse'},           // warm deep-house sub pulse with a soft lift (sidechain)
       air:{steps:[0,6,8,12],mode:'melodic'},                    // round melodic cinematic
-      populous:{steps:[0,8],mode:'sub'},                        // dense sub
+      populous:{steps:[0,6,8,12],mode:'folktronica'},           // dense sub with organic syncopated motion
       // Punk/Grunge
-      nirvana:{steps:[0,2,4,6,8,10,12,14],mode:'fuzz'},         // rough distorted, follows the roots in 8ths
+      nirvana:{steps:[0,2,4,6,8,10,12,14],mode:'grunge'},       // driving grunge riff: root + power-chord movement
       joydivision:{steps:[0,3,6,8,11,14],mode:'leadmelody'},    // bass is the leader: high, melodic line
-      verdena:{steps:[0,2,4,6,8,10,12,14],mode:'fuzz'},         // heavy fuzz, present & energetic
+      verdena:{steps:[0,2,4,6,8,10,12,14],mode:'psych'},        // psychedelic driving: rootier with a syncopated lift
       // Electro
       crystalcastles:{steps:[0,2,4,6,8,10,12,14],mode:'acid'},  // acid, distorted, aggressive
-      apparat:{steps:[0,8],mode:'sub'},                         // deep cinematic sub
-      theknife:{steps:[0,3,6,8,11,14],mode:'metallic'}          // cold, metallic, spiky, pulsing
+      apparat:{steps:[0,6,8,14],mode:'subcine'},                // deep cinematic sub with slow melodic drift
+      theknife:{steps:[0,2,4,6,8,10,12,14],mode:'coldpulse'}     // cold, metallic, spiky, driving pulse
     };
     const BS=BASS_STYLE[style]||null; if(BS)steps=BS.steps;
     // scale-degree offsets to move around within the chord (root, fifth=+4, octave=+7deg, and a passing +1)
@@ -1558,33 +1587,68 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         if(BS){ // band-specific bass modes
           const m=BS.mode;
           if(m==='funk'){const opts=[root,root,root+4,root+7,root+2];deg=opts[Math.floor(Math.random()*opts.length)];}
+          else if(m==='ftfunk'){ // Daft Punk: fixed funky syncopated riff — root-heavy with 5th/octave pops
+            const motif=[root,root+7,root,root+4,root,root+7,root+4,root+2];deg=motif[i%motif.length];}
+          else if(m==='ftfuzz'){ // Justice: saturated driving 8ths with a recurring octave hook
+            const motif=[root,root,root+7,root,root,root+7,root+4,root+7];deg=motif[i%motif.length];}
+          else if(m==='ftdisco'){ // Cassius: round pumping disco — root/5th/octave bounce
+            const motif=[root,root+7,root+4,root+7,root,root+7,root+4,root+7];deg=motif[i%motif.length];}
           else if(m==='fuzz'){deg=root;if(pos>=0.75&&chance(.4))deg=root+7;}
+          else if(m==='grunge'){ // Nirvana: driving, but a FIXED power-chord riff (root/4th/5th) for a recognizable push
+            const motif=[root,root,root,root+3,root,root,root+4,root+3];deg=motif[i%motif.length];}
+          else if(m==='psych'){ // Verdena: rootier, energetic, with a syncopated octave lift that repeats
+            const motif=[root,root,root+4,root,root,root+7,root,root+4];deg=motif[i%motif.length];}
           else if(m==='acid'){const opts=[root,root,root+7,root+3,root+2,root+7];deg=opts[i%opts.length];} // squelchy 303-ish movement
           else if(m==='metallic'){deg=(i%2===0)?root:root+3;} // cold, spiky two-note pulse
+          else if(m==='subcine'){ // Apparat: deep cinematic sub with a slow melodic drift
+            const motif=[root,root,root+2,root+4];deg=motif[i%motif.length];}
+          else if(m==='coldpulse'){ // The Knife: cold, metallic, driving — fixed spiky riff
+            const motif=[root,root,root+3,root,root,root+3,root+5,root+3];deg=motif[i%motif.length];}
           else if(m==='round'){deg=(i%2===0)?root:root+4;if(i===steps.length-1&&chance(.4))deg=root+7;}
           else if(m==='pulse'){deg=root;if(i===steps.length-1&&chance(.3))deg=root+7;}
+          else if(m==='poppulse'){ // STRFKR: bright pulsing groove — root with recurring 5th/octave pops
+            const motif=[root,root,root+4,root,root+7,root,root+4,root+2];deg=motif[i%motif.length];}
+          else if(m==='popbounce'){ // MGMT: bouncy octave-hook synth-pop bass
+            const motif=[root,root+7,root,root+7,root+4,root+7,root+2,root+7];deg=motif[i%motif.length];}
+          else if(m==='popmin'){ // Wixel: minimal but moving — sparse catchy motif
+            const motif=[root,root+7,root+4];deg=motif[i%motif.length];}
           else if(m==='sub'||m==='drone'||m==='tonic'){deg=root;}
-          else if(m==='lazy'){const opts=[root,root+2,root+4,root-2];deg=opts[i%opts.length];}
-          else if(m==='leadmelody'){const opts=[root+7,root+8,root+9,root+7,root+11,root+7];deg=opts[i%opts.length];if(b===bars-1&&i===steps.length-1)deg=root+7;} // bass as melodic leader, up the neck
+          else if(m==='deephouse'){ // Löffler: warm four-on-the-floor sub with a soft melodic lift on the last hit
+            const motif=[root,root,root,root,root+4];deg=motif[i%motif.length];}
+          else if(m==='folktronica'){ // Populous: deep sub with gentle organic movement (root/3rd/5th)
+            const motif=[root,root+2,root,root+4];deg=motif[i%motif.length];}
+          else if(m==='folk'){ // Sufjan: warm fingerpicked motif, gentle root→3rd→5th movement
+            const motif=[root,root+4,root+2,root+4];deg=motif[i%motif.length];}
+          else if(m==='subwarm'){ // Bon Iver: deep sub anchored on root with a soft melodic tail
+            const motif=[root,root,root+2];deg=motif[i%motif.length];}
+          else if(m==='lazy'){ // Mac DeMarco: fixed lazy floating motif — melodic, warm, catchy
+            const motif=[root,root+2,root+4,root-2];deg=motif[i%motif.length];}
+          else if(m==='leadmelody'){const opts=[root+7,root+9,root+11,root+9,root+7,root+4];deg=opts[i%opts.length];if(b===bars-1&&i===steps.length-1)deg=root+7;} // Peter Hook: high, singable melodic lead line
           else if(m==='melodic'){const opts=[root,root+4,root+2,root+7];deg=opts[i%opts.length];if(b===bars-1&&i===steps.length-1)deg=(nextRoot>root?root+1:root-1);}
         }
-        else if(isFloyd){ // hypnotic pulse on the root, occasional octave for the "heartbeat" feel
-          deg=root; if(i===steps.length-1&&chance(.4))deg=root+7;
-        } else if(isZep){ // pentatonic, mobile, staccato: root/fifth/octave/b7 movement
-          const opts=[root,root,root+4,root+7,root+6];deg=opts[Math.floor(Math.random()*opts.length)];
+        else if(isFloyd){ // hypnotic heartbeat: mostly root with a recurring fifth/octave pull — steady & engaging
+          const motif=[root,root,root+4,root,root+7,root,root+4,root];
+          deg=motif[i%motif.length];
+        } else if(isZep){ // John Paul Jones: a FIXED bluesy pentatonic riff (root, 4th, 5th, b7) — riff-driven groove
+          const motif=[root,root+3,root+4,root,root+6,root+4,root+3,root];
+          deg=motif[i%motif.length];
         } else if(isPunk){ // driving punk bass: hammer the root in 8ths, only a rare octave for energy
           deg=root; if(pos>=0.85&&chance(.3))deg=root+7;
-        } else if(isSonic){ // minimal, saturated: only 2 notes (root and one neighbor), repeated
-          deg=(i%4<2)?root:root+3;
+        } else if(isSonic){ // hypnotic & saturated: insistent root drone with a recurring neighbor push — trance-like
+          const motif=[root,root,root,root+3,root,root,root+2,root];
+          deg=motif[i%motif.length];
         } else if(isModest){ // hypnotic & groovy: a FIXED circular riff that repeats every bar,
           // anchored to the root (Eric Judy style) — insistent, not bouncing up/down the neck.
           const motif=[root,root,root+4,root,root+7,root,root+4,root+2];
           deg=motif[i%motif.length];
-        } else if(isBTS){ // melodic walking: never stuck on the root, steps toward the next chord
-          const opts=[root,root+2,root+4,root+5,root+7];deg=opts[i%opts.length];
+        } else if(isBTS){ // Built to Spill: a fixed melodic walking motif that climbs then resolves — catchy & moving
+          const motif=[root,root+2,root+4,root+7,root+5,root+4,root+2,root];
+          deg=motif[i%motif.length];
           if(b===bars-1&&i===steps.length-1)deg=(nextRoot>root?root+1:root-1);
-        } else if(isNat){ // deep, fluid: hold the tonic, occasional mid-range flourish (3rd/5th)
-          deg=root; if(i===steps.length-1&&chance(.5))deg=chance(.5)?root+2:root+4;
+        } else if(isNat){ // deep & fluid: a fixed low motif with a gentle mid-bar lift (3rd/5th) — moving, not static
+          const motif=[root,root,root+4,root+2];
+          deg=motif[i%motif.length];
+          if(b===bars-1&&i===steps.length-1)deg=(nextRoot>root?root+2:root-1);
         } else {
         if(pos>0.25&&pos<0.6&&chance(.5))deg=root+4;              // fifth in the middle
         else if(pos>=0.6&&chance(.45))deg=root+7;                 // octave up later
@@ -1603,13 +1667,37 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const instr=chordInstr||((A==='Electro'||A==='Pop')?'pad':'organ');
     const isFloyd=(style==='floyd'), isZep=(style==='zeppelin');
     const isModest=(style==='modest'), isSonic=(style==='sonicyouth'), isBTS=(style==='builttospill');
+    const isNirvana=(style==='nirvana'), isJoy=(style==='joydivision'), isVerdena=(style==='verdena');
+    const isSufjan=(style==='sufjan'), isBonIver=(style==='boniver'), isMac=(style==='macdemarco');
+    const isDaft=(style==='daftpunk'), isJustice=(style==='justice'), isCassius=(style==='cassius');
+    const isCrystal=(style==='crystalcastles'), isApparat=(style==='apparat'), isKnife=(style==='theknife');
+    const isLoffler=(style==='loffler'), isAir=(style==='air'), isPopulous=(style==='populous');
+    const isStrfkr=(style==='strfkr'), isMgmt=(style==='mgmt'), isWixel=(style==='wixel');
     // rhythm of chord hits per archetype/style
     let hits; let toneMode='triad';
     if(isFloyd){hits=[0,4,8,12];toneMode='arp';}         // arpeggiated, spacious
-    else if(isZep){hits=[0,8];toneMode='sus';}            // open/sus stabs
+    else if(isZep){hits=[0,6,8,14];toneMode='sus';}       // open/sus stabs with a syncopated push
     else if(isModest){hits=[0,2,6,8,10,14];toneMode='triad';}   // neurotic, short stabs
-    else if(isSonic){hits=[0];toneMode='dissonant';}      // sustained dissonant cluster
+    else if(isSonic){hits=[0,4,8,12];toneMode='dissonant';}  // pulsing dissonant cluster (hypnotic, not static)
     else if(isBTS){hits=[0,4,8,12];toneMode='arp';}       // fluid maj7/add9 arpeggios
+    else if(isNirvana){hits=[0,4,8,10,12];toneMode='triad';}  // grunge: decisive rhythmic power chords
+    else if(isJoy){hits=[0,8];toneMode='triad';}             // cold & sparse: leave room for the melodic bass
+    else if(isVerdena){hits=[0,2,4,6,8,10,12,14];toneMode='triad';} // psychedelic saturated strumming
+    else if(isSufjan){hits=[0,3,6,8,11,14];toneMode='arp';}   // delicate fingerpicked maj7/add9 arpeggio
+    else if(isBonIver){hits=[0,4,8,12];toneMode='arp';}       // wide, reverberant held-arp chords
+    else if(isMac){hits=[0,4,8,12];toneMode='arp';}           // lazy warm arpeggio
+    else if(isDaft){hits=[2,6,10,14];toneMode='seventh';}     // classic filtered off-beat seventh stabs (minimal)
+    else if(isJustice){hits=[0,6,10];toneMode='seventh';}     // sparse punchy seventh stabs
+    else if(isCassius){hits=[2,6,10,14];toneMode='seventh';}  // disco off-beat seventh stabs
+    else if(isCrystal){hits=[0,8];toneMode='triad';}          // cold chiptune stabs, sparse & sharp
+    else if(isApparat){hits=[0];toneMode='seventh';}          // single held cinematic 7th pad (minimal)
+    else if(isKnife){hits=[0,8];toneMode='triad';}            // cold minor stabs, rigid & sparse
+    else if(isLoffler){hits=[0,8];toneMode='arp';}            // deep, slowly unfolding maj7/add9 pad-arp
+    else if(isAir){hits=[0];toneMode='arp';}                 // single lush suspended extended chord
+    else if(isPopulous){hits=[0,6,12];toneMode='arp';}       // gentle floating arpeggiated extensions
+    else if(isStrfkr){hits=[0,4,8,12];toneMode='seventh';}   // bright pulsing synth-pop 7th chords
+    else if(isMgmt){hits=[0,4,8,10,12];toneMode='seventh';}  // 80s rhythmic synth-pop stabs
+    else if(isWixel){hits=[0,4,8,12];toneMode='arp';}        // catchy but light arpeggiated chords
     else if(style==='national'){hits=[0,2,4,6,8,10,12,14];toneMode='arp';}  // constant intimate piano arpeggio
     else{const rhythmByGenre={House:[0,4,8,12],Electro:[0,2,4,6,8,10,12,14],Pop:[0,8],Trap:[0,10],'Hip-Hop':[0,8],Funk:[0,6,8,14],Rock:[0],Indie:[0,8],Ambient:[0]};hits=rhythmByGenre[A]||[0];}
     const useSeventh=(A==='Ambient'||A==='Pop');
@@ -1618,8 +1706,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       if(toneMode==='arp')tones=[root,root+2,root+4,root+6,root+8];   // Maj7 + add9 (extended, arpeggiated)
       else if(toneMode==='sus')tones=[root,root+3,root+4,root+7];      // open/sus voicing with the 5th
       else if(toneMode==='dissonant')tones=[root,root+1,root+4,root+3]; // tense cluster (minor 2nd + tritone-ish)
+      else if(toneMode==='seventh')tones=[root,root+2,root+4,root+6];   // full 7th chord stab (root/3rd/5th/7th)
       else{tones=[root,root+2,root+4];if(useSeventh)tones.push(root+6);}
-      if(b%2===1&&toneMode==='triad')tones=tones.map((d,i)=>i===0?d+7:d);
+      // Voice-leading: rotate the inversion each bar so the top/bottom voices move smoothly
+      // (fluid & harmonious) instead of jumping in blocks. Skip for arp (already spread).
+      if(toneMode==='triad'||toneMode==='sus'){const inv=b%tones.length;for(let k=0;k<inv;k++)tones[k]+=7;}
       if(toneMode==='arp'){ // spread the extended chord as an arpeggio across the hits
         hits.forEach((s,i)=>{const d=tones[i%tones.length];const when=(b*SEQ_STEPS+s)*stepDur+swingOffset(s);if(b===0&&capture)capture.push({step:s,deg:d});renderToneOffline(off,mg,instr,midiToFreq(degToMidi(instr,d,0)),when);});
       } else {
@@ -1852,6 +1943,21 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   (function(){const cb=document.getElementById('melChordBtn'),ps=document.getElementById('melProgSel');
     if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
     if(ps)ps.addEventListener('change',()=>{chordProg=ps.value;toast('Progressione: '+(chordProg==='last'?(lastUsedProg||'nessuna ancora'):chordProg));});})();
+  // ---- Grid chord toggles (canvas + melody sequencer) ----
+  (function(){
+    const gBtn=document.getElementById('gridChordBtn');
+    if(gBtn)gBtn.addEventListener('click',()=>{gridChordMode=!gridChordMode;gBtn.classList.toggle('active',gridChordMode);
+      // chord mode implies the "note" tool on the canvas (so taps create/play chords)
+      if(gridChordMode&&tool==='live'){/* live chords also work, keep tool */}
+      toast(gridChordMode?('Accordi griglia ON'+(gridChordFollow?' • segue base':'')):'Accordi griglia OFF');});
+    const mBtn=document.getElementById('melGridChordBtn');
+    if(mBtn)mBtn.addEventListener('click',()=>{gridChordMode=!gridChordMode;mBtn.textContent='🎹 Accordi: '+(gridChordMode?'on':'off');mBtn.classList.toggle('on',gridChordMode);
+      const g=document.getElementById('gridChordBtn');if(g)g.classList.toggle('active',gridChordMode);
+      toast(gridChordMode?'Accordi sequencer ON':'Accordi sequencer OFF');});
+    const fBtn=document.getElementById('melFollowProgBtn');
+    if(fBtn)fBtn.addEventListener('click',()=>{gridChordFollow=!gridChordFollow;fBtn.textContent='🎯 Segui base: '+(gridChordFollow?'on':'off');fBtn.classList.toggle('on',gridChordFollow);
+      toast(gridChordFollow?('Accordi vincolati alla progressione: '+chordProg):'Accordi liberi (in scala)');});
+  })();
 
   // ---------- HiChord panel logic ----------
   const HI_ROMAN=['I','ii','iii','IV','V','vi','vii°','VIII','IX'];
@@ -1930,15 +2036,22 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(tracks[activeTrack].instr==='drums'){const kind=drumPadAt(x,y);if(kind){playDrumKind(kind);drumPadFlash[kind]=1;}return;}
     if(tracks[activeTrack].instr==='hichord'){return;} // HiChord is played from its dedicated panel
     if(tool==='live'){const tr=tracks[activeTrack];
+      if(gridChordMode){ // live: play a full chord (held), each note a voice
+        let deg=stepForY(y+panY);if(gridChordFollow)deg=snapDegreeToProg(deg);
+        const voices=gridChordDegrees(deg).map(d=>makeHeldVoice(tr.instr,midiToFreq(degToMidi(tr.instr,d,tr.oct))));
+        liveVoices.set(id,{voice:voices,x,y,chord:true});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
       const v=makeHeldVoice(tr.instr,freqForLiveY(y));liveVoices.set(id,{voice:v,x,y});pulseAt(x,y,TRACK_COLORS[activeTrack]);return;}
     const hit=findNode(x,y);if(tool==='erase'){if(hit){const a=tracks[activeTrack].nodes;a.splice(a.indexOf(hit),1);}return;}
-    if(hit)dragNode=hit;else{dragNode=addNode(x,y,tool);if(tool==='note'||tool==='kick'||tool==='snare')playNodeInstrument(dragNode);}}
+    if(hit)dragNode=hit;else{
+      const nodeType=(gridChordMode&&tool==='note')?'chord':tool;
+      dragNode=addNode(x,y,nodeType);if(nodeType==='chord')dragNode.follow=gridChordFollow;
+      if(tool==='note'||tool==='kick'||tool==='snare')playNodeInstrument(dragNode);}}
   function onPointerMove(id,clientX,clientY){
     if(panActive){if(panLast){panX+=clientX-panLast.x;panY+=clientY-panLast.y;panLast={x:clientX,y:clientY};}return;}
     const{x,y}=ptrPos(clientX,clientY);
-    if(tool==='live'){const lv=liveVoices.get(id);if(lv){lv.x=x;lv.y=y;setVoiceFreq(lv.voice,freqForLiveY(y));}return;}
+    if(tool==='live'){const lv=liveVoices.get(id);if(lv){lv.x=x;lv.y=y;if(!lv.chord)setVoiceFreq(lv.voice,freqForLiveY(y));}return;}
     if(dragNode){dragNode.x=x-panX;dragNode.y=clamp(y-panY,GRID_TOP-10-panY,GRID_BOTTOM+10-panY);}}
-  function onPointerUp(id){if(tool==='live'){const lv=liveVoices.get(id);if(lv){releaseVoice(lv.voice);liveVoices.delete(id);}return;}dragNode=null;}
+  function onPointerUp(id){if(tool==='live'){const lv=liveVoices.get(id);if(lv){if(lv.chord&&Array.isArray(lv.voice))lv.voice.forEach(v=>releaseVoice(v));else releaseVoice(lv.voice);liveVoices.delete(id);}return;}dragNode=null;}
   canvas.addEventListener('mousedown',e=>{e.preventDefault();onPointerDown('mouse',e.clientX,e.clientY);});
   window.addEventListener('mousemove',e=>{onPointerMove('mouse',e.clientX,e.clientY);});
   window.addEventListener('mouseup',()=>onPointerUp('mouse'));
