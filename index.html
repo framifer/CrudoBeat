@@ -185,7 +185,10 @@
   #studioGrid .beatln{position:absolute;top:0;bottom:0;border-left:1px solid rgba(43,33,24,.13);}
   #studioGrid .barnum{position:absolute;top:0;font-size:8px;font-weight:800;color:rgba(43,33,24,.4);padding-left:3px;}
   .lane{position:relative;height:60px;border-bottom:1px solid rgba(43,33,24,.15);}
-  .lane .laneHead{position:sticky;left:0;z-index:2;width:96px;height:100%;float:left;background:var(--cream);border-right:2px solid var(--red2);display:flex;flex-direction:column;justify-content:center;gap:3px;padding:3px 5px;box-sizing:border-box;}
+  .lane .laneHead{position:sticky;left:0;z-index:6;width:96px;height:100%;float:left;background:var(--cream);border-right:2px solid var(--red2);display:flex;flex-direction:column;justify-content:center;gap:2px;padding:2px 5px;box-sizing:border-box;box-shadow:2px 0 4px rgba(0,0,0,.12);}
+  .lane .laneHead .octrow{display:flex;gap:3px;justify-content:center;}
+  .lane .laneHead .octrow button{border:2px solid var(--red2);background:var(--red);color:var(--cream);border-radius:5px;height:18px;font-size:9px;font-weight:900;cursor:pointer;flex:1;padding:0;}
+  .lane .laneHead .octrow button:disabled{opacity:.4;cursor:default;background:var(--cream);color:var(--ink);}
   .lane .laneHead .ln{font-size:10px;font-weight:900;overflow:hidden;white-space:nowrap;background:transparent;border:none;width:100%;padding:0;}
   .lane .laneHead .lb{display:flex;gap:3px;align-items:center;}
   .lane .laneHead .lanecol{width:20px;height:22px;padding:0;border:2px solid var(--red2);border-radius:5px;background:none;cursor:pointer;}
@@ -2340,6 +2343,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const lane=document.createElement('div');lane.className='lane';lane.style.width=(LANE_HEAD+timelineW)+'px';lane.dataset.lane=li;
       const head=document.createElement('div');head.className='laneHead';
       const first=clips.find(c=>(c.lane||0)===li);
+      const octrow=document.createElement('div');octrow.className='octrow';
+      const laneClips=clips.filter(c=>(c.lane||0)===li);const onlyDrums=laneClips.length&&laneClips.every(c=>c.pattern&&c.pattern.kind==='drum');
+      const oDn=document.createElement('button');oDn.textContent='8va−';oDn.title="Abbassa di un'ottava";
+      const oUp=document.createElement('button');oUp.textContent='8va＋';oUp.title="Alza di un'ottava";
+      if(onlyDrums){oDn.disabled=true;oUp.disabled=true;oDn.title=oUp.title='La batteria non ha ottava';}
+      oDn.onclick=(e)=>{e.stopPropagation();changeLaneOctave(li,-1);};
+      oUp.onclick=(e)=>{e.stopPropagation();changeLaneOctave(li,1);};
+      octrow.appendChild(oDn);octrow.appendChild(oUp);head.appendChild(octrow);
       const nm=document.createElement('input');nm.className='ln';nm.style.color=first?first.color:'#000';nm.value=laneNames[li]||('Corsia '+(laneIdxs.indexOf(li)+1));
       nm.title='Rinomina corsia';nm.onclick=(e)=>e.stopPropagation();nm.onchange=()=>{laneNames[li]=nm.value||('Corsia '+(laneIdxs.indexOf(li)+1));};
       head.appendChild(nm);
@@ -2496,7 +2507,6 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     blockToolsEl.appendChild(mk('Dr','Drive/Distorsione traccia (0-3)',()=>{c.fxDrive=((c.fxDrive||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' drive '+c.fxDrive);},(c.fxDrive||0)>0));
     blockToolsEl.appendChild(mk('🔊','Volume traccia (%)',async()=>{const v=await askText('Volume % (0-150):',Math.round((c.vol==null?1:c.vol)*100));if(v===null)return;setClipVol(c,(parseFloat(v)||0)/100);buildStudio();toast(c.name+' vol '+Math.round((c.vol)*100)+'%');}));
     blockToolsEl.appendChild(mk('⇆','Pan L/R (−100..100)',async()=>{const p=await askText('Pan (−100 = L, 0 = centro, 100 = R):',Math.round((c.pan||0)*100));if(p===null)return;setClipPan(c,(parseFloat(p)||0)/100);buildStudio();toast(c.name+' pan '+Math.round((c.pan)*100));}));
-    blockToolsEl.appendChild(mk('✁','Trim non distruttivo (inizio/fine %)',async()=>{const s=await askText('Trim inizio %:',Math.round((c.trimStart||0)*100));if(s===null)return;const e=await askText('Trim fine %:',Math.round((c.trimEnd==null?1:c.trimEnd)*100));if(e===null)return;let sf=clamp((parseFloat(s)||0)/100,0,0.98),ef=clamp((parseFloat(e)||100)/100,sf+0.02,1);c.trimStart=sf;c.trimEnd=ef;restartClip(c);buildStudio();toast(c.name+' trim '+(sf*100|0)+'–'+(ef*100|0)+'%');},((c.trimStart||0)>0||(c.trimEnd==null?1:c.trimEnd)<1)));
     blockToolsEl.appendChild(mk('📊','Normalizza volume',()=>{normalizeClip(c);buildStudio();}));
     blockToolsEl.appendChild(mk('◀◁','Inverti (reverse)',()=>{reverseClip(c);buildStudio();}));
     blockToolsEl.appendChild(mk('♩bpm','Cambia tempo di questa traccia (resampling)',async()=>{const cur=Math.round(c.bpm||bpm);const v=await askText('Nuovo BPM per '+c.name+' (attuale ~'+cur+'):',cur);if(v===null)return;const nb=parseInt(v,10);if(!nb||nb<BPM_MIN||nb>BPM_MAX){toast('BPM non valido ('+BPM_MIN+'-'+BPM_MAX+')');return;}retimeClipToBpm(c,nb);buildStudio();toast(c.name+' → '+nb+' BPM');}));
@@ -2507,11 +2517,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       pushGlobal();c.t=prev?((prev.t||0)+clipMusicDur(prev)):0;buildStudio();toast(c.name+' attaccata → '+(c.t).toFixed(3)+'s');}));
     blockToolsEl.appendChild(mk('🗑','Cancella',()=>{pushGlobal();stopClipPlayback(c);clips.splice(idx,1);if(selectedClip>=clips.length)selectedClip=clips.length-1;buildStudio();}));
     // position the toolbar just below the selected block, clamped inside the studio
-    const innerR=studioInner.getBoundingClientRect(),blkR=block.getBoundingClientRect();
-    let left=blkR.left-innerR.left,top=blkR.bottom-innerR.top+4;
+    // Position the toolbar so it's ALWAYS visible: keep it within the scrolled viewport, near the block.
+    const sc=document.getElementById('studioScroll');const innerR=studioInner.getBoundingClientRect(),blkR=block.getBoundingClientRect();
     blockToolsEl.classList.add('show');
-    const tw=blockToolsEl.offsetWidth||230;
-    left=Math.max(0,Math.min(left,studioInner.offsetWidth-tw));
+    const tw=blockToolsEl.offsetWidth||230, th=blockToolsEl.offsetHeight||60;
+    let left, top=blkR.bottom-innerR.top+4;
+    if(sc){const scR=sc.getBoundingClientRect();
+      // clamp horizontally to the visible window of the scroll area (so it doesn't hide off-screen)
+      const visLeft=sc.scrollLeft+8, visRight=sc.scrollLeft+scR.width-tw-8;
+      left=blkR.left-innerR.left; left=Math.max(visLeft,Math.min(left,Math.max(visLeft,visRight)));
+      // if the toolbar would fall below the visible area, place it above the block instead
+      const visBottom=sc.scrollTop+scR.height-th-8; if(top>visBottom)top=Math.max(sc.scrollTop+8,blkR.top-innerR.top-th-4);
+    }else{left=Math.max(0,Math.min(blkR.left-innerR.left,studioInner.offsetWidth-tw));}
     blockToolsEl.style.left=left+'px';blockToolsEl.style.top=top+'px';
   }
 
@@ -2769,6 +2786,26 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     for(let ch=0;ch<b.numberOfChannels;ch++){const src=b.getChannelData(ch),dst=nb.getChannelData(ch);
       for(let i=0;i<newLen;i++){const pos=i*ratio;const i0=Math.floor(pos),frac=pos-i0;const a=src[i0]||0,bb=src[i0+1]||0;dst[i]=a+(bb-a)*frac;}}
     clip.buffer=nb;clip.offset=0;restartClip(clip);refreshClipsView();}
+  // Re-render a melody-pattern clip transposed by octShift octaves (clean, same length).
+  async function regenMelClipOctave(clip,octShift){const p=clip.pattern;if(!p||p.kind!=='mel')return false;
+    const rate=audio.sampleRate,barDur=(60/(clip.bpm||bpm))*4,stepDur=barDur/SEQ_STEPS;const bars=Math.max(1,clip.musicBars||p.bars||1);
+    const SCL=SCALES[p.scale||currentScaleName]||SCALE;const keyOff=KEY_SEMITONE[p.key||currentKey]||0;const rows=p.pattern.length;const instr=p.instr||'piano';
+    const degMidi=(row)=>{const deg=rows-1-row;const o=Math.floor(deg/SCL.length),dd=((deg%SCL.length)+SCL.length)%SCL.length;return INSTR_BASE[instr]+keyOff+o*12+SCL[dd]+octShift*12;};
+    const targetLen=Math.round(bars*barDur*rate),off=new OfflineAudioContext(2,targetLen+Math.round(2.5*rate),rate);
+    const fxBus=offlineGlobalFxBus(off);const mg=off.createGain();mg.gain.value=0.9;mg.connect(fxBus);
+    for(let b=0;b<bars;b++){for(let s=0;s<SEQ_STEPS;s++){const when=(b*SEQ_STEPS+s)*stepDur;for(let r=0;r<rows;r++){if(p.pattern[r]&&p.pattern[r][s])renderToneOffline(off,mg,instr,midiToFreq(degMidi(r)),when);}}}
+    const rendered=await off.startRendering();const out=audio.createBuffer(2,targetLen,rate);
+    for(let ch=0;ch<2;ch++){const src=rendered.getChannelData(Math.min(ch,rendered.numberOfChannels-1)),dst=out.getChannelData(ch);for(let i=0;i<targetLen;i++)dst[i]=src[i]||0;for(let i=targetLen;i<src.length;i++)dst[i-targetLen]+=src[i]||0;}
+    snapshot(clip);clip.buffer=out;clip.offset=0;restartClip(clip);return true;}
+  async function changeLaneOctave(li,delta){const cs=clips.filter(c=>(c.lane||0)===li);if(!cs.length)return;pushGlobal();
+    let didAudio=false,skippedDrums=false;
+    for(const c of cs){
+      if(c.pattern&&c.pattern.kind==='drum'){skippedDrums=true;continue;}
+      if(c.pattern&&c.pattern.kind==='mel'){await regenMelClipOctave(c,delta);}
+      else{pitchShift(c,delta*12);didAudio=true;}
+    }
+    buildStudio();
+    toast('Ottava '+(delta>0?'+1':'-1')+(skippedDrums?' • batteria esclusa':'')+(didAudio?' • audio ripitchato':''));}
   // Method B retime: resample the clip by a speed factor (>1 = faster/shorter, also raises pitch).
   function retimeClip(clip,factor){if(!(factor>0)||Math.abs(factor-1)<0.001)return;snapshot(clip);
     const b=clip.buffer,rate=b.sampleRate;const newLen=Math.max(1,Math.round(b.length/factor));
