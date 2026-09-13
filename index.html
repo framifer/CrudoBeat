@@ -2945,7 +2945,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const pres=off.createBiquadFilter();pres.type='peaking';pres.frequency.value=3000;pres.Q.value=0.8;pres.gain.value=P.eq.pres;
     const air=off.createBiquadFilter();air.type='highshelf';air.frequency.value=9000;air.gain.value=P.eq.air;
     // glue compressor (gentle bus compression)
-    const glue=off.createDynamicsCompressor();const ga=clamp(P.comp,0,3);
+    const glue=off.createDynamicsCompressor();const ga=clamp(Math.round(finiteOr(P.comp,0)),0,3);
     glue.threshold.value=[-6,-14,-20,-26][ga];glue.knee.value=8;glue.ratio.value=[1.5,2,3,4][ga];glue.attack.value=0.02;glue.release.value=0.25;
     // saturation for warmth/loudness
     const sat=off.createWaveShaper();sat.curve=saturationCurve(P.sat);sat.oversample='4x';
