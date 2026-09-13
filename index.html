@@ -319,6 +319,7 @@
     <button data-tool="live" class="live active" title="Live">LIVE</button>
     <button data-tool="note" class="iconbtn" title="Nota">●</button>
     <button id="gridChordBtn" class="iconbtn" title="Modalità accordi: tocca la griglia per suonare/inserire accordi diatonici in tonalità con la base">🎹Acc</button>
+    <button id="gridFollowBtn" class="iconbtn" title="Segui base: vincola gli accordi alla progressione della base generata (massima armonia)">🎯</button>
     <button data-tool="pulsar" class="iconbtn" title="Pulsar">◎</button>
     <button data-tool="kick" class="iconbtn" title="Cassa (drum)">🥁K</button>
     <button data-tool="snare" class="iconbtn" title="Rullante (drum)">🥁S</button>
@@ -1943,20 +1944,25 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   (function(){const cb=document.getElementById('melChordBtn'),ps=document.getElementById('melProgSel');
     if(cb)cb.addEventListener('click',()=>{chordMode=!chordMode;cb.classList.toggle('on',chordMode);if(ps)ps.style.display=chordMode?'':'none';toast(chordMode?('Accordi ON • '+chordProg):'Accordi OFF (riff libero)');});
     if(ps)ps.addEventListener('change',()=>{chordProg=ps.value;toast('Progressione: '+(chordProg==='last'?(lastUsedProg||'nessuna ancora'):chordProg));});})();
-  // ---- Grid chord toggles (canvas + melody sequencer) ----
+  // ---- Grid chord toggles (canvas + melody sequencer), state shared and buttons kept in sync ----
   (function(){
-    const gBtn=document.getElementById('gridChordBtn');
-    if(gBtn)gBtn.addEventListener('click',()=>{gridChordMode=!gridChordMode;gBtn.classList.toggle('active',gridChordMode);
-      // chord mode implies the "note" tool on the canvas (so taps create/play chords)
-      if(gridChordMode&&tool==='live'){/* live chords also work, keep tool */}
-      toast(gridChordMode?('Accordi griglia ON'+(gridChordFollow?' • segue base':'')):'Accordi griglia OFF');});
-    const mBtn=document.getElementById('melGridChordBtn');
-    if(mBtn)mBtn.addEventListener('click',()=>{gridChordMode=!gridChordMode;mBtn.textContent='🎹 Accordi: '+(gridChordMode?'on':'off');mBtn.classList.toggle('on',gridChordMode);
-      const g=document.getElementById('gridChordBtn');if(g)g.classList.toggle('active',gridChordMode);
-      toast(gridChordMode?'Accordi sequencer ON':'Accordi sequencer OFF');});
-    const fBtn=document.getElementById('melFollowProgBtn');
-    if(fBtn)fBtn.addEventListener('click',()=>{gridChordFollow=!gridChordFollow;fBtn.textContent='🎯 Segui base: '+(gridChordFollow?'on':'off');fBtn.classList.toggle('on',gridChordFollow);
-      toast(gridChordFollow?('Accordi vincolati alla progressione: '+chordProg):'Accordi liberi (in scala)');});
+    const gBtn=document.getElementById('gridChordBtn');      // canvas: chord mode
+    const gfBtn=document.getElementById('gridFollowBtn');    // canvas: follow progression
+    const mBtn=document.getElementById('melGridChordBtn');   // sequencer: chord mode
+    const fBtn=document.getElementById('melFollowProgBtn');  // sequencer: follow progression
+    function syncChordUI(){
+      if(gBtn)gBtn.classList.toggle('active',gridChordMode);
+      if(gfBtn)gfBtn.classList.toggle('active',gridChordFollow);
+      if(mBtn){mBtn.textContent='🎹 Accordi: '+(gridChordMode?'on':'off');mBtn.classList.toggle('on',gridChordMode);}
+      if(fBtn){fBtn.textContent='🎯 Segui base: '+(gridChordFollow?'on':'off');fBtn.classList.toggle('on',gridChordFollow);}
+    }
+    function toggleChord(){gridChordMode=!gridChordMode;syncChordUI();toast(gridChordMode?('Accordi ON'+(gridChordFollow?' • segue base':'')):'Accordi OFF');}
+    function toggleFollow(){gridChordFollow=!gridChordFollow;syncChordUI();toast(gridChordFollow?('Accordi vincolati alla progressione: '+chordProg):'Accordi liberi (in scala)');}
+    if(gBtn)gBtn.addEventListener('click',toggleChord);
+    if(mBtn)mBtn.addEventListener('click',toggleChord);
+    if(gfBtn)gfBtn.addEventListener('click',toggleFollow);
+    if(fBtn)fBtn.addEventListener('click',toggleFollow);
+    syncChordUI();
   })();
 
   // ---------- HiChord panel logic ----------
