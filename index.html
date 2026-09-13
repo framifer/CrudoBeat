@@ -349,7 +349,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="multiSelBtn" title="Selezione multipla: tocca più tracce, poi copia/elimina/muta di gruppo">☑</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="multiSelBtn" title="Selezione multipla: tocca più tracce, poi copia/elimina/muta di gruppo">☑</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="importAudioBtn" title="Importa file audio (wav/mp3) come nuova traccia">🎵📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -446,6 +446,7 @@
 
 <div id="loadDlg"><div id="loadBox"><h3>📂 Carica progetto</h3><div id="prjList"></div><button class="close" id="loadClose">Chiudi</button></div></div>
 <input type="file" id="importFile" accept=".crudo,application/json" style="display:none" />
+<input type="file" id="importAudioFile" accept="audio/*,.wav,.mp3,.ogg,.m4a,.aac,.flac" multiple style="display:none" />
 
 <div id="randDlg"><div id="loadBox">
   <h3 id="randTitle">🎲 Generatore</h3>
@@ -496,6 +497,9 @@
   <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
     <label for="masterPresetSel">Preset:</label><select id="masterPresetSel" class="sel" style="flex:1"></select>
   </div>
+  <div class="r" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:800;font-size:12px">
+    <label for="masterFmtSel">Formato:</label><select id="masterFmtSel" class="sel" style="flex:1"><option value="wav">WAV (senza perdita)</option><option value="mp3-256">MP3 256 kbps</option><option value="mp3-192">MP3 192 kbps</option><option value="mp3-128">MP3 128 kbps</option></select>
+  </div>
   <div style="display:flex;gap:8px;margin-bottom:8px">
     <button id="masterPreview" style="flex:1;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;font-weight:800;cursor:pointer">▶ Ascolta anteprima</button>
     <button id="masterPreviewStop" style="flex:0 0 auto;border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;height:38px;padding:0 12px;font-weight:800;cursor:pointer">⏹</button>
@@ -523,6 +527,7 @@
   <button class="btn icon" id="midiBtn" title="Tastiera MIDI: collega un tastierino (USB/Bluetooth). Suona lo strumento della traccia attiva">🎹</button>
 </div>
 
+<script src="lame.min.js"></script>
 <script>
 "use strict";
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
@@ -2845,12 +2850,36 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function bufferToWav(buffer){const len=buffer.length,rate=buffer.sampleRate;const l=buffer.getChannelData(0),r=buffer.numberOfChannels>1?buffer.getChannelData(1):l;const inter=new Float32Array(len*2);for(let i=0,j=0;i<len;i++){inter[j++]=l[i];inter[j++]=r[i];}
     const ab=new ArrayBuffer(44+inter.length*2),view=new DataView(ab);const ws=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};let o=0;ws(o,'RIFF');o+=4;view.setUint32(o,36+inter.length*2,true);o+=4;ws(o,'WAVE');o+=4;ws(o,'fmt ');o+=4;view.setUint32(o,16,true);o+=4;view.setUint16(o,1,true);o+=2;view.setUint16(o,2,true);o+=2;view.setUint32(o,rate,true);o+=4;view.setUint32(o,rate*4,true);o+=4;view.setUint16(o,4,true);o+=2;view.setUint16(o,16,true);o+=2;ws(o,'data');o+=4;view.setUint32(o,inter.length*2,true);o+=4;for(let i=0;i<inter.length;i++,o+=2){let s=Math.max(-1,Math.min(1,inter[i]));view.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);}return new Blob([view],{type:'audio/wav'});}
   function download(blob,fn){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
+  // ---- MP3 export (lamejs) — WAV stays the default/lossless option; MP3 is offered alongside it ----
+  // Selected export format: 'wav' | 'mp3-256' | 'mp3-192' | 'mp3-128'. Kept in sync with #masterFmtSel.
+  let exportFmt='wav';
+  function fmtExt(fmt){return (fmt||exportFmt).indexOf('mp3')===0?'mp3':'wav';}
+  function fmtBitrate(fmt){const m=(fmt||exportFmt).match(/mp3-(\d+)/);return m?(+m[1]):192;}
+  // Convert an AudioBuffer to an MP3 Blob using lamejs. Stereo (or mono duplicated). 16-bit PCM.
+  function bufferToMp3(buffer,bitrate){
+    if(typeof lamejs==='undefined'||!lamejs.Mp3Encoder){throw new Error('encoder MP3 non disponibile');}
+    const ch=buffer.numberOfChannels>1?2:1,rate=buffer.sampleRate,kbps=bitrate||192;
+    const enc=new lamejs.Mp3Encoder(ch,rate,kbps);
+    const l=buffer.getChannelData(0);const r=ch>1?buffer.getChannelData(1):l;
+    const n=buffer.length;const li=new Int16Array(n),ri=new Int16Array(n);
+    for(let i=0;i<n;i++){let sl=Math.max(-1,Math.min(1,l[i]));li[i]=sl<0?sl*0x8000:sl*0x7FFF;let sr=Math.max(-1,Math.min(1,r[i]));ri[i]=sr<0?sr*0x8000:sr*0x7FFF;}
+    const data=[];const block=1152;
+    for(let i=0;i<n;i+=block){const lc=li.subarray(i,i+block),rc=ri.subarray(i,i+block);
+      const mp3=ch>1?enc.encodeBuffer(lc,rc):enc.encodeBuffer(lc);if(mp3.length)data.push(new Int8Array(mp3));}
+    const end=enc.flush();if(end.length)data.push(new Int8Array(end));
+    return new Blob(data,{type:'audio/mp3'});
+  }
+  // Encode a rendered AudioBuffer into the currently selected format and download it.
+  // baseName is the fileName() 'suffix' (without extension); WAV path is unchanged from before.
+  function exportBuffer(rendered,suffix,fmt){const f=fmt||exportFmt;
+    if(fmtExt(f)==='mp3'){const blob=bufferToMp3(rendered,fmtBitrate(f));download(blob,fileName(suffix,'mp3'));}
+    else{const blob=bufferToWav(rendered);download(blob,fileName(suffix,'wav'));}}
   // base64 <-> ArrayBuffer helpers for portable single-file project export
   function abToBase64(ab){const bytes=new Uint8Array(ab);let bin='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));}return btoa(bin);}
   function base64ToAb(b64){const bin=atob(b64);const len=bin.length;const bytes=new Uint8Array(len);for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);return bytes.buffer;}
   async function blobToBase64(blob){const ab=await blob.arrayBuffer();return abToBase64(ab);}
   function projFileName(name){const safe=(name||'progetto').replace(/[^\w\-]+/g,'_');const d=new Date(),p=(n)=>String(n).padStart(2,'0');return`crudobeat-${safe}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}.crudo`;}
-  function fileName(suffix){const d=new Date(),p=(n)=>String(n).padStart(2,'0');return`crudobeat-${suffix||'mix'}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.wav`;}
+  function fileName(suffix,ext){const d=new Date(),p=(n)=>String(n).padStart(2,'0');return`crudobeat-${suffix||'mix'}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.${ext||'wav'}`;}
 
   // ---- Export single clip (feature 4) ----
   // render a single clip (1 loop) through its FX chain, offline
@@ -2868,7 +2897,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function clipSeg(clip){const d=clip.buffer?clip.buffer.duration:0;const ts=(clip.trimStart||0)*d,te=(clip.trimEnd==null?1:clip.trimEnd)*d;return{ts,te,dur:Math.max(0.01,te-ts)};}
   async function renderClipFX(clip){const tail=clip.fxDelay||clip.fxRev?audio.sampleRate*2:0;const seg=clipSeg(clip);const len=Math.ceil(seg.dur*audio.sampleRate)+tail;
     const off=new OfflineAudioContext(2,Math.max(1,len),audio.sampleRate);const s=off.createBufferSource();s.buffer=clip.buffer;connectOfflineFX(off,s,clip,off.destination);s.start(0,seg.ts,seg.dur);return await off.startRendering();}
-  async function exportClip(clip){try{if(!clip.buffer||clip.buffer.length<10){toast('Traccia vuota');return;}toast('Esporto '+clip.name+'…');const r=await renderClipFX(clip);const blob=bufferToWav(r);download(blob,fileName(clip.name.replace(/\s+/g,'_')));toast('Esportata '+clip.name);}catch(e){toast('Errore export: '+e.message);}}
+  async function exportClip(clip){try{if(!clip.buffer||clip.buffer.length<10){toast('Traccia vuota');return;}toast('Esporto '+clip.name+' ('+fmtExt().toUpperCase()+')…');const r=await renderClipFX(clip);exportBuffer(r,clip.name.replace(/\s+/g,'_'));toast('Esportata '+clip.name);}catch(e){toast('Errore export: '+e.message);}}
   // ---- Export all (skip muted) — with per-clip FX + per-lane mixer ----
   // Build an offline per-lane bus (gain+pan) that mirrors the live mixer, feeding the master node.
   function offlineLaneBus(off,li,mgDest,dur){const m=getLaneMix(li);const g=off.createGain();const eg=laneEffGain(li);g.gain.value=isFinite(eg)?eg:1;
@@ -2964,17 +2993,23 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(buildMastering(off,preset));
         const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
         for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
-        const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('timeline'+(preset!=='off'?'-'+preset:'')));toast('Timeline esportata • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));return;}
+        const rendered=await off.startRendering();exportBuffer(rendered,'timeline'+(preset!=='off'?'-'+preset:''));toast('Timeline esportata • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));return;}
       let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(buildMastering(off,preset));
       const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
-      const rendered=await off.startRendering();const blob=bufferToWav(rendered);download(blob,fileName('mix'+(preset!=='off'?'-'+preset:'')));toast('Mix esportato • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));}
+      const rendered=await off.startRendering();exportBuffer(rendered,'mix'+(preset!=='off'?'-'+preset:''));toast('Mix esportato • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));}
     catch(e){toast('Errore export: '+e.message);}}
   // ---- Mastering dialog: choose a genre preset, then export the mix ----
   (function(){const dlg=document.getElementById('masterDlg'),sel=document.getElementById('masterPresetSel');
     if(sel&&!sel.options.length){for(const k in MASTER_PRESETS){const o=document.createElement('option');o.value=k;o.textContent=MASTER_PRESETS[k].label;sel.appendChild(o);}}
     if(sel)sel.value=masterPreset;
-    const open=()=>{if(!clips.length){toast('Nessuna traccia da esportare');return;}resumeAudio();dlg.classList.add('show');};
+    const fmtSel=document.getElementById('masterFmtSel');
+    if(fmtSel){
+      const mp3ok=(typeof lamejs!=='undefined'&&lamejs.Mp3Encoder);
+      if(!mp3ok){for(const o of fmtSel.options){if(o.value.indexOf('mp3')===0){o.disabled=true;o.textContent+=' — non disponibile';}}exportFmt='wav';}
+      fmtSel.value=exportFmt;fmtSel.addEventListener('change',()=>{exportFmt=fmtSel.value;});
+    }
+    const open=()=>{if(!clips.length){toast('Nessuna traccia da esportare');return;}resumeAudio();if(fmtSel)fmtSel.value=exportFmt;dlg.classList.add('show');};
     const close=()=>{stopMasterPreview();dlg.classList.remove('show');};
     document.getElementById('exportAllBtn').addEventListener('click',open);
     document.getElementById('masterCancel').addEventListener('click',close);
@@ -3334,6 +3369,26 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     resumeAudio();toast('Importo…');const rd=new FileReader();
     rd.onload=async()=>{try{const p=JSON.parse(rd.result);await importProjectData(p);}catch(e){toast('File .crudo non leggibile: '+e.message);}};
     rd.onerror=()=>toast('Errore lettura file');rd.readAsText(f);});
+  // ---- Import external audio files (wav/mp3/ogg/...) as new tracks ----
+  async function importAudioFiles(fileList){resumeAudio();const files=[...fileList].filter(f=>f&&(f.type.startsWith('audio/')||/\.(wav|mp3|ogg|m4a|aac|flac)$/i.test(f.name)));
+    if(!files.length){toast('Nessun file audio valido');return;}
+    let ok=0,at=(typeof transportPos!=='undefined'?transportPos:0)||0;
+    for(const f of files){try{toast('Importo '+f.name+'…');const ab=await f.arrayBuffer();
+      const buf=await new Promise((res,rej)=>{audio.decodeAudioData(ab.slice(0),res,rej);});
+      const nm=f.name.replace(/\.[^.]+$/,'');addClip(buf,nm,at,true);ok++;
+    }catch(e){toast('Non riesco a leggere '+f.name+': '+(e&&e.message||e));}}
+    if(ok)toast(ok===1?'Traccia audio importata':(ok+' tracce audio importate'));}
+  const importAudioEl=document.getElementById('importAudioFile');
+  const importAudioBtn=document.getElementById('importAudioBtn');
+  if(importAudioBtn)importAudioBtn.addEventListener('click',()=>{importAudioEl.value='';importAudioEl.click();});
+  if(importAudioEl)importAudioEl.addEventListener('change',()=>{if(importAudioEl.files&&importAudioEl.files.length)importAudioFiles(importAudioEl.files);});
+  // drag & drop audio files onto the multitrack studio
+  (function(){const dz=document.getElementById('studio');if(!dz)return;
+    const stop=(e)=>{e.preventDefault();e.stopPropagation();};
+    ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,(e)=>{stop(e);dz.style.outline='3px dashed var(--red)';}));
+    ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,(e)=>{stop(e);dz.style.outline='';}));
+    dz.addEventListener('drop',(e)=>{const dt=e.dataTransfer;if(dt&&dt.files&&dt.files.length)importAudioFiles(dt.files);});
+  })();
   const loadDlg=document.getElementById('loadDlg'),prjList=document.getElementById('prjList');
   async function openLoad(){let all=[];try{all=await dbAll();}catch(e){}all.sort((a,b)=>b.ts-a.ts);prjList.innerHTML='';
     if(!all.length)prjList.innerHTML='<div style="opacity:.6">Nessun progetto salvato.</div>';
