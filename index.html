@@ -2923,14 +2923,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // give a loud, balanced, "release-ready" master (approaching commercial loudness, no harsh clipping).
   // ============================================================
   const MASTER_PRESETS={
-    'off':      {label:'Nessuno (grezzo)',eq:{lo:0,lomid:0,pres:0,air:0},comp:0,sat:0,makeup:1.0,ceiling:0.99},
-    'universal':{label:'Universale (bilanciato)',eq:{lo:1.5,lomid:-1,pres:1.5,air:2},comp:2,sat:0.12,makeup:1.5,ceiling:0.98},
-    'folkrock': {label:'Folk / Rock (naturale, caldo)',eq:{lo:1,lomid:0,pres:2,air:1.5},comp:1.5,sat:0.18,makeup:1.35,ceiling:0.98},
-    'indierock':{label:'Indie Rock (grintoso)',eq:{lo:2,lomid:-1.5,pres:3,air:2},comp:2.5,sat:0.28,makeup:1.7,ceiling:0.985},
-    'electro':  {label:'Electro / French Touch (potente)',eq:{lo:3.5,lomid:-2,pres:2,air:3.5},comp:3,sat:0.35,makeup:2.0,ceiling:0.99},
-    'hiphop':   {label:'Hip-Hop / Trap (bassi forti)',eq:{lo:4,lomid:-1,pres:1.5,air:2.5},comp:2.5,sat:0.22,makeup:1.9,ceiling:0.99},
-    'pop':      {label:'Pop (brillante, radio)',eq:{lo:2,lomid:-1,pres:2.5,air:4},comp:2.5,sat:0.15,makeup:1.8,ceiling:0.99},
-    'ambient':  {label:'Ambient (morbido, ampio)',eq:{lo:1,lomid:0,pres:0.5,air:2},comp:1,sat:0.08,makeup:1.2,ceiling:0.96}
+    'off':      {label:'Nessuno (grezzo)',eq:{lo:0,lomid:0,pres:0,air:0},comp:0,sat:0,makeup:1.0,ceiling:0.95},
+    'universal':{label:'Universale (bilanciato)',eq:{lo:1.5,lomid:-1,pres:1.5,air:2},comp:2,sat:0.10,makeup:1.15,ceiling:0.95},
+    'folkrock': {label:'Folk / Rock (naturale, caldo)',eq:{lo:1,lomid:0,pres:2,air:1.5},comp:1.5,sat:0.12,makeup:1.1,ceiling:0.95},
+    'indierock':{label:'Indie Rock (grintoso)',eq:{lo:2,lomid:-1.5,pres:3,air:2},comp:2.5,sat:0.16,makeup:1.2,ceiling:0.95},
+    'electro':  {label:'Electro / French Touch (potente)',eq:{lo:3.5,lomid:-2,pres:2,air:3.5},comp:3,sat:0.18,makeup:1.3,ceiling:0.95},
+    'hiphop':   {label:'Hip-Hop / Trap (bassi forti)',eq:{lo:4,lomid:-1,pres:1.5,air:2.5},comp:2.5,sat:0.14,makeup:1.25,ceiling:0.95},
+    'pop':      {label:'Pop (brillante, radio)',eq:{lo:2,lomid:-1,pres:2.5,air:4},comp:2.5,sat:0.10,makeup:1.25,ceiling:0.95},
+    'ambient':  {label:'Ambient (morbido, ampio)',eq:{lo:1,lomid:0,pres:0.5,air:2},comp:1,sat:0.06,makeup:1.1,ceiling:0.94}
   };
   let masterPreset='universal'; // remembered choice
   // soft saturation curve (adds harmonics/warmth); amount 0..1
@@ -2939,6 +2939,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function buildMastering(off,presetKey){const P=MASTER_PRESETS[presetKey]||MASTER_PRESETS.off;
     const input=off.createGain();input.gain.value=1;
     if(presetKey==='off'){input.connect(off.destination);return input;}
+    // Headroom: pull the signal down ~6 dB before EQ/saturation so the chain has room to work
+    // without overdriving the waveshaper (which is what caused the crunchy/farty distortion).
+    const head=off.createGain();head.gain.value=0.5;
     // 4-band tone EQ
     const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=110;lo.gain.value=P.eq.lo;
     const lomid=off.createBiquadFilter();lomid.type='peaking';lomid.frequency.value=350;lomid.Q.value=1;lomid.gain.value=P.eq.lomid;
@@ -2950,10 +2953,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // saturation for warmth/loudness
     const sat=off.createWaveShaper();sat.curve=saturationCurve(P.sat);sat.oversample='4x';
     // makeup gain then brickwall limiter (fast compressor acting as a limiter at the ceiling)
-    const makeup=off.createGain();makeup.gain.value=P.makeup;
-    const limiter=off.createDynamicsCompressor();limiter.threshold.value=-1.0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.001;limiter.release.value=0.12;
-    const ceil=off.createGain();ceil.gain.value=P.ceiling; // final safety trim to the target ceiling
-    input.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);air.connect(glue);glue.connect(sat);sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
+    const makeup=off.createGain();makeup.gain.value=finiteOr(P.makeup,1);
+    const limiter=off.createDynamicsCompressor();limiter.threshold.value=-2.0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.002;limiter.release.value=0.15;
+    const ceil=off.createGain();ceil.gain.value=Math.min(0.95,finiteOr(P.ceiling,0.95)); // final safety trim to the target ceiling
+    input.connect(head);head.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);air.connect(glue);glue.connect(sat);sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
     return input;}
 
   // Render the full mix through a mastering preset and return the buffer (optionally capped for preview).
@@ -2962,14 +2965,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!active.length)return null;
     if(timelineView){
       let dur=projectDuration()+2;if(maxDur)dur=Math.min(dur,maxDur);
-      const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
+      const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=0.9*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
       const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
       return await off.startRendering();
     }
     let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));
     if(maxDur)maxLen=Math.min(maxLen,Math.ceil(maxDur*audio.sampleRate));
-    const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
+    const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.1)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
     const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
     for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
     return await off.startRendering();
@@ -2992,11 +2995,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!active.length){toast('Nessuna traccia da esportare (tutte mute/solo?)');return;}
     try{toast('Esporto mix…');
       if(timelineView){ // sequence: each clip plays once at its t
-        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
+        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=0.9*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
         const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
         for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
         const rendered=await off.startRendering();exportBuffer(rendered,'timeline'+(preset!=='off'?'-'+preset:''));toast('Timeline esportata • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));return;}
-      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
+      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.1)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
       const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
       const rendered=await off.startRendering();exportBuffer(rendered,'mix'+(preset!=='off'?'-'+preset:''));toast('Mix esportato • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));}
