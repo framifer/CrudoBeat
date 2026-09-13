@@ -2853,6 +2853,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- MP3 export (lamejs) — WAV stays the default/lossless option; MP3 is offered alongside it ----
   // Selected export format: 'wav' | 'mp3-256' | 'mp3-192' | 'mp3-128'. Kept in sync with #masterFmtSel.
   let exportFmt='wav';
+  // Guard against NaN/Infinity reaching an AudioParam (throws "non-finite" otherwise).
+  function finiteOr(x,fallback){return (typeof x==='number'&&isFinite(x))?x:fallback;}
   function fmtExt(fmt){return (fmt||exportFmt).indexOf('mp3')===0?'mp3':'wav';}
   function fmtBitrate(fmt){const m=(fmt||exportFmt).match(/mp3-(\d+)/);return m?(+m[1]):192;}
   // Convert an AudioBuffer to an MP3 Blob using lamejs. Stereo (or mono duplicated). 16-bit PCM.
@@ -2960,14 +2962,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!active.length)return null;
     if(timelineView){
       let dur=projectDuration()+2;if(maxDur)dur=Math.min(dur,maxDur);
-      const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(buildMastering(off,preset));
+      const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
       const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
       return await off.startRendering();
     }
     let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));
     if(maxDur)maxLen=Math.min(maxLen,Math.ceil(maxDur*audio.sampleRate));
-    const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(buildMastering(off,preset));
+    const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
     const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
     for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
     return await off.startRendering();
@@ -2990,11 +2992,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!active.length){toast('Nessuna traccia da esportare (tutte mute/solo?)');return;}
     try{toast('Esporto mix…');
       if(timelineView){ // sequence: each clip plays once at its t
-        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*masterVol;mg.connect(buildMastering(off,preset));
+        const dur=projectDuration()+2;const off=new OfflineAudioContext(2,Math.ceil(dur*audio.sampleRate),audio.sampleRate);const mg=off.createGain();mg.gain.value=1.2*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
         const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,dur));
         for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;connectOfflineFX(off,s,c,bus(c.lane||0));const seg=clipSeg(c);s.start(c.t||0,seg.ts,seg.dur);}
         const rendered=await off.startRendering();exportBuffer(rendered,'timeline'+(preset!=='off'?'-'+preset:''));toast('Timeline esportata • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));return;}
-      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*masterVol;mg.connect(buildMastering(off,preset));
+      let maxLen=0;for(const c of active)maxLen=Math.max(maxLen,Math.ceil(clipSeg(c).dur*audio.sampleRate));const off=new OfflineAudioContext(2,Math.max(1,maxLen),audio.sampleRate);const mg=off.createGain();mg.gain.value=(1/Math.max(1,active.length)*1.6)*finiteOr(masterVol,0.9);mg.connect(buildMastering(off,preset));
       const buses={};const bus=(li)=>buses[li]||(buses[li]=offlineLaneBus(off,li,mg,maxLen/audio.sampleRate));
       for(const c of active){const s=off.createBufferSource();s.buffer=c.buffer;const seg=clipSeg(c);s.loop=true;s.loopStart=seg.ts;s.loopEnd=seg.te;connectOfflineFX(off,s,c,bus(c.lane||0));s.start(0,seg.ts);}
       const rendered=await off.startRendering();exportBuffer(rendered,'mix'+(preset!=='off'?'-'+preset:''));toast('Mix esportato • master: '+(MASTER_PRESETS[preset]?MASTER_PRESETS[preset].label:preset));}
@@ -3302,7 +3304,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(st.clipZoom)clipZoom=st.clipZoom;
     if(st.snapRec!=null){snapRec=st.snapRec;snapBtn.classList.toggle('on',snapRec);}
     loopMode=false; // Loop mode removed: always free
-    if(st.masterVol!=null){masterVol=st.masterVol;const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
+    if(st.masterVol!=null){masterVol=finiteOr(+st.masterVol,0.9);const mv=document.getElementById('masterVol'),mvv=document.getElementById('masterVolVal');if(mv)mv.value=Math.round(masterVol*100);if(mvv)mvv.textContent=Math.round(masterVol*100)+'%';if(masterBus&&audio)masterBus.gain.setTargetAtTime(masterVol,audio.currentTime,0.02);}
     if(st.masterPreset){masterPreset=st.masterPreset;const ps=document.getElementById('masterPresetSel');if(ps)ps.value=masterPreset;}
     if(st.limiterOn!=null){limiterOn=st.limiterOn;limiterBtn.classList.toggle('on',limiterOn);rewireMaster();}
     if(st.latencyMs!=null){latencyMs=st.latencyMs;const ls=document.getElementById('latSlider'),lv=document.getElementById('latVal');if(ls)ls.value=latencyMs;if(lv)lv.textContent=latencyMs+'ms';}
