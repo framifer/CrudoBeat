@@ -1,5 +1,5 @@
 // CrudoBeat service worker — cache offline
-const CACHE='crudobeat-v111';
+const CACHE='crudobeat-v112';
 // Core assets must all cache for install to succeed.
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
 // Optional assets: cached best-effort so a missing file never breaks install (e.g. lame.min.js for MP3 export).
