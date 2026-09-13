@@ -1522,7 +1522,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const isModest=(style==='modest'), isSonic=(style==='sonicyouth'), isBTS=(style==='builttospill'), isNat=(style==='national');
     if(isFloyd)steps=[0,2,4,6,8,10,12,14];   // hypnotic constant 8ths
     if(isZep)steps=[0,3,4,6,8,11,12,14];     // syncopated, R&B-flavored
-    if(isModest)steps=[0,3,6,8,11,14];       // dynamic, bouncy, plucked
+    if(isModest)steps=[0,3,4,6,8,11,12,14]; // hypnotic & groovy: steady driving pulse with a recurring syncope
     if(isSonic)steps=[0,2,4,6,8,10,12,14];   // minimal, saturated, insistent 8ths
     if(isBTS)steps=[0,4,6,8,12,14];          // melodic, walking
     if(isNat)steps=[0,10];                   // deep long tonics following the kick
@@ -1576,8 +1576,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
           deg=root; if(pos>=0.85&&chance(.3))deg=root+7;
         } else if(isSonic){ // minimal, saturated: only 2 notes (root and one neighbor), repeated
           deg=(i%4<2)?root:root+3;
-        } else if(isModest){ // dynamic bounce: mobile pentatonic-minor movement up/down the neck
-          const opts=[root,root+2,root+4,root+7,root+6,root-2];deg=opts[Math.floor(Math.random()*opts.length)];
+        } else if(isModest){ // hypnotic & groovy: a FIXED circular riff that repeats every bar,
+          // anchored to the root (Eric Judy style) — insistent, not bouncing up/down the neck.
+          const motif=[root,root,root+4,root,root+7,root,root+4,root+2];
+          deg=motif[i%motif.length];
         } else if(isBTS){ // melodic walking: never stuck on the root, steps toward the next chord
           const opts=[root,root+2,root+4,root+5,root+7];deg=opts[i%opts.length];
           if(b===bars-1&&i===steps.length-1)deg=(nextRoot>root?root+1:root-1);
