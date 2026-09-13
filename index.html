@@ -2967,15 +2967,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'ambient':  {label:'Ambient (morbido, ampio)',eq:{lo:1,lomid:0,pres:0.5,air:2},comp:1,sat:0.06,makeup:1.1,ceiling:0.94}
   };
   let masterPreset='universal'; // remembered choice
-  // soft saturation curve (adds harmonics/warmth); amount 0..1
-  function saturationCurve(amount){const n=1024,c=new Float32Array(n),k=amount*8;for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=amount<=0?x:Math.tanh(x*(1+k))/Math.tanh(1+k);}return c;}
+  // soft saturation curve (adds harmonics/warmth); amount 0..1 — GENTLE: k*3 instead of k*8
+  function saturationCurve(amount){const n=1024,c=new Float32Array(n),k=amount*3;for(let i=0;i<n;i++){const x=i/n*2-1;c[i]=amount<=0?x:Math.tanh(x*(1+k))/Math.tanh(1+k);}return c;}
   // Build the mastering chain in an offline ctx; returns the INPUT node (feed the mix into it). Connects to off.destination.
   function buildMastering(off,presetKey){const P=MASTER_PRESETS[presetKey]||MASTER_PRESETS.off;
     const input=off.createGain();input.gain.value=1;
     if(presetKey==='off'){input.connect(off.destination);return input;}
-    // Headroom: pull the signal down ~6 dB before EQ/saturation so the chain has room to work
-    // without overdriving the waveshaper (which is what caused the crunchy/farty distortion).
-    const head=off.createGain();head.gain.value=0.5;
+    // Headroom: pull the signal down before EQ/saturation so the chain has room to work.
+    const head=off.createGain();head.gain.value=0.45;
     // 4-band tone EQ
     const lo=off.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=110;lo.gain.value=P.eq.lo;
     const lomid=off.createBiquadFilter();lomid.type='peaking';lomid.frequency.value=350;lomid.Q.value=1;lomid.gain.value=P.eq.lomid;
@@ -2984,13 +2983,19 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // glue compressor (gentle bus compression)
     const glue=off.createDynamicsCompressor();const ga=clamp(Math.round(finiteOr(P.comp,0)),0,3);
     glue.threshold.value=[-6,-14,-20,-26][ga];glue.knee.value=8;glue.ratio.value=[1.5,2,3,4][ga];glue.attack.value=0.02;glue.release.value=0.25;
-    // saturation for warmth/loudness
-    const sat=off.createWaveShaper();sat.curve=saturationCurve(P.sat);sat.oversample='4x';
+    // PRE-SATURATION LIMITER: keep the signal well below 0 dB BEFORE the waveshaper, so tanh only
+    // adds gentle warmth and never hard-distorts. This is the real fix for the "distorce da morire".
+    const preComp=off.createDynamicsCompressor();preComp.threshold.value=-6;preComp.knee.value=6;preComp.ratio.value=12;preComp.attack.value=0.003;preComp.release.value=0.1;
+    const preTrim=off.createGain();preTrim.gain.value=0.6; // extra safety margin into the saturator
+    // saturation for warmth/loudness (gentle: P.sat kept small)
+    const sat=off.createWaveShaper();sat.curve=saturationCurve(finiteOr(P.sat,0));sat.oversample='4x';
     // makeup gain then brickwall limiter (fast compressor acting as a limiter at the ceiling)
     const makeup=off.createGain();makeup.gain.value=finiteOr(P.makeup,1);
-    const limiter=off.createDynamicsCompressor();limiter.threshold.value=-2.0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.002;limiter.release.value=0.15;
-    const ceil=off.createGain();ceil.gain.value=Math.min(0.95,finiteOr(P.ceiling,0.95)); // final safety trim to the target ceiling
-    input.connect(head);head.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);air.connect(glue);glue.connect(sat);sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
+    const limiter=off.createDynamicsCompressor();limiter.threshold.value=-3.0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.002;limiter.release.value=0.15;
+    const ceil=off.createGain();ceil.gain.value=Math.min(0.92,finiteOr(P.ceiling,0.92)); // final safety trim to the target ceiling
+    input.connect(head);head.connect(lo);lo.connect(lomid);lomid.connect(pres);pres.connect(air);
+    air.connect(glue);glue.connect(preComp);preComp.connect(preTrim);preTrim.connect(sat);
+    sat.connect(makeup);makeup.connect(limiter);limiter.connect(ceil);ceil.connect(off.destination);
     return input;}
 
   // Render the full mix through a mastering preset and return the buffer (optionally capped for preview).
