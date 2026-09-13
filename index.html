@@ -1643,13 +1643,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // ---- Modifica 1: consecutive bases inherit genre/band/mood/BPM from the last generated one ----
     // (unless the arrangement was cleared). The Part is always chosen fresh.
     if(lastGen && clips.some(c=>c._gen)){genre=lastGen.genre;bandName=lastGen.band||bandName;mood=lastGen.mood;}
-    // Parti: length (bars) + character per section
+    // Parti: length (bars) + character per section.
+    // Arrangement philosophy (Passo 1): quality over quantity — fewer instruments playing
+    // AT THE SAME TIME, so each part has room to breathe. Lead is reserved for the chorus
+    // to create verse→chorus contrast. Intro/close are deliberately sparse.
     const PARTS={
-      intro:{bars:4,label:'Intro',dens:0.6,lead:false,drop:['lead']},         // sparse opener
-      strofa:{bars:8,label:'Strofa',dens:1.0,lead:true},                       // full verse
-      ritornello:{bars:4,label:'Ritornello',dens:1.0,lead:true,boost:true},    // energetic chorus
-      stacco:{bars:1,label:'Stacco',dens:1.0,lead:false,drumsOnly:true},       // 1-bar break/fill
-      chiusura:{bars:4,label:'Chiusura',dens:0.8,lead:false,fade:true}         // closing
+      intro:{bars:4,label:'Intro',dens:0.6,lead:false,noChord:true},          // drums + bass only: airy opener
+      strofa:{bars:8,label:'Strofa',dens:0.9,lead:false},                     // drums + bass + chords (no lead): breathes
+      ritornello:{bars:4,label:'Ritornello',dens:1.0,lead:true,boost:true},   // full: adds lead → the payoff
+      stacco:{bars:1,label:'Stacco',dens:1.0,lead:false,drumsOnly:true},      // 1-bar break/fill
+      chiusura:{bars:4,label:'Chiusura',dens:0.7,lead:false,fade:true}        // drums + chords, no lead: gentle close
     };
     const PT=PARTS[part]||PARTS.strofa; const bars=PT.bars;
     // pick the band: explicit, or a random one from the chosen genre
@@ -1686,7 +1689,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const chordInstr=(P&&P.instr&&P.instr.chord)?P.instr.chord:(pool?pick():'organ');
       const leadInstr=(P&&P.leadForce)?P.leadForce:((P&&P.instr&&P.instr.lead)?P.instr.lead:(pool?pick():null)); // leadForce overrides (e.g. Ambient → Effect)
       const style=P&&P.style?P.style:null; // band-specific groove (zeppelin/floyd/indie)
-      const wantLead=(P?!!P.lead:false)&&PT.lead;
+      // Lead policy (Passo 1): reserve the lead for the chorus to create verse→chorus contrast,
+      // EXCEPT for genres where the lead/pad is the main voice (Ambient) — there it stays in the verse too.
+      const leadEssential=(g==='Ambient');
+      const wantLead=(P?!!P.lead:false)&&(PT.lead||(leadEssential&&!PT.drumsOnly&&!PT.noChord));
       const label=(band?band:g)+' • '+M.label+' • '+PT.label;
       toast('Genero '+PT.label+' in stile '+(band||g)+'…');
       // ---- Modifica 1: place the new part right AFTER the end of the last generated content ----
@@ -1696,6 +1702,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const drumPat=randomBeat(g);
       let jobs,order;
       if(PT.drumsOnly){ jobs=[renderDrumsPattern(drumPat,bars,kit,g,style)]; order=['drum']; }
+      else if(PT.noChord){ // intro: drums + bass only, leave the chords out for an airy opener
+        jobs=[renderDrumsPattern(drumPat,bars,kit,g,style),renderBassLine(roots,bars,g,bassInstr,capB,style)];
+        order=['drum','bass'];
+      }
       else{
         jobs=[renderDrumsPattern(drumPat,bars,kit,g,style),renderBassLine(roots,bars,g,bassInstr,capB,style),renderChordBed(roots,bars,g,chordInstr,capC,style)];
         order=['drum','bass','chord'];
@@ -1705,15 +1715,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const idx=(k)=>order.indexOf(k);
       const at0=at;const mkPat=(cap,instr)=>({kind:'mel',pattern:melPatternFromEvents(cap),bars:1,key:currentKey,scale:currentScaleName,instr:instr,arp:{on:false,dir:'up',rate:'16',oct:1}});
       const tag=(c)=>{c._gen=true;c._genPart=part;};
-      // chords/node track (skip on drums-only stacco)
+      // chords/node track (skip on drums-only stacco, and on noChord intro)
       let cLane=null,lLane=null,bLane=null;
       if(!PT.drumsOnly){
-        const chordName=(chordInstr==='node')?'Node':'Accordi';
-        const cc=addClip(bufs[idx('chord')],chordName,at0,true,(chordInstr==='node')?null:mkPat(capC,chordInstr));cc.loop=false;cc.color=TRACK_COLORS[3];cLane=(cc.lane||0);tag(cc);
-        if(P&&P.chordFx){cc.fxRev=P.chordFx.rev||0;cc.fxDelay=P.chordFx.delay||0;cc.fxDrive=P.chordFx.drive||0;restartClip(cc);} // e.g. Floyd space / grunge drive (removable via R/D/Dr)
-        if(wantLead){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,leadInstr||((g==='French touch'||g==='Electro')?'guitar':'epiano')));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);
+        if(idx('chord')>=0){
+          const chordName=(chordInstr==='node')?'Node':'Accordi';
+          const cc=addClip(bufs[idx('chord')],chordName,at0,true,(chordInstr==='node')?null:mkPat(capC,chordInstr));cc.loop=false;cc.color=TRACK_COLORS[3];cLane=(cc.lane||0);tag(cc);
+          if(P&&P.chordFx){cc.fxRev=P.chordFx.rev||0;cc.fxDelay=P.chordFx.delay||0;cc.fxDrive=P.chordFx.drive||0;restartClip(cc);} // e.g. Floyd space / grunge drive (removable via R/D/Dr)
+        }
+        if(wantLead&&idx('lead')>=0){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,leadInstr||((g==='French touch'||g==='Electro')?'guitar':'epiano')));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);
           if(P&&P.leadFx){lc.fxRev=P.leadFx.rev||0;lc.fxDelay=P.leadFx.delay||0;lc.fxDrive=P.leadFx.drive||0;restartClip(lc);}}
-        const bc=addClip(bufs[idx('bass')],'Basso',at0,true,mkPat(capB,bassInstr));bc.loop=false;bc.color=TRACK_COLORS[1];bLane=(bc.lane||0);tag(bc);
+        if(idx('bass')>=0){const bc=addClip(bufs[idx('bass')],'Basso',at0,true,mkPat(capB,bassInstr));bc.loop=false;bc.color=TRACK_COLORS[1];bLane=(bc.lane||0);tag(bc);}
       }
       const dc=addClip(bufs[idx('drum')],(PT.drumsOnly?'Stacco':'Batteria'),at0,true,{kind:'drum',pattern:drumPat.map(r=>r.slice()),bars:1,kit:kit});dc.loop=false;dc.color=TRACK_COLORS[0];tag(dc);
       const scAmt=P?(P.sc||0):0;
