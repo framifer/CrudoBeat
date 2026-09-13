@@ -2871,9 +2871,29 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const end=enc.flush();if(end.length)data.push(new Int8Array(end));
     return new Blob(data,{type:'audio/mp3'});
   }
+  // Safety soft-clip on the rendered buffer, applied to EVERY export path before encoding.
+  // Harsh digital clipping (hard cut at ±1.0) is what produces the "graffio"/farty crackle.
+  // We first normalize if the peak exceeds a ceiling, then round remaining peaks with a gentle
+  // tanh curve so nothing ever hits the hard 0 dBFS wall abruptly.
+  function softClipBuffer(buf,ceiling){
+    const cap=ceiling||0.98;
+    // find true peak across all channels
+    let peak=0;
+    for(let ch=0;ch<buf.numberOfChannels;ch++){const d=buf.getChannelData(ch);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a;}}
+    // if the mix is hot, pull it down so peaks land near the ceiling before soft-clipping
+    const preGain=peak>cap?(cap/peak):1;
+    const drive=1.1; // gentle knee
+    for(let ch=0;ch<buf.numberOfChannels;ch++){const d=buf.getChannelData(ch);
+      for(let i=0;i<d.length;i++){let x=d[i]*preGain;
+        // only shape samples approaching the ceiling; leave quiet parts untouched (transparent)
+        if(x>cap||x<-cap){x=Math.tanh(x*drive)/Math.tanh(drive)*cap;}
+        d[i]=x;}}
+    return buf;
+  }
   // Encode a rendered AudioBuffer into the currently selected format and download it.
   // baseName is the fileName() 'suffix' (without extension); WAV path is unchanged from before.
   function exportBuffer(rendered,suffix,fmt){const f=fmt||exportFmt;
+    softClipBuffer(rendered,0.98); // guarantee no harsh clipping regardless of mix/master levels
     if(fmtExt(f)==='mp3'){const blob=bufferToMp3(rendered,fmtBitrate(f));download(blob,fileName(suffix,'mp3'));}
     else{const blob=bufferToWav(rendered);download(blob,fileName(suffix,'wav'));}}
   // base64 <-> ArrayBuffer helpers for portable single-file project export
