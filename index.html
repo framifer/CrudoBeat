@@ -91,6 +91,7 @@
   #seqPanel .seqhead button,#melPanel .seqhead button{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;}
   #seqPanel .seqhead button.on,#melPanel .seqhead button.on{background:var(--red);color:var(--cream);}
   #seqPanel .seqhead select,#melPanel .seqhead select{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:7px;padding:4px 6px;font-size:11px;font-weight:800;cursor:pointer;}
+  #melInstrSel{max-width:130px;}
   #seqGrid,#melGrid{display:flex;flex-direction:column;gap:3px;max-height:46vh;overflow-y:auto;}
   #seqGrid .seqrow,#melGrid .seqrow{display:flex;align-items:center;gap:3px;}
   #seqGrid .seqlbl,#melGrid .seqlbl{width:74px;flex:0 0 74px;font-size:9px;font-weight:800;color:var(--ink);}
@@ -253,6 +254,7 @@
   .mixstrip .compbtn{border:2px solid var(--panel-border);background:var(--cream);color:var(--ink);border-radius:6px;height:22px;font-size:9px;font-weight:900;cursor:pointer;width:100%;}
   .mixstrip .compbtn.on{background:var(--red);color:var(--cream);border-color:var(--red2);}
   .mixstrip .compbtn.sc.on{background:#2b8ccc;color:#fff;border-color:#1c6a9e;}
+  .mixstrip .fxpreset{width:100%;border:2px solid var(--panel-border);background:var(--cream);color:var(--ink);border-radius:6px;font-size:9px;font-weight:800;padding:2px;cursor:pointer;}
   @media (max-height:560px){.mixstrip .fader{height:110px;}}
 
   /* persistent Tracce button bottom-left */
@@ -344,7 +346,7 @@
 
 <div id="looper">
   <div id="looperHead">
-    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="multiSelBtn" title="Selezione multipla: tocca più tracce, poi copia/elimina/muta di gruppo">☑ Multi</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
+    <div class="titrow"><span class="t">🎛 MULTITRACCIA<span id="studioTag" style="background:var(--ink);color:var(--cream);border-radius:5px;padding:1px 6px;margin-left:6px;font-size:10px">STUDIO</span></span><button id="allPlayBtn" title="Play tutte">▶</button><button id="allPauseBtn" title="Pausa tutte">⏸</button><button id="allStopBtn" title="Stop (torna a inizio)">⏹</button><button id="addTrackBtn" title="Aggiungi traccia vuota">➕</button><button id="clearAllBtn" title="Cancella TUTTE le tracce">🧹</button><button id="bpmAllBtn" title="Cambia tempo (BPM) di TUTTE le tracce">♩⇄</button><button id="fullBaseBtn" title="Genera intera base: batteria + basso + accordi coerenti in un click">🎹</button><button id="mixerBtn" title="Mixer (volume/pan/mute/solo per corsia)">🎚</button><button id="multiSelBtn" title="Selezione multipla: tocca più tracce, poi copia/elimina/muta di gruppo">☑</button><button id="gUndoBtn" title="Annulla (arrangiamento)">↩</button><button id="gRedoBtn" title="Rifai (arrangiamento)">↪</button><button id="snapBtn" title="Snap: allinea la durata delle registrazioni al tempo">🧲</button><button id="qStartBtn" title="Quantizza inizio: allinea il primo colpo registrato al battito">⏮</button><button id="lpZoomOut" title="Zoom −">🔍－</button><button id="lpZoomIn" title="Zoom +">🔍＋</button><button id="saveBtn" title="Salva progetto">💾</button><button id="loadBtn" title="Carica progetto">📂</button><button id="exportProjBtn" title="Esporta progetto completo in un file .crudo">📤</button><button id="importProjBtn" title="Importa progetto da file .crudo">📥</button><button id="exportAllBtn" title="Esporta mix audio (canzone finita, esclude le mute)">⤓</button><button id="expandBtn" title="Espandi / metà">⤢</button><button id="closeLooper" title="Chiudi">✕</button></div>
     <div class="projname" id="projName">Progetto: (nuovo)</div>
     <div class="latrow" id="latRow"><span>Latenza</span><input type="range" id="latSlider" min="0" max="300" value="20"><span id="latVal">20ms</span><button id="calibBtn" title="Calibra la latenza battendo a tempo col click">🎯 Calibra</button></div>
     <div class="latrow" id="masterRow"><span>Master</span><input type="range" id="masterVol" min="0" max="130" value="90"><span id="masterVolVal">90%</span><button id="limiterBtn" class="on" title="Limiter master (evita distorsione)">LIM</button></div>
@@ -393,6 +395,7 @@
 <div id="melPanel">
   <div class="seqhead">
     <span class="seqt">🎹 MELODY • 16 step</span>
+    <select id="melInstrSel" title="Strumento: cambia al volo mantenendo le note"></select>
     <button id="melPlay" title="Play/Stop melodia">▶</button>
     <button id="melClear" title="Svuota">🗑</button>
     <button id="melRand" title="Genera riff casuale">🎲</button>
@@ -547,6 +550,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const AC=window.AudioContext||window.webkitAudioContext;
   let audio=null,master=null,reverb=null,reverbWet=null,dryGain=null,instrFxBus=null;
   let roomVerb=null,roomSend=null,roomWet=null;
+  let warmBus=null,warmLP=null,warmLS=null;
+  // instruments that get the warmth stage (Extra, Piano family, Pad, Lead). Drums handled separately.
+  const WARM_INSTR={guitar:1,accordion:1,banjo:1,trumpet:1,organ:1,piano:1,epiano:1,pad:1,lead:1};
+  function warmOut(instr){return (warmBus&&WARM_INSTR[instr])?warmBus:master;}
   let masterBus=null,masterLimiter=null,masterVol=0.9,limiterOn=true;
   let delayNode=null,delayFb=null,delayWet=null,delayFilter=null,delaySendBus=null,delayLevel=0;
   let metroGain=null,noiseBuffer=null;
@@ -570,6 +577,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     roomSend=audio.createGain();roomSend.gain.value=1.0;   // acoustic instruments send here
     roomWet=audio.createGain();roomWet.gain.value=0.34;    // amount of room ambience (more present)
     roomSend.connect(roomVerb);roomVerb.connect(roomWet);roomWet.connect(master);
+    // ---- Warmth bus: instruments routed here get a tamed top end + fuller low end (less "8-bit", warmer/bassier) ----
+    warmBus=audio.createGain();
+    warmLP=audio.createBiquadFilter();warmLP.type='lowpass';warmLP.frequency.value=4800;warmLP.Q.value=0.4;
+    warmLS=audio.createBiquadFilter();warmLS.type='lowshelf';warmLS.frequency.value=220;warmLS.gain.value=4.5;
+    warmBus.connect(warmLP);warmLP.connect(warmLS);warmLS.connect(master);
     // instrFxBus = instruments (dry) + their global delay/reverb, separate from recorded tracks.
     // Used for recording so LIVE grid recordings carry the effects, without capturing existing tracks.
     instrFxBus=audio.createGain();
@@ -681,13 +693,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(500,now);f.frequency.linearRampToValueAtTime(freq*3+1200,now+0.8);f.Q.value=2;
     o1.connect(f);o2.connect(f);o3.connect(f);f.connect(g);
     g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.32,now+0.5);g.gain.setValueAtTime(.32,now+1.6);g.gain.exponentialRampToValueAtTime(.0005,now+2.8);
-    g.connect(master);[o1,o2,o3].forEach(o=>{o.start(now);o.stop(now+2.9);});}
+    g.connect(warmOut('pad'));[o1,o2,o3].forEach(o=>{o.start(now);o.stop(now+2.9);});}
   function playLead(freq){const now=audio.currentTime,g=audio.createGain();const o=audio.createOscillator(),o2=audio.createOscillator();
     o.type='square';o2.type='sawtooth';o.frequency.value=freq;o2.frequency.value=freq*1.005;const o2g=audio.createGain();o2g.gain.value=.4;
     const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(freq*8+2000,now);f.frequency.exponentialRampToValueAtTime(freq*2+400,now+.35);f.Q.value=3;
     o.connect(f);o2.connect(o2g);o2g.connect(f);f.connect(g);
     g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.006);g.gain.exponentialRampToValueAtTime(.0006,now+.6);
-    g.connect(master);o.start(now);o2.start(now);o.stop(now+.65);o2.stop(now+.65);}
+    g.connect(warmOut('lead'));o.start(now);o2.start(now);o.stop(now+.65);o2.stop(now+.65);}
   function playBassAcousticWarm(freq){const now=audio.currentTime,g=audio.createGain();const rj=(Math.random()*2-1);
     // Warm upright/finger bass: sub + fundamental + 2nd + a touch of 3rd/5th (odd = "nodoso"), slight detune for body.
     const sub=audio.createOscillator();sub.type='sine';sub.frequency.value=freq*0.5;const subg=audio.createGain();subg.gain.value=.35; // deep weight
@@ -709,7 +721,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function playOrgan(freq){const now=audio.currentTime,g=audio.createGain();const parts=[[1,.5],[2,.3],[3,.18],[4,.1]];const oscs=[];
     parts.forEach(([m,a])=>{const o=audio.createOscillator();o.type='sine';o.frequency.value=freq*m;const og=audio.createGain();og.gain.value=a;o.connect(og);og.connect(g);oscs.push(o);});
     g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.4,now+.02);g.gain.setValueAtTime(.4,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+.8);
-    g.connect(master);oscs.forEach(o=>{o.start(now);o.stop(now+.85);});}
+    g.connect(warmOut('organ'));oscs.forEach(o=>{o.start(now);o.stop(now+.85);});}
   function playPianoAcoustic(freq){const now=audio.currentTime;const rj=(Math.random()*2-1);
     // FM piano (DX-style): carrier modulated by an operator at a harmonic ratio, with a fast-decaying
     // modulation index → bright attack that quickly mellows = the classic realistic piano character.
@@ -741,13 +753,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=Math.min(8000,freq*10+2000);f.Q.value=.3;
     // piano amplitude envelope: sharp attack, initial decay, long natural tail
     const g=audio.createGain();g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.65,now+.003);g.gain.exponentialRampToValueAtTime(.22,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+3.2);
-    out.connect(f);f.connect(g);g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.4;g.connect(rs);rs.connect(roomSend);}
+    out.connect(f);f.connect(g);g.connect(warmOut('piano'));if(roomSend){const rs=audio.createGain();rs.gain.value=1.4;g.connect(rs);rs.connect(roomSend);}
   }
   function playEPiano(freq){const now=audio.currentTime,g=audio.createGain();
     const carrier=audio.createOscillator();carrier.type='sine';carrier.frequency.value=freq;
     const mod=audio.createOscillator();mod.type='sine';mod.frequency.value=freq*2;const modg=audio.createGain();modg.gain.value=freq*1.2;mod.connect(modg);modg.connect(carrier.frequency);
     carrier.connect(g);g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.55,now+.005);g.gain.exponentialRampToValueAtTime(.0006,now+1.2);
-    g.connect(master);carrier.start(now);mod.start(now);carrier.stop(now+1.3);mod.stop(now+1.3);}
+    g.connect(warmOut('epiano'));carrier.start(now);mod.start(now);carrier.stop(now+1.3);mod.stop(now+1.3);}
   // ---------- Extras: synthesized guitar / accordion / banjo / trumpet ----------
   // Electric guitar: sawtooth through a resonant filter + light overdrive, medium sustain.
   function playEGuitar(freq){const now=audio.currentTime,g=audio.createGain();
@@ -759,7 +771,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const sh=audio.createWaveShaper();sh.curve=makeDistortion(45);sh.oversample='4x'; // heavier, dirtier
     o1.connect(f);o2.connect(f);o3.connect(o3g);o3g.connect(f);f.connect(sh);sh.connect(g);
     g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.008);g.gain.setValueAtTime(.42,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.6);
-    g.connect(master);if(roomSend)g.connect(roomSend);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+1.65);o2.stop(now+1.65);o3.stop(now+1.65);}
+    g.connect(warmOut('guitar'));if(roomSend)g.connect(roomSend);o1.start(now);o2.start(now);o3.start(now);o1.stop(now+1.65);o2.stop(now+1.65);o3.stop(now+1.65);}
   // Accordion (per spec): two saw detuned +10c (beating), attack 40ms, full sustain, lowpass (bellows).
   function playAccordion(freq){const now=audio.currentTime,g=audio.createGain();
     // Per spec: two saw/pulse detuned by +10 cents (beating), attack 40ms, 100% sustain, lowpass = bellows pressure.
@@ -770,7 +782,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // attack 40ms, hold (100% sustain) then a short release when the note ends
     g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.34,now+.04);g.gain.setValueAtTime(.34,now+.7);g.gain.exponentialRampToValueAtTime(.0006,now+1.0);
     const oscs=[o1,o2];
-    g.connect(master);if(roomSend)g.connect(roomSend);oscs.forEach(o=>{o.start(now);o.stop(now+1.05);});}
+    g.connect(warmOut('accordion'));if(roomSend)g.connect(roomSend);oscs.forEach(o=>{o.start(now);o.stop(now+1.05);});}
   // Banjo (per spec): 2 saw/pulse, attack 0ms, decay ~200ms, no sustain; white-noise pluck peak + fixed 500Hz head resonance.
   function playBanjo(freq){const now=audio.currentTime,g=audio.createGain();
     const o1=audio.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;
@@ -782,7 +794,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='highpass';nf.frequency.value=2000;const ng=audio.createGain();ng.gain.setValueAtTime(.5,now);ng.gain.exponentialRampToValueAtTime(.001,now+.008);n.connect(nf);nf.connect(g);
     // envelope: 0ms attack, 200ms decay, no sustain
     g.gain.setValueAtTime(.6,now);g.gain.exponentialRampToValueAtTime(.0006,now+.2);
-    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
+    g.connect(warmOut('trumpet'));if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
     o1.start(now);o2.start(now);n.start(now);o1.stop(now+.25);o2.stop(now+.25);n.stop(now+.02);}
   // Trumpet (per spec): saw + lowpass (24dB) driven by envelope (dark→bright), 15ms pitch-scoop, vibrato delayed 400ms.
   function playTrumpet(freq){const now=audio.currentTime,g=audio.createGain();
@@ -795,7 +807,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     [f1,f2].forEach(f=>{f.frequency.setValueAtTime(freq*1.5,now);f.frequency.linearRampToValueAtTime(freq*5+1200,now+.12);f.frequency.setValueAtTime(freq*5+1200,now+.5);f.frequency.linearRampToValueAtTime(freq*2+400,now+1.0);});
     o.connect(f1);f1.connect(f2);f2.connect(g);
     g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(.5,now+.05);g.gain.setValueAtTime(.45,now+.5);g.gain.exponentialRampToValueAtTime(.0006,now+1.1);
-    g.connect(master);if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
+    g.connect(warmOut('trumpet'));if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
     vib.start(now);o.start(now);o.stop(now+1.15);vib.stop(now+1.15);}
   // ---------- HiChord: chord synth (organ-like, warm) ----------
   let hiWave='sawtooth';                         // HiChord waveform (〰 button)
@@ -862,7 +874,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const K=kit||(tracks[activeTrack]&&tracks[activeTrack].drumKit)||'pop';
     // Acoustic & Pop kits get room ambience (live only). Acoustic gets MORE room. Electro stays dry/tight.
     let out=dest||master;
-    if(!dest&&roomSend&&(K==='acoustic'||K==='pop')){const tap=ac.createGain();tap.gain.value=1;tap.connect(master);
+    if(!dest&&roomSend&&(K==='acoustic'||K==='pop')){const tap=ac.createGain();tap.gain.value=1;
+      const dls=ac.createBiquadFilter();dls.type='lowshelf';dls.frequency.value=140;dls.gain.value=5; // heavier/bassier drums
+      tap.connect(dls);dls.connect(master);
       const rsend=ac.createGain();rsend.gain.value=(K==='acoustic'?1.6:0.8);tap.connect(rsend);rsend.connect(roomSend);out=tap;}
     if(kind==='kick'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';
       // per-kit kick: electro = long 808-ish, acoustic = deep/soft, pop = punchy
@@ -932,7 +946,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const vib=audio.createOscillator();vib.type='sine';vib.frequency.value=5.5;const vg=audio.createGain();vg.gain.setValueAtTime(0,now);vg.gain.setValueAtTime(0,now+.4);vg.gain.linearRampToValueAtTime(freq*0.007,now+.6);vib.connect(vg);vg.connect(o.frequency);vib.start(now);
       const f1=audio.createBiquadFilter();f1.type='lowpass';f1.Q.value=.7;f1.frequency.value=freq*4+1000;const f2=audio.createBiquadFilter();f2.type='lowpass';f2.Q.value=.7;f2.frequency.value=freq*4+1000;o.connect(f1);f1.connect(f2);f2.connect(g);oscs=[o];oscs._vib=vib;extra={f:f1,f2:f2,trumpet:true};}
     else{const o1=audio.createOscillator(),o2=audio.createOscillator();o1.type='sine';o2.type=(instr==='piano')?'sine':'triangle';o1.frequency.value=freq;o2.frequency.value=freq*2.001;const o2g=audio.createGain();o2g.gain.value=.22;o1.connect(g);o2.connect(o2g);o2g.connect(g);oscs=[o1,o2];extra={o2};}
-    g.connect(master);oscs.forEach(o=>o.start(now));return{g,oscs,extra,instr};}
+    g.connect(warmOut(instr));oscs.forEach(o=>o.start(now));return{g,oscs,extra,instr};}
   function setVoiceFreq(v,freq){const t=audio.currentTime;
     if(v.instr==='synth'){v.oscs.forEach(o=>o.frequency.setTargetAtTime(freq,t,.008));}
     else if(v.instr==='bass'||v.instr==='bassacoustic'){v.oscs[0].frequency.setTargetAtTime(freq,t,.008);v.oscs[1].frequency.setTargetAtTime(v.extra.bacc?freq*2:freq,t,.008);if(v.extra.f)v.extra.f.frequency.setTargetAtTime(freq*4+250,t,.02);}
@@ -1126,14 +1140,31 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     }
     highlightMelStep(melStep);melStep=(melStep+1)%SEQ_STEPS;}
   const melPlayBtn=document.getElementById('melPlay');
-  function openMel(){resumeAudio();melPanel.classList.add('show');buildMelGrid();}
+  function openMel(){resumeAudio();melPanel.classList.add('show');buildMelGrid();syncMelInstrSel();}
+  // Instrument switcher inside the Melody sequencer: change instrument on the fly, keeping the notes.
+  let _melSelReady=false;
+  function populateMelInstrSel(){const sel=document.getElementById('melInstrSel');if(!sel||_melSelReady)return;_melSelReady=true;
+    [['amb','Amb'],['piano','Piano'],['extras','Extra'],['bass','Bass']].forEach(([fam,label])=>{
+      (FAMILIES[fam]||[]).forEach(([id,nm])=>{const o=document.createElement('option');o.value=id;o.textContent=label+' · '+nm;sel.appendChild(o);});});
+    // also HiCrudo and Synth (use their current grid settings)
+    [['hichord','HiCrudo'],['synth','Synth']].forEach(([id,nm])=>{const o=document.createElement('option');o.value=id;o.textContent=nm;sel.appendChild(o);});
+    sel.addEventListener('change',()=>{setInstrument(sel.value);});} // setInstrument keeps notes + rebuilds grid
+  function syncMelInstrSel(){populateMelInstrSel();const sel=document.getElementById('melInstrSel');if(!sel)return;const cur=tracks[activeTrack].instr;
+    const pick=(cur==='drums')?'piano':cur; // drums isn't melodic → show piano; hichord/synth are valid
+    if([...sel.options].some(o=>o.value===pick))sel.value=pick;}
   document.getElementById('melClose').addEventListener('click',()=>{melPanel.classList.remove('show');melOn=false;melPlayBtn.textContent='▶';melPlayBtn.classList.remove('on');highlightMelStep(-1);});
   melPlayBtn.addEventListener('click',()=>{resumeAudio();melOn=!melOn;melPlayBtn.classList.toggle('on',melOn);melPlayBtn.textContent=melOn?'❚❚':'▶';if(melOn){melStep=0;melLastTime=audio.currentTime-seqStepDur();}else highlightMelStep(-1);});
   document.getElementById('melClear').addEventListener('click',()=>{for(const row of melPattern)row.fill(false);buildMelGrid();toast('Melodia svuotata');});
   // offline render of the melody to an exact-length clip (sample-accurate loop, wrapped tails)
   // offline synth for melody export — compact versions of the live instruments
   function renderToneOffline(ac,dest,instr,freq,now){
-    const g=ac.createGain();g.connect(dest);
+    const g=ac.createGain();
+    // ---- Global "less 8-bit, warmer/fuller/bassier" stage: tame highs + add a sub octave under every note ----
+    const warm=ac.createBiquadFilter();warm.type='lowpass';warm.frequency.value=Math.min(5200,freq*7+1400);warm.Q.value=0.5;
+    const body=ac.createBiquadFilter();body.type='lowshelf';body.frequency.value=220;body.gain.value=4; // fuller low end
+    g.connect(warm);warm.connect(body);body.connect(dest);
+    // subtle sub-oscillator an octave below (skip for bass, which is already low) → weight & fullness
+    if(instr!=='bass'&&instr!=='bassacoustic'){const sub=ac.createOscillator();sub.type='sine';sub.frequency.value=freq*0.5;const subg=ac.createGain();subg.gain.setValueAtTime(.12,now);subg.gain.exponentialRampToValueAtTime(.0006,now+1.4);sub.connect(subg);subg.connect(body);sub.start(now);sub.stop(now+1.5);}
     if(instr==='hichord'){ // HiCrudo-style warm chord voice: 2 detuned saws -> resonant lowpass, sustained
       const o1=ac.createOscillator();o1.type='sawtooth';o1.frequency.value=freq;
       const o2=ac.createOscillator();o2.type='sawtooth';o2.frequency.value=freq*1.005;const o2g=ac.createGain();o2g.gain.value=.5;
@@ -1299,9 +1330,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'Built to Spill':{genre:'Indie',bpm:125,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Rock',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'builttospill',randInstr:['organ','guitar']},
     'Sonic Youth':{genre:'Indie',bpm:130,key:'Mi',scale:'Frigia',kit:'acoustic',arch:'Rock',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:0,lead:true,style:'sonicyouth',randInstr:['guitar','piano']},
     // Bedroom
-    'Sufjan Stevens':{genre:'Bedroom',bpm:92,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'sufjan',randInstr:['banjo','piano','node','ambient']},
-    'Bon Iver':{genre:'Bedroom',bpm:88,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'boniver',randInstr:['piano','trumpet','pad','epiano'],chordFx:{rev:2,delay:2}},
-    'Mac DeMarco':{genre:'Bedroom',bpm:90,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'macdemarco',randInstr:['guitar','ambient','piano']},
+    'Sufjan Stevens':{genre:'Bedroom',bpm:82,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'sufjan',randInstr:['banjo','piano','node','ambient']},
+    'Bon Iver':{genre:'Bedroom',bpm:76,key:'Re',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'boniver',randInstr:['piano','trumpet','pad','epiano'],chordFx:{rev:2,delay:2}},
+    'Mac DeMarco':{genre:'Bedroom',bpm:80,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'macdemarco',randInstr:['guitar','ambient','piano']},
     // French touch
     'Daft Punk':{genre:'French touch',bpm:120,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:2,lead:true,style:'daftpunk',randInstr:['guitar','hichord']},
     'Justice':{genre:'French touch',bpm:126,key:'Fa',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:3,lead:true,style:'justice',randInstr:['guitar','hichord']},
@@ -1311,13 +1342,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     'Apparat':{genre:'Electro',bpm:110,key:'La',scale:'Minore',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'vi-IV-I-V',sc:1,lead:true,style:'apparat',randInstr:['piano','pad','guitar'],chordFx:{rev:3,delay:2}},
     'The Knife':{genre:'Electro',bpm:120,key:'Mi',scale:'Frigia',kit:'electro',arch:'Electro',instr:{bass:'bass'},prog:'I-vi-IV-V',sc:2,lead:true,style:'theknife',randInstr:['guitar','hichord','ambient'],chordFx:{rev:2,delay:2,drive:2}},
     // Ambient (Node instead of chords)
-    'Christian Löffler':{genre:'Ambient',bpm:121,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:2,lead:true,style:'loffler',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2}},
-    'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'air',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2}},
-    'Populous':{genre:'Ambient',bpm:95,key:'Do',scale:'Dorica',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:1,lead:true,style:'populous',randInstr:['piano','synth','node','ambient','pad'],chordFx:{rev:3,delay:2}},
+    'Christian Löffler':{genre:'Ambient',bpm:121,key:'La',scale:'Minore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:2,lead:true,style:'loffler',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
+    'Air':{genre:'Ambient',bpm:100,key:'Re',scale:'Maggiore',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'air',leadForce:'ambient',randInstr:['piano','synth','node','ambient'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
+    'Populous':{genre:'Ambient',bpm:95,key:'Do',scale:'Dorica',kit:'pop',arch:'Ambient',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:1,lead:true,style:'populous',leadForce:'ambient',randInstr:['piano','synth','node','ambient','pad'],chordFx:{rev:3,delay:2},leadFx:{rev:2,delay:3}},
     // Pop (Strfkr/MGMT/Wixel)
-    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','guitar']},
-    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','guitar']},
-    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'pop',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','guitar'],chordFx:{rev:2,delay:1}}
+    'STRFKR':{genre:'Pop',bpm:116,key:'Do',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-V-vi-IV',sc:0,lead:true,style:'strfkr',randInstr:['hichord','node','ambient','guitar']},
+    'MGMT':{genre:'Pop',bpm:120,key:'Sol',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'I-vi-IV-V',sc:0,lead:true,style:'mgmt',randInstr:['hichord','epiano','guitar']},
+    'Wixel':{genre:'Pop',bpm:112,key:'La',scale:'Maggiore',kit:'acoustic',arch:'Pop',instr:{bass:'bassacoustic'},prog:'vi-IV-I-V',sc:0,lead:true,style:'wixel',randInstr:['hichord','epiano','guitar'],chordFx:{rev:2,delay:1}}
   };
   function bandsForGenre(g){return Object.keys(BANDS).filter(b=>BANDS[b].genre===g);}
   let chordMode=false, chordProg='I-V-vi-IV', lastUsedProg=null;
@@ -1645,7 +1676,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const pool=P&&P.randInstr?P.randInstr:null; // random instrument pool (e.g. Indie)
       const pick=()=>pool[Math.floor(Math.random()*pool.length)];
       const chordInstr=(P&&P.instr&&P.instr.chord)?P.instr.chord:(pool?pick():'organ');
-      const leadInstr=(P&&P.instr&&P.instr.lead)?P.instr.lead:(pool?pick():null); // A: independent random pick
+      const leadInstr=(P&&P.leadForce)?P.leadForce:((P&&P.instr&&P.instr.lead)?P.instr.lead:(pool?pick():null)); // leadForce overrides (e.g. Ambient → Effect)
       const style=P&&P.style?P.style:null; // band-specific groove (zeppelin/floyd/indie)
       const wantLead=(P?!!P.lead:false)&&PT.lead;
       const label=(band?band:g)+' • '+M.label+' • '+PT.label;
@@ -1672,7 +1703,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         const chordName=(chordInstr==='node')?'Node':'Accordi';
         const cc=addClip(bufs[idx('chord')],chordName,at0,true,(chordInstr==='node')?null:mkPat(capC,chordInstr));cc.loop=false;cc.color=TRACK_COLORS[3];cLane=(cc.lane||0);tag(cc);
         if(P&&P.chordFx){cc.fxRev=P.chordFx.rev||0;cc.fxDelay=P.chordFx.delay||0;cc.fxDrive=P.chordFx.drive||0;restartClip(cc);} // e.g. Floyd space / grunge drive (removable via R/D/Dr)
-        if(wantLead){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,leadInstr||((g==='French touch'||g==='Electro')?'synth':'epiano')));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);}
+        if(wantLead){const lc=addClip(bufs[idx('lead')],'Lead',at0,true,mkPat(capL,leadInstr||((g==='French touch'||g==='Electro')?'guitar':'epiano')));lc.loop=false;lc.color=TRACK_COLORS[2];lLane=(lc.lane||0);tag(lc);
+          if(P&&P.leadFx){lc.fxRev=P.leadFx.rev||0;lc.fxDelay=P.leadFx.delay||0;lc.fxDrive=P.leadFx.drive||0;restartClip(lc);}}
         const bc=addClip(bufs[idx('bass')],'Basso',at0,true,mkPat(capB,bassInstr));bc.loop=false;bc.color=TRACK_COLORS[1];bLane=(bc.lane||0);tag(bc);
       }
       const dc=addClip(bufs[idx('drum')],(PT.drumsOnly?'Stacco':'Batteria'),at0,true,{kind:'drum',pattern:drumPat.map(r=>r.slice()),bars:1,kit:kit});dc.loop=false;dc.color=TRACK_COLORS[0];tag(dc);
@@ -2021,7 +2053,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const FAM_BASE={bass:'Bass',amb:'Amb',piano:'Piano',extras:'Extra',drums:'Drums'};
   // which family an instrument id belongs to (melodic families only)
   function famOf(instr){for(const f in FAMILIES){if(f==='drums')continue;if(FAMILIES[f].some(v=>v[0]===instr))return f;}return null;}
-  function setInstrument(instr){tracks[activeTrack].instr=instr;resumeAudio();refreshInstrSwitch();if(melPanel.classList.contains('show'))buildMelGrid();
+  function setInstrument(instr){tracks[activeTrack].instr=instr;resumeAudio();refreshInstrSwitch();if(melPanel.classList.contains('show')){buildMelGrid();syncMelInstrSel();}
     const lbl=(FAMILIES[famOf(instr)]||[]).find(v=>v[0]===instr);toast('→ '+(lbl?lbl[1]:instr));}
   function setDrumKit(kit){tracks[activeTrack].instr='drums';tracks[activeTrack].drumKit=kit;resumeAudio();refreshInstrSwitch();
     const ks=document.getElementById('seqKitSel');if(ks)ks.value=kit;
@@ -2571,6 +2603,19 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     n.gain.gain.setTargetAtTime(laneEffGain(li),t,0.02);if(n.pan.pan)n.pan.pan.setTargetAtTime(m.pan||0,t,0.02);
     if(n.eqLo)n.eqLo.gain.setTargetAtTime(m.eqLo||0,t,0.02);if(n.eqMid)n.eqMid.gain.setTargetAtTime(m.eqMid||0,t,0.02);if(n.eqHi)n.eqHi.gain.setTargetAtTime(m.eqHi||0,t,0.02);
     if(n.comp)applyCompSettings(n.comp,m.comp||0);}}
+  // FX presets (BandLab-style): set a lane's EQ + compressor + sidechain to a ready-made "sound".
+  function applyFxPreset(m,p){
+    const P={
+      warm:  {eqLo:4, eqMid:1, eqHi:-3, comp:1, sc:0},   // fuller lows, softer highs
+      bright:{eqLo:-1,eqMid:0, eqHi:6,  comp:1, sc:0},    // airy/crisp
+      punch: {eqLo:3, eqMid:-2,eqHi:2,  comp:3, sc:0},    // tight & punchy (drums/bass)
+      wide:  {eqLo:2, eqMid:-1,eqHi:4,  comp:1, sc:0},    // open & big
+      lofi:  {eqLo:2, eqMid:3, eqHi:-8, comp:2, sc:0},    // dark, mid-forward, vintage
+      pump:  {eqLo:3, eqMid:0, eqHi:1,  comp:2, sc:2},    // sidechain pumping
+      clean: {eqLo:0, eqMid:0, eqHi:0,  comp:0, sc:0}     // reset flat
+    }[p];
+    if(!P)return; m.eqLo=P.eqLo;m.eqMid=P.eqMid;m.eqHi=P.eqHi;m.comp=P.comp;m.sc=P.sc;scNextBeat=0;ensureScClock();
+  }
   // ---- Sidechain "pumping" (ducking) — tempo-synced gain automation on each lane's sc node ----
   // depth per level: how far the gain drops on each beat (0 = none). Rise time = most of the beat.
   const SC_DEPTH=[0,0.35,0.6,0.85];
@@ -2625,6 +2670,13 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       eqWrap.appendChild(mkEq('eqMid','M')); // Medi
       eqWrap.appendChild(mkEq('eqLo','B'));  // Bassi
       strip.appendChild(eqWrap);
+      // FX preset (BandLab-style): one click sets EQ + compressor + sidechain for a "finished" sound
+      const fxSel=document.createElement('select');fxSel.className='fxpreset';
+      const FXP={'':'FX…','warm':'🔥 Caldo','bright':'✨ Brillante','punch':'🥊 Punch','wide':'🌐 Ampio','lofi':'📼 Lo-Fi','pump':'💓 Pump','clean':'🧼 Pulito'};
+      for(const k in FXP){const o=document.createElement('option');o.value=k;o.textContent=FXP[k];fxSel.appendChild(o);}
+      fxSel.title='Preset effetti: imposta EQ + compressore + sidechain con un click';
+      fxSel.onchange=()=>{const p=fxSel.value;if(!p)return;applyFxPreset(m,p);applyLaneGains();buildMixer();toast('Preset FX: '+FXP[p]);};
+      strip.appendChild(fxSel);
       // Compressor: cycles 0(off)/1/2/3
       const compBtn=document.createElement('button');compBtn.className='compbtn'+((m.comp||0)>0?' on':'');compBtn.textContent='CMP '+(m.comp||0);compBtn.title='Compressore (0=off, 1-3 = più punch)';
       compBtn.onclick=()=>{m.comp=((m.comp||0)+1)%4;compBtn.textContent='CMP '+m.comp;compBtn.classList.toggle('on',m.comp>0);applyLaneGains();};
