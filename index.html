@@ -2112,7 +2112,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const laneNames={}; // #4 custom lane labels in Studio view (by lane index)
   // ---- #2 Global (arrangement) undo/redo: snapshots clip layout, not audio buffers ----
   const gUndo=[],gRedo=[];const G_MAX=40;
-  function snapClip(c){return {buffer:c.buffer,name:c.name,muted:c.muted,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,t:(c.t||0),lane:(c.lane||0),loop:!!c.loop,empty:!!c.empty,pattern:(c.pattern||null),musicBars:(c.musicBars||null),bpm:(c.bpm||bpm)};}
+  function snapClip(c){return {buffer:c.buffer,name:c.name,muted:c.muted,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,t:(c.t||0),lane:(c.lane||0),loop:!!c.loop,empty:!!c.empty,pattern:(c.pattern||null),musicBars:(c.musicBars||null),bpm:(c.bpm||bpm),oct:(c.oct||0)};}
   function snapState(){return {clips:clips.map(snapClip),sel:selectedClip,counter:clipCounter,laneNames:Object.assign({},laneNames)};}
   function pushGlobal(){gUndo.push(snapState());if(gUndo.length>G_MAX)gUndo.shift();gRedo.length=0;}
   function restoreState(st){for(const c of clips)stopClipPlayback(c);clips.length=0;
@@ -2393,7 +2393,11 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
             if(overLane&&+overLane.dataset.lane!==(c.lane||0)){c.lane=+overLane.dataset.lane;}}
         };
         const mm=(ev)=>{ev.preventDefault();const p=ev.touches?ev.touches[0]:ev;move(p.clientX,p.clientY);};
-        const up=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);buildStudio();toast(group?('Gruppo spostato ('+group.length+' tracce)'):(c.name+' → '+(c.t||0).toFixed(2)+'s'));};
+        const startLane=(c.lane||0);
+        const up=async ()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mm);window.removeEventListener('touchend',up);
+          // if the clip landed on a different lane, align it to that lane's octave
+          if(!group&&(c.lane||0)!==startLane){const targetOct=getLaneMix(c.lane||0).oct||0;if((c.oct||0)!==targetOct){await alignClipToOctave(c,targetOct);}}
+          buildStudio();toast(group?('Gruppo spostato ('+group.length+' tracce)'):(c.name+' → '+(c.t||0).toFixed(2)+'s'));};
         window.addEventListener('mousemove',mm);window.addEventListener('mouseup',up);window.addEventListener('touchmove',mm,{passive:false});window.addEventListener('touchend',up);};
       block.addEventListener('mousedown',(ev)=>{if(ev.target.tagName==='BUTTON')return;if(multiSelMode||ev.shiftKey||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();startDrag(ev.clientX,ev.clientY);});
       block.addEventListener('touchstart',(ev)=>{if(ev.target.tagName==='BUTTON')return;if(multiSelMode)return;ev.preventDefault();startDrag(ev.touches[0].clientX,ev.touches[0].clientY);},{passive:false});
@@ -2595,8 +2599,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // ---- Per-lane mixer (BandLab-style): volume/pan/mute/solo shared by all clips on a lane ----
   // laneMix[li] = {vol,pan,mute,solo,eqLo,eqMid,eqHi,comp}; laneNodes[li] = audio bus feeding dryGain.
   const laneMix={},laneNodes={};
-  function getLaneMix(li){if(!laneMix[li])laneMix[li]={vol:1,pan:0,mute:false,solo:false,eqLo:0,eqMid:0,eqHi:0,comp:0,sc:0};
-    const m=laneMix[li];if(m.eqLo==null)m.eqLo=0;if(m.eqMid==null)m.eqMid=0;if(m.eqHi==null)m.eqHi=0;if(m.comp==null)m.comp=0;if(m.sc==null)m.sc=0;return m;}
+  function getLaneMix(li){if(!laneMix[li])laneMix[li]={vol:1,pan:0,mute:false,solo:false,eqLo:0,eqMid:0,eqHi:0,comp:0,sc:0,oct:0};
+    const m=laneMix[li];if(m.eqLo==null)m.eqLo=0;if(m.eqMid==null)m.eqMid=0;if(m.eqHi==null)m.eqHi=0;if(m.comp==null)m.comp=0;if(m.sc==null)m.sc=0;if(m.oct==null)m.oct=0;return m;}
   function anySolo(){for(const k in laneMix)if(laneMix[k]&&laneMix[k].solo)return true;return false;}
   // effective gain for a lane: 0 if muted, or if a solo is active elsewhere and this lane isn't soloed
   function laneEffGain(li){const m=getLaneMix(li);if(m.mute)return 0;if(anySolo()&&!m.solo)return 0;return (m.vol==null?1:m.vol);}
@@ -2799,13 +2803,20 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     snapshot(clip);clip.buffer=out;clip.offset=0;restartClip(clip);return true;}
   async function changeLaneOctave(li,delta){const cs=clips.filter(c=>(c.lane||0)===li);if(!cs.length)return;pushGlobal();
     let didAudio=false,skippedDrums=false;
+    const lm=getLaneMix(li);lm.oct=(lm.oct||0)+delta; // remember the lane's octave for future clips
     for(const c of cs){
       if(c.pattern&&c.pattern.kind==='drum'){skippedDrums=true;continue;}
-      if(c.pattern&&c.pattern.kind==='mel'){await regenMelClipOctave(c,delta);}
-      else{pitchShift(c,delta*12);didAudio=true;}
+      const newOct=(c.oct||0)+delta;
+      if(c.pattern&&c.pattern.kind==='mel'){await regenMelClipOctave(c,newOct);c.oct=newOct;} // mel: absolute re-render from pattern
+      else{pitchShift(c,delta*12);c.oct=newOct;didAudio=true;} // audio: incremental pitch shift
     }
     buildStudio();
     toast('Ottava '+(delta>0?'+1':'-1')+(skippedDrums?' • batteria esclusa':'')+(didAudio?' • audio ripitchato':''));}
+  // Align a single clip to a target absolute octave (used when moving a clip into a lane).
+  async function alignClipToOctave(c,targetOct){targetOct=targetOct||0;const cur=(c.oct||0);const d=targetOct-cur;if(d===0)return;
+    if(c.pattern&&c.pattern.kind==='drum')return; // drums: no octave
+    if(c.pattern&&c.pattern.kind==='mel'){await regenMelClipOctave(c,targetOct);c.oct=targetOct;}
+    else{pitchShift(c,d*12);c.oct=targetOct;}}
   // Method B retime: resample the clip by a speed factor (>1 = faster/shorter, also raises pitch).
   function retimeClip(clip,factor){if(!(factor>0)||Math.abs(factor-1)<0.001)return;snapshot(clip);
     const b=clip.buffer,rate=b.sampleRate;const newLen=Math.max(1,Math.round(b.length/factor));
@@ -3204,7 +3215,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const clipData=[];
     for(const c of clips){clipData.push({name:c.name,muted:!!c.muted,color:c.color,fxRev:c.fxRev||0,fxDelay:c.fxDelay||0,fxDrive:c.fxDrive||0,
       t:c.t||0,lane:c.lane||0,loop:!!c.loop,vol:(c.vol==null?1:c.vol),pan:(c.pan||0),
-      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),bpm:(c.bpm||bpm),pattern:(c.pattern||null),musicBars:(c.musicBars||null),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
+      trimStart:(c.trimStart||0),trimEnd:(c.trimEnd==null?1:c.trimEnd),bpm:(c.bpm||bpm),pattern:(c.pattern||null),musicBars:(c.musicBars||null),oct:(c.oct||0),wavB64:await blobToBase64(bufferToWav(c.buffer))});}
     // grid tracks with all nodes (note/pulsar/kick/snare)
     const gridTracks=tracks.map(tr=>({instr:tr.instr,oct:tr.oct||0,muted:!!tr.muted,drumKit:tr.drumKit||'pop',
       nodes:tr.nodes.map(n=>({x:n.x,y:n.y,type:n.type}))}));
@@ -3236,7 +3247,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       const clip={buffer:buf,name:cd.name,muted:!!cd.muted,paused:false,offset:0,source:null,gain:null,volNode:null,panNode:null,
         vol:(cd.vol==null?1:cd.vol),pan:(cd.pan||0),trimStart:(cd.trimStart||0),trimEnd:(cd.trimEnd==null?1:cd.trimEnd),bpm:(cd.bpm||bpm),
         color:cd.color||TRACK_COLORS[(clipCounter-1)%NUM_TRACKS],history:[],redo:[],fadeIn:0,fadeOut:0,
-        fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,fxDrive:cd.fxDrive||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop,pattern:(cd.pattern||null),musicBars:(cd.musicBars||null)};
+        fxRev:cd.fxRev||0,fxDelay:cd.fxDelay||0,fxDrive:cd.fxDrive||0,t:cd.t||0,_tlScheduled:false,lane:cd.lane||0,loop:!!cd.loop,pattern:(cd.pattern||null),musicBars:(cd.musicBars||null),oct:(cd.oct||0)};
       clips.push(clip);}catch(e){}}
     // grid
     if(p.grid&&p.grid.tracks){for(let i=0;i<tracks.length&&i<p.grid.tracks.length;i++){const gt=p.grid.tracks[i];
@@ -3264,7 +3275,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // reset lane mixer state + buses, then restore saved lane mix values
     for(const k in laneNodes)delete laneNodes[k];
     for(const k in laneMix)delete laneMix[k];
-    if(st.laneMix){for(const k in st.laneMix){const s=st.laneMix[k]||{};laneMix[k]={vol:(s.vol==null?1:s.vol),pan:(s.pan||0),mute:!!s.mute,solo:!!s.solo,eqLo:(s.eqLo||0),eqMid:(s.eqMid||0),eqHi:(s.eqHi||0),comp:(s.comp||0),sc:(s.sc||0)};}}
+    if(st.laneMix){for(const k in st.laneMix){const s=st.laneMix[k]||{};laneMix[k]={vol:(s.vol==null?1:s.vol),pan:(s.pan||0),mute:!!s.mute,solo:!!s.solo,eqLo:(s.eqLo||0),eqMid:(s.eqMid||0),eqHi:(s.eqHi||0),comp:(s.comp||0),sc:(s.sc||0),oct:(s.oct||0)};}}
     if(st.swingLevel!=null){swingLevel=clamp(st.swingLevel,0,SWING_LEVELS.length-1);swing=SWING_LEVELS[swingLevel].v;syncSwingButtons();}
     if(st.arp){melArp=!!st.arp.on;melArpDir=st.arp.dir||melArpDir;melArpRate=st.arp.rate||melArpRate;melArpOct=st.arp.oct||1;
       const ab=document.getElementById('melArpBtn'),ad=document.getElementById('melArpDir'),ar=document.getElementById('melArpRate'),ao=document.getElementById('melArpOct');
