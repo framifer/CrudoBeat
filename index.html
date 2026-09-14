@@ -201,6 +201,7 @@
   .block .fadetri.r{right:0;background:linear-gradient(270deg,rgba(20,14,8,.55),rgba(20,14,8,0));}
   .block .fadetri.l{left:0;}
   .block .cutmask{position:absolute;top:0;bottom:0;background:rgba(20,14,8,.55);pointer-events:none;z-index:4;}
+  .block .splitmark{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#2b8ccc;box-shadow:0 0 4px #2b8ccc;pointer-events:none;z-index:6;}
   .block.sel{outline:2px solid var(--ink);z-index:2;}
   .block.multisel{outline:3px solid #2b8ccc;box-shadow:0 0 0 2px rgba(43,140,204,.4);z-index:3;}
   #groupBar{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:24;display:flex;gap:5px;align-items:center;
@@ -2561,6 +2562,23 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
         hL.addEventListener('touchstart',(ev)=>{ev.stopPropagation();ev.preventDefault();dragH('L',ev.touches[0].clientX);},{passive:false});
         hR.addEventListener('touchstart',(ev)=>{ev.stopPropagation();ev.preventDefault();dragH('R',ev.touches[0].clientX);},{passive:false});
       }
+      // ---- Split mode: tap anywhere on the block to cut at that point (repeatable) ----
+      if(c._splitArmed){
+        block.style.outline='2px solid #2b8ccc';block.style.cursor='col-resize';
+        // a movable marker that follows the pointer to preview the cut point
+        const mark=document.createElement('div');mark.className='splitmark';block.appendChild(mark);
+        const showMark=(cx)=>{const r=block.getBoundingClientRect();const f=clamp((cx-r.left)/r.width,0,1);mark.style.left=(f*100)+'%';};
+        const doSplitAt=(cx)=>{const r=block.getBoundingClientRect();const f=clamp((cx-r.left)/r.width,0.03,0.97);
+          const gi=clips.indexOf(c);if(gi<0)return;pushGlobal();
+          splitClip(c,gi,f);
+          // keep split mode armed on BOTH resulting halves so you can keep cutting anywhere
+          c._splitArmed=true;const nw=clips[gi+1];if(nw)nw._splitArmed=true;
+          buildStudio();toast('Diviso • continua a toccare per altri tagli');};
+        block.addEventListener('mousemove',(ev)=>{showMark(ev.clientX);});
+        block.addEventListener('mousedown',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.stopPropagation();ev.preventDefault();doSplitAt(ev.clientX);});
+        block.addEventListener('touchmove',(ev)=>{ev.preventDefault();showMark(ev.touches[0].clientX);},{passive:false});
+        block.addEventListener('touchstart',(ev)=>{if(ev.target.tagName==='BUTTON')return;ev.stopPropagation();ev.preventDefault();doSplitAt(ev.touches[0].clientX);},{passive:false});
+      }
       // ---- Fade mode: drag two handles to set fade-in (left) / fade-out (right) length visually ----
       if(c._fadeArmed){
         const fi=(c._fiFrac==null?0:c._fiFrac), fo=(c._foFrac==null?0:c._foFrac);
@@ -2644,7 +2662,10 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       toast(c._fadeArmed?'Trascina le maniglie per il fade, poi ✅ Applica':'Fade annullato');
     },c._fadeArmed));
     if(c._fadeArmed){blockToolsEl.appendChild(mk('✅','Applica fade',()=>{applyFadeFrac(c,c._fiFrac||0,c._foFrac||0);c._fadeArmed=false;buildStudio();toast(c.name+' fade applicato');},true));}
-    blockToolsEl.appendChild(mk('⿻','Split: divide la traccia a metà in due blocchi',()=>{splitClip(c,idx,0.5);buildStudio();toast(c.name+' divisa a metà');}));
+    blockToolsEl.appendChild(mk('⿻','Split: attiva, poi tocca il blocco dove vuoi tagliare (ripetibile)',()=>{
+      c._splitArmed=!c._splitArmed;c._cutArmed=false;c._fadeArmed=false;buildStudio();
+      toast(c._splitArmed?'Split ON: tocca il blocco dove vuoi dividere (quante volte vuoi)':'Split OFF');
+    },c._splitArmed));
     blockToolsEl.appendChild(mk('R','Riverbero traccia (0-3)',()=>{c.fxRev=((c.fxRev||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' riverbero '+c.fxRev);},(c.fxRev||0)>0));
     blockToolsEl.appendChild(mk('D','Delay traccia (0-3)',()=>{c.fxDelay=((c.fxDelay||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' delay '+c.fxDelay);},(c.fxDelay||0)>0));
     blockToolsEl.appendChild(mk('Dr','Drive/Distorsione traccia (0-3)',()=>{c.fxDrive=((c.fxDrive||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' drive '+c.fxDrive);},(c.fxDrive||0)>0));
