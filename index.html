@@ -2644,6 +2644,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
       toast(c._fadeArmed?'Trascina le maniglie per il fade, poi ✅ Applica':'Fade annullato');
     },c._fadeArmed));
     if(c._fadeArmed){blockToolsEl.appendChild(mk('✅','Applica fade',()=>{applyFadeFrac(c,c._fiFrac||0,c._foFrac||0);c._fadeArmed=false;buildStudio();toast(c.name+' fade applicato');},true));}
+    blockToolsEl.appendChild(mk('⿻','Split: divide la traccia a metà in due blocchi',()=>{splitClip(c,idx,0.5);buildStudio();toast(c.name+' divisa a metà');}));
     blockToolsEl.appendChild(mk('R','Riverbero traccia (0-3)',()=>{c.fxRev=((c.fxRev||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' riverbero '+c.fxRev);},(c.fxRev||0)>0));
     blockToolsEl.appendChild(mk('D','Delay traccia (0-3)',()=>{c.fxDelay=((c.fxDelay||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' delay '+c.fxDelay);},(c.fxDelay||0)>0));
     blockToolsEl.appendChild(mk('Dr','Drive/Distorsione traccia (0-3)',()=>{c.fxDrive=((c.fxDrive||0)+1)%4;restartClip(c);buildStudio();toast(c.name+' drive '+c.fxDrive);},(c.fxDrive||0)>0));
