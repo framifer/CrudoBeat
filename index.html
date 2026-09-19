@@ -807,7 +807,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     const n=audio.createBufferSource();n.buffer=noiseBuffer;const nf=audio.createBiquadFilter();nf.type='highpass';nf.frequency.value=2000;const ng=audio.createGain();ng.gain.setValueAtTime(.5,now);ng.gain.exponentialRampToValueAtTime(.001,now+.008);n.connect(nf);nf.connect(g);
     // envelope: 0ms attack, 200ms decay, no sustain
     g.gain.setValueAtTime(.6,now);g.gain.exponentialRampToValueAtTime(.0006,now+.2);
-    g.connect(warmOut('trumpet'));if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
+    g.connect(warmOut('banjo'));if(roomSend){const rs=audio.createGain();rs.gain.value=1.2;g.connect(rs);rs.connect(roomSend);}
     o1.start(now);o2.start(now);n.start(now);o1.stop(now+.25);o2.stop(now+.25);n.stop(now+.02);}
   // Trumpet (per spec): saw + lowpass (24dB) driven by envelope (dark→bright), 15ms pitch-scoop, vibrato delayed 400ms.
   function playTrumpet(freq){const now=audio.currentTime,g=audio.createGain();
@@ -3337,7 +3337,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const micSel=document.getElementById('micSel');let selectedMicId='';
   async function refreshMicList(){try{const devs=await navigator.mediaDevices.enumerateDevices();const mics=devs.filter(d=>d.kind==='audioinput');
     micSel.innerHTML='<option value="">🎤 Mic: predefinito</option>';mics.forEach((m,i)=>{const o=document.createElement('option');o.value=m.deviceId;o.textContent='🎤 '+(m.label||('Microfono '+(i+1)));if(m.deviceId===selectedMicId)o.selected=true;micSel.appendChild(o);});}catch(e){}}
-  micSel.addEventListener('change',()=>{selectedMicId=micSel.value;toast('Mic: '+(micSel.options[micSel.selectedIndex].textContent));});
+  micSel.addEventListener('change',()=>{selectedMicId=micSel.value;const opt=micSel.options[micSel.selectedIndex];toast('Mic: '+((opt&&opt.textContent)||'predefinito'));});
   async function startMic(){resumeAudio();
     if(!window.isSecureContext){toast('Microfono: serve HTTPS (contesto sicuro)');return;}
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Microfono non supportato dal browser');return;}
@@ -3579,7 +3579,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(!all.length)prjList.innerHTML='<div style="opacity:.6">Nessun progetto salvato.</div>';
     all.forEach(p=>{const n=p.name;const row=document.createElement('div');row.className='prj';const pn=document.createElement('span');pn.className='pn';pn.textContent=n+' ('+((p.clips&&p.clips.length)||0)+' tr.)';row.appendChild(pn);
       const open=document.createElement('button');open.textContent='Apri';open.onclick=()=>loadProject(n);row.appendChild(open);
-      const ren=document.createElement('button');ren.textContent='✎';ren.title='Rinomina';ren.onclick=async()=>{const nn=await askText('Nuovo nome:',n);if(nn&&nn!==n){const rec=await dbGet(n);rec.name=nn;await dbPut(rec);await dbDel(n);if(currentProject.name===n){currentProject.name=nn;refreshProjName();}openLoad();}};row.appendChild(ren);
+      const ren=document.createElement('button');ren.textContent='✎';ren.title='Rinomina';ren.onclick=async()=>{const nn=await askText('Nuovo nome:',n);if(nn&&nn!==n){let rec;try{rec=await dbGet(n);}catch(e){}if(!rec){toast('Progetto non trovato');return;}rec.name=nn;await dbPut(rec);await dbDel(n);if(currentProject.name===n){currentProject.name=nn;refreshProjName();}openLoad();}};row.appendChild(ren);
       const del=document.createElement('button');del.textContent='🗑';del.onclick=async()=>{if(await askConfirm('Eliminare "'+n+'"?')){await dbDel(n);openLoad();}};row.appendChild(del);
       prjList.appendChild(row);});
     storageInfo().then(s=>{if(s){const info=document.createElement('div');info.style.cssText='opacity:.6;font-size:11px;margin-top:6px';info.textContent='Spazio'+s;prjList.appendChild(info);}});
