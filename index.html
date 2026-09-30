@@ -101,6 +101,32 @@
   #seqGrid .cell.beat,#melGrid .cell.beat{border-left:2px solid var(--red2);}
   #seqGrid .cell.playing,#melGrid .cell.playing{outline:2px solid #2b2118;}
   @media (max-width:520px){#seqGrid .cell,#melGrid .cell{width:16px;height:20px;}#seqGrid .seqlbl,#melGrid .seqlbl{width:60px;flex-basis:60px;}}
+  /* ---- Live keyboard overlay (toggle: griglia <-> tastiera) ---- */
+  #keyboard{position:fixed;left:0;right:var(--edge);z-index:10;display:none;flex-direction:column;
+    top:calc(var(--kbTop,64px));bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    padding:6px;background:linear-gradient(180deg,var(--bg2),var(--bg));touch-action:none;overflow:hidden;}
+  #keyboard.show{display:flex;}
+  #kbBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 4px 6px;}
+  #kbBar .kbInfo{font-size:12px;font-weight:900;color:var(--red2);margin-right:auto;}
+  #kbBar .kbOct{display:flex;gap:4px;align-items:center;background:var(--cream);border:2px solid var(--red2);border-radius:9px;padding:3px 4px;box-shadow:0 2px 0 var(--red2);}
+  #kbBar .kbOct button{border:none;background:var(--red);color:var(--cream);font-size:14px;font-weight:900;width:28px;height:28px;border-radius:7px;cursor:pointer;padding:0;}
+  #kbBar .kbOct .lbl{font-size:10px;font-weight:800;min-width:56px;text-align:center;}
+  #kbToggleScale{border:2px solid var(--red2);background:var(--cream);color:var(--ink);border-radius:9px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 0 var(--red2);}
+  #kbToggleScale.on{background:var(--red);color:var(--cream);}
+  /* white/black keys laid out with a relative container */
+  #kbKeys{position:relative;flex:1 1 auto;min-height:0;width:100%;user-select:none;-webkit-user-select:none;}
+  #kbKeys .wkey{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#fbf6ea,#efe2c4);
+    border:2px solid var(--red2);border-top:none;border-radius:0 0 8px 8px;box-shadow:inset 0 -6px 10px rgba(120,90,40,.12);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:10px;font-weight:800;color:#7a5a2a;cursor:pointer;}
+  #kbKeys .wkey.down{background:linear-gradient(180deg,var(--red),var(--red2));color:var(--cream);box-shadow:inset 0 4px 10px rgba(0,0,0,.35);}
+  #kbKeys .wkey.root{border-color:#000;}
+  #kbKeys .wkey.root .lab{color:var(--red);font-weight:900;}
+  #kbKeys .wkey.dimmed{opacity:.4;}
+  #kbKeys .bkey{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#2b2118,#0c0c0e);
+    border:2px solid #000;border-top:none;border-radius:0 0 6px 6px;box-shadow:0 3px 6px rgba(0,0,0,.5);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:9px;font-weight:800;color:#d9c9a8;cursor:pointer;z-index:2;}
+  #kbKeys .bkey.down{background:linear-gradient(180deg,var(--red2),#7a1c07);color:var(--cream);}
+  #kbKeys .bkey.dimmed{opacity:.4;}
   /* ---- HiChord panel (device look, centered) ---- */
   #hiPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:13;display:none;flex-direction:column;gap:8px;
     background:linear-gradient(180deg,#efeae2,#ded8cd);border:2px solid #b9b0a0;border-radius:16px;padding:12px;
@@ -347,7 +373,21 @@
   <div id="zoomctl">
     <button id="gzOut" title="Zoom −">🔍－</button>
     <button id="gzIn" title="Zoom +">🔍＋</button>
+    <button id="kbToggleBtn" title="Passa da griglia a tastiera per suonare live">🎹 Tastiera</button>
   </div>
+</div>
+
+<div id="keyboard">
+  <div id="kbBar">
+    <span class="kbInfo" id="kbInfo">Tastiera</span>
+    <button id="kbToggleScale" title="Mostra solo le note della scala/tonalità attiva">In scala</button>
+    <div class="kbOct">
+      <button id="kbOctDown" title="Ottava −">－</button>
+      <span class="lbl" id="kbOctLbl">8va 0</span>
+      <button id="kbOctUp" title="Ottava ＋">＋</button>
+    </div>
+  </div>
+  <div id="kbKeys"></div>
 </div>
 
 <div id="looper">
@@ -652,7 +692,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   let currentKey='Do',currentScaleName='Pen Maggiore';
   let SCALE=SCALES[currentScaleName].slice(),SCALE_LEN=SCALE.length,KEY_OFF=0,BASE_OCTAVES=3,gridZoom=1,TOTAL_STEPS=0,VIS_OCT=3;
   let drumZoom=1; // #1 vertical zoom for the drum grid rows
-  function refreshScale(){SCALE=SCALES[currentScaleName].slice();SCALE_LEN=SCALE.length;KEY_OFF=KEY_SEMITONE[currentKey];updateTotalSteps();}
+  function refreshScale(){SCALE=SCALES[currentScaleName].slice();SCALE_LEN=SCALE.length;KEY_OFF=KEY_SEMITONE[currentKey];updateTotalSteps();if(window._refreshKeyboard)window._refreshKeyboard();}
   function updateTotalSteps(){const oct=Math.max(1,Math.round(BASE_OCTAVES/gridZoom));TOTAL_STEPS=SCALE_LEN*oct;VIS_OCT=oct;}
 
   const NOTE_IT=['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
@@ -2036,6 +2076,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   window.addEventListener('mouseup',()=>{if(panActive){panActive=false;speaker.classList.remove('panning');panLast=null;}});
 
   function onPointerDown(id,clientX,clientY){resumeAudio();hideHint();
+    if(window._keyboardActive&&window._keyboardActive())return; // tastiera attiva: la griglia non riceve input
     if(calibrating){calibTapNow();return;} // calibration: taps only measure timing
     if(panActive){panLast={x:clientX,y:clientY};return;}
     if(!inCanvas(clientX))return;const{x,y}=ptrPos(clientX,clientY);
@@ -2172,7 +2213,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   const octLbl=document.getElementById('octLbl');
   function refreshOct(){const o=tracks[activeTrack].oct;octLbl.textContent='8va '+(o>0?'+':'')+o;}
   // change octave from the main dashboard; if the melody sequencer is open, rebuild it so notes/labels follow
-  function changeOct(delta){tracks[activeTrack].oct=clamp((tracks[activeTrack].oct||0)+delta,-3,3);refreshOct();if(melPanel&&melPanel.classList.contains('show'))buildMelGrid();}
+  function changeOct(delta){tracks[activeTrack].oct=clamp((tracks[activeTrack].oct||0)+delta,-3,3);refreshOct();if(melPanel&&melPanel.classList.contains('show'))buildMelGrid();if(window._refreshKeyboard)window._refreshKeyboard();}
   document.getElementById('octUp').addEventListener('click',()=>changeOct(1));
   document.getElementById('octDown').addEventListener('click',()=>changeOct(-1));
   function doZoom(dir){ // dir +1 in, -1 out; zoom looper if open, else grid
@@ -2196,6 +2237,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   // which family an instrument id belongs to (melodic families only)
   function famOf(instr){for(const f in FAMILIES){if(f==='drums')continue;if(FAMILIES[f].some(v=>v[0]===instr))return f;}return null;}
   function setInstrument(instr){tracks[activeTrack].instr=instr;resumeAudio();refreshInstrSwitch();if(melPanel.classList.contains('show')){buildMelGrid();syncMelInstrSel();}
+    if(window._refreshKeyboard)window._refreshKeyboard();
     const lbl=(FAMILIES[famOf(instr)]||[]).find(v=>v[0]===instr);toast('→ '+(lbl?lbl[1]:instr));}
   function setDrumKit(kit){tracks[activeTrack].instr='drums';tracks[activeTrack].drumKit=kit;resumeAudio();refreshInstrSwitch();
     const ks=document.getElementById('seqKitSel');if(ks)ks.value=kit;
@@ -2224,7 +2266,160 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   document.addEventListener('click',(e)=>{if(!instrMenu.contains(e.target)&&!(e.target.closest&&e.target.closest('[data-fam]')))instrMenu.classList.remove('show');});
   refreshInstrSwitch();refreshOct();
 
-  const keySel=document.getElementById('keySel'),scaleSel=document.getElementById('scaleSel');
+  // ============================================================
+  // Live keyboard (toggle griglia <-> tastiera). Plays the ACTIVE
+  // track's instrument (Extra/Bass/Amb/Piano/Syn and every melodic
+  // instrument) using the same held-voice engine as the grid.
+  // ============================================================
+  (function(){
+    const kbEl=document.getElementById('keyboard');
+    const kbKeys=document.getElementById('kbKeys');
+    const kbInfo=document.getElementById('kbInfo');
+    const kbOctLbl=document.getElementById('kbOctLbl');
+    const kbToggleBtn=document.getElementById('kbToggleBtn');
+    const kbScaleBtn=document.getElementById('kbToggleScale');
+    let keyboardMode=false;   // false = griglia, true = tastiera
+    let kbScaleOnly=false;    // se true, mostra/attiva solo le note in scala
+    const KB_WHITE=[0,2,4,5,7,9,11];               // semitoni dei tasti bianchi in un'ottava
+    const KB_BLACK={1:0,3:1,6:3,8:4,10:5};         // semitono -> indice del tasto bianco precedente
+    const KB_OCTAVES=2;                             // ottave visibili
+    const kbVoices=new Map();                       // pointerId -> {voice, midi, el}
+    // base MIDI: come la griglia, ancorata allo strumento + tonalità + ottava traccia,
+    // riportata al Do più vicino sotto la base per un ambito musicale sensato.
+    function kbBaseMidi(){
+      const tr=tracks[activeTrack];
+      const instr=(tr.instr==='drums'||tr.instr==='hichord')?'node':tr.instr;
+      const b=(INSTR_BASE[instr]||60)+KEY_OFF+(tr.oct||0)*12;
+      return Math.floor(b/12)*12; // Do dell'ottava della base
+    }
+    function inScale(midi){const rel=(((midi-KEY_OFF)%12)+12)%12;return SCALE.indexOf(rel)>=0;}
+    function buildKeys(){
+      kbKeys.innerHTML='';
+      const base=kbBaseMidi();
+      const whitesPerOct=KB_WHITE.length, totalWhites=whitesPerOct*KB_OCTAVES;
+      const ww=100/totalWhites; // larghezza percentuale di ogni tasto bianco
+      // tasti bianchi
+      let wi=0;
+      for(let o=0;o<KB_OCTAVES;o++){
+        for(let k=0;k<KB_WHITE.length;k++){
+          const midi=base+o*12+KB_WHITE[k];
+          const el=document.createElement('div');el.className='wkey';el.dataset.midi=midi;
+          el.style.left=(wi*ww)+'%';el.style.width=ww+'%';
+          const rel=(((midi-KEY_OFF)%12)+12)%12;
+          if(rel===0)el.classList.add('root');
+          if(kbScaleOnly&&!inScale(midi))el.classList.add('dimmed');
+          el.innerHTML='<span class="lab">'+midiToName(midi)+'</span>';
+          kbKeys.appendChild(el);wi++;
+        }
+      }
+      // tasti neri (posizionati sopra, tra i bianchi)
+      for(let o=0;o<KB_OCTAVES;o++){
+        for(const semi in KB_BLACK){
+          const s=parseInt(semi,10);
+          const midi=base+o*12+s;
+          const whiteIndexInOct=KB_BLACK[s];                       // bianco a sinistra
+          const globalWhite=o*whitesPerOct+whiteIndexInOct;
+          const el=document.createElement('div');el.className='bkey';el.dataset.midi=midi;
+          const bw=ww*0.62;                                        // larghezza tasto nero
+          el.style.width=bw+'%';
+          el.style.left=((globalWhite+1)*ww - bw/2)+'%';           // a cavallo tra due bianchi
+          if(kbScaleOnly&&!inScale(midi))el.classList.add('dimmed');
+          kbKeys.appendChild(el);
+        }
+      }
+    }
+    function refreshKeyboard(){
+      const tr=tracks[activeTrack];
+      const melodic=!(tr.instr==='drums'||tr.instr==='hichord');
+      const nm=(FAMILIES[famOf(tr.instr)]||[]).find(v=>v[0]===tr.instr);
+      const label=nm?nm[1]:(tr.instr==='synth'?'Synth':(tr.instr==='hichord'?'HiCrudo':(tr.instr==='drums'?'Drums':tr.instr)));
+      kbInfo.textContent=melodic?('Tastiera · '+label+' · '+currentKey+' '+currentScaleName):('Tastiera non disponibile per '+label);
+      kbOctLbl.textContent='8va '+((tr.oct>0?'+':'')+(tr.oct||0));
+      if(keyboardMode)buildKeys();
+    }
+    // suono
+    function pressKey(id,el){
+      if(!el||!el.dataset.midi)return;
+      const tr=tracks[activeTrack];
+      if(tr.instr==='drums'||tr.instr==='hichord')return; // non melodico
+      resumeAudio();
+      const midi=parseInt(el.dataset.midi,10);
+      const instr=tr.instr;
+      const v=makeHeldVoice(instr,midiToFreq(midi));
+      kbVoices.set(id,{voice:v,midi,el});
+      el.classList.add('down');
+    }
+    function releaseKey(id){
+      const rec=kbVoices.get(id);if(!rec)return;
+      try{releaseVoice(rec.voice);}catch(e){}
+      if(rec.el)rec.el.classList.remove('down');
+      kbVoices.delete(id);
+    }
+    // trova il tasto sotto le coordinate (i neri hanno priorità perché sopra)
+    function keyAtPoint(cx,cy){
+      if(document.elementsFromPoint){
+        const els=document.elementsFromPoint(cx,cy);
+        for(const e of els){if(e.classList&&(e.classList.contains('bkey')||e.classList.contains('wkey')))return e;}
+      }
+      // fallback: singolo elemento + closest (browser senza elementsFromPoint)
+      const one=document.elementFromPoint&&document.elementFromPoint(cx,cy);
+      if(one&&one.closest){const k=one.closest('.bkey,.wkey');if(k)return k;}
+      return null;
+    }
+    // slide/glissando: se il dito si sposta su un altro tasto, cambia nota
+    function moveKey(id,cx,cy){
+      const rec=kbVoices.get(id);if(!rec)return;
+      const el=keyAtPoint(cx,cy);if(!el||el===rec.el)return;
+      const midi=parseInt(el.dataset.midi,10);
+      try{setVoiceFreq(rec.voice,midiToFreq(midi));}catch(e){}
+      if(rec.el)rec.el.classList.remove('down');
+      el.classList.add('down');rec.el=el;rec.midi=midi;
+    }
+    // Pointer events (mouse + touch unificati)
+    kbKeys.addEventListener('pointerdown',e=>{e.preventDefault();
+      const el=keyAtPoint(e.clientX,e.clientY);if(el){pressKey(e.pointerId,el);try{kbKeys.setPointerCapture(e.pointerId);}catch(_){}}
+    });
+    kbKeys.addEventListener('pointermove',e=>{if(kbVoices.has(e.pointerId)){e.preventDefault();moveKey(e.pointerId,e.clientX,e.clientY);}});
+    const endP=e=>{if(kbVoices.has(e.pointerId))releaseKey(e.pointerId);};
+    kbKeys.addEventListener('pointerup',endP);
+    kbKeys.addEventListener('pointercancel',endP);
+    kbKeys.addEventListener('pointerleave',e=>{/* held via capture; nulla */});
+    // rete di sicurezza: se il capture salta (scroll di sistema, ecc.) rilascia comunque
+    window.addEventListener('pointerup',endP);
+    window.addEventListener('pointercancel',endP);
+    function releaseAll(){for(const id of[...kbVoices.keys()])releaseKey(id);}
+
+    function setKeyboardMode(on){
+      keyboardMode=on;
+      kbEl.classList.toggle('show',on);
+      kbToggleBtn.classList.toggle('active',on);
+      kbToggleBtn.textContent=on?'⊞ Griglia':'🎹 Tastiera';
+      showGrid=!on; // il draw della griglia si spegne; il canvas resta per pulsar/nodi in play
+      if(on){positionKeyboard();buildKeys();refreshKeyboard();}else{releaseAll();}
+    }
+    // calcola l'offset superiore = altezza reale della topbar
+    function positionKeyboard(){
+      const tb=document.getElementById('topbar');
+      const top=((tb&&tb.offsetHeight)||60)+4;
+      document.documentElement.style.setProperty('--kbTop',top+'px');
+    }
+    kbToggleBtn.addEventListener('click',()=>{resumeAudio();setKeyboardMode(!keyboardMode);
+      toast(keyboardMode?'Tastiera ON — suona toccando i tasti':'Griglia ON');});
+    kbScaleBtn.addEventListener('click',()=>{kbScaleOnly=!kbScaleOnly;kbScaleBtn.classList.toggle('on',kbScaleOnly);if(keyboardMode)buildKeys();
+      toast(kbScaleOnly?'Tastiera: solo note in scala':'Tastiera: cromatica');});
+    document.getElementById('kbOctUp').addEventListener('click',()=>{changeOct(1);});
+    document.getElementById('kbOctDown').addEventListener('click',()=>{changeOct(-1);});
+    window.addEventListener('resize',()=>{if(keyboardMode){releaseAll();positionKeyboard();buildKeys();}});
+    // la rotazione su mobile aggiorna le dimensioni con un piccolo ritardo: ri-misura e ridisegna dopo,
+    // coerente con come l'app gestisce orientationchange altrove
+    window.addEventListener('orientationchange',()=>{if(keyboardMode){releaseAll();setTimeout(()=>{positionKeyboard();buildKeys();},220);}});
+    // esponi il refresh così i cambi di strumento/ottava/tonalità aggiornano la tastiera
+    window._refreshKeyboard=refreshKeyboard;
+    window._keyboardActive=()=>keyboardMode;
+    window._closeKeyboard=()=>{if(keyboardMode)setKeyboardMode(false);};
+  })();
+
+
   KEYS.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;keySel.appendChild(o);});
   Object.keys(SCALES).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;scaleSel.appendChild(o);});
   keySel.value=currentKey;scaleSel.value=currentScaleName;
@@ -2267,7 +2462,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
   function refreshProjName(){projNameEl.textContent='Progetto: '+(currentProject.name||'(nuovo)');}
   document.getElementById('expandBtn').addEventListener('click',()=>{looperFull=!looperFull;applyLayout();refreshView();});
   document.getElementById('closeLooper').addEventListener('click',()=>{looperHidden=true;applyLayout();toast('Multitraccia chiuso • le tracce continuano');});
-  tracceBtn.addEventListener('click',()=>{if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();});
+  tracceBtn.addEventListener('click',()=>{if(window._closeKeyboard)window._closeKeyboard();if(!splitMode){splitMode=true;}looperHidden=false;applyLayout();refreshView();});
 
   // ---- Loop mode + latency compensation ----
   const LOOP_BEATS=8;let loopMode=false,latencyMs=20,loopStart=null;
@@ -3506,6 +3701,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     // view: always Studio now
     timelineView=true;
     refreshInstrSwitch();refreshOct();
+    if(window._refreshKeyboard)window._refreshKeyboard();
     // start playback of clips per current view
     for(const c of clips)startClipPlayback(c);
     splitMode=true;looperHidden=false;applyLayout();refreshView();
